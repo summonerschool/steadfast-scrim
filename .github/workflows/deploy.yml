@@ -8,6 +8,11 @@ jobs:
   build:
       name: Build and Test
       timeout-minutes: 15
+      runs-on: ubuntu-latest
+      strategy:
+        matrix:
+          node-version: [16.x]
+
       steps:
         - name: Check out code
           uses: actions/checkout@v2
