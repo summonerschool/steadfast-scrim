@@ -20,7 +20,7 @@ import { SlashCommand, CommandOptionType } from 'slash-create';
     }
     async run(ctx) {
         // returns the subcommand, option, and option value
-        return "LOSER"
+        return "Go and touch grass you loser"
     }
 };
 

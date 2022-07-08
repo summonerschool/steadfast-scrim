@@ -1,0 +1,33 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id         String       @id
+  username   String
+  UserQueued UserQueued[]
+}
+
+model Queue {
+  id         String       @id @default(uuid())
+  started_at DateTime     @default(now())
+  //status STARTED | INGAME | FINISHED | REMAKED?
+  UserQueued UserQueued[]
+}
+
+model UserQueued {
+  player    User   @relation(fields: [player_id], references: [id])
+  player_id String
+  queue     Queue  @relation(fields: [queue_id], references: [id])
+  queue_id  String
+
+  @@id([player_id, queue_id])
+}
