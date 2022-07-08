@@ -16,10 +16,17 @@ model User {
   UserQueued UserQueued[]
 }
 
+enum QueueStatus {
+  STARTED
+  IN_PROGRESS
+  FINISHED
+  REMAKE
+}
+
 model Queue {
   id         String       @id @default(uuid())
   started_at DateTime     @default(now())
-  //status STARTED | INGAME | FINISHED | REMAKED?
+  status     QueueStatus
   UserQueued UserQueued[]
 }
 
@@ -28,6 +35,8 @@ model UserQueued {
   player_id String
   queue     Queue  @relation(fields: [queue_id], references: [id])
   queue_id  String
+
+  queuedAt DateTime @default(now())
 
   @@id([player_id, queue_id])
 }
