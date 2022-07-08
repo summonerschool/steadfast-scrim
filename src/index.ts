@@ -2,6 +2,8 @@ import dotenv from 'dotenv';
 import { SlashCreator, FastifyServer, AWSLambdaServer } from 'slash-create';
 import path from 'path';
 import CatLoggr from 'cat-loggr/ts';
+import HelloCommand from './commands/hello';
+import QueueCommand from './commands/queue';
 
 let dotenvPath = path.join(process.cwd(), '.env');
 if (path.parse(process.cwd()).name === 'dist') dotenvPath = path.join(process.cwd(), '..', '.env');
@@ -27,6 +29,7 @@ creator.on('commandRun', (command, _, ctx) =>
 creator.on('commandRegister', (command) => logger.info(`Registered command ${command.commandName}`));
 creator.on('commandError', (command, error) => logger.error(`Command ${command.commandName}:`, error));
 
-creator.withServer(new AWSLambdaServer()).registerCommandsIn(path.join(__dirname, 'commands')).startServer();
+const server = creator.withServer(new FastifyServer()).registerCommands([HelloCommand, QueueCommand])
+server.startServer();
 
 console.log(`Starting server at "localhost:${creator.options.serverPort}/interactions"`);
