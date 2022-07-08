@@ -8,3 +8,4 @@ node_modules
 !.yarn/versions
 yarn-error.log
 .env
+.turbo

@@ -43,7 +43,6 @@ const headers = {
 }
 
 const data = [queueCmd, leaveCmd, roleCmd].map((cmd) => cmd.toJSON())
-console.log(data)
 
 axios
 	.put(APP_URL, JSON.stringify(data), {
