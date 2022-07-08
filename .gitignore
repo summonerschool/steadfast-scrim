@@ -1,11 +1,23 @@
-node_modules
-.pnp.*
+# Packages
+node_modules/
+yarn.lock
+package_lock.json
+
+# Log files
+logs/
+*.log
+
+# Miscellaneous
+.tmp/
+.vscode/**/*
+!.vscode/extensions.json
+.env
+dist/
+
 .yarn/*
 !.yarn/patches
-!.yarn/plugins
 !.yarn/releases
+!.yarn/plugins
 !.yarn/sdks
 !.yarn/versions
-yarn-error.log
-.env
-.turbo
+.pnp.*
