@@ -3,6 +3,8 @@ name: Deploy
 on:
   push:
     branches: ["main"]
+    paths:
+      - 'apps/commands'
 
 jobs:
   build:
