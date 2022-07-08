@@ -6,35 +6,28 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "cockroachdb"
   url      = env("DATABASE_URL")
 }
 
 model User {
   id         String       @id
-  username   String
+  league_ign String       @unique
   UserQueued UserQueued[]
-}
-
-enum QueueStatus {
-  STARTED
-  IN_PROGRESS
-  FINISHED
-  REMAKE
 }
 
 model Queue {
   id         String       @id @default(uuid())
-  started_at DateTime     @default(now())
-  status     QueueStatus
+  server     String
   UserQueued UserQueued[]
 }
 
 model UserQueued {
-  player    User   @relation(fields: [player_id], references: [id])
+  player    User    @relation(fields: [player_id], references: [id])
   player_id String
-  queue     Queue  @relation(fields: [queue_id], references: [id])
+  queue     Queue   @relation(fields: [queue_id], references: [id])
   queue_id  String
+  popped    Boolean @default(false)
 
   queuedAt DateTime @default(now())
 

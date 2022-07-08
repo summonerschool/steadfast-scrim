@@ -1,19 +1,26 @@
-import { PrismaClient, Queue } from '@prisma/client';
+import { Prisma, PrismaClient, UserQueued } from '@prisma/client';
 
 export interface QueueRepository {
-  addUserToQueue: (userID: string, queueID: string) => Promise<void>;
-  getLatestQueue: () => Promise<Queue>
+  addUserToQueue: (userID: string, queueID: string) => Promise<UserQueued>;
+  removeUserFromQueue: (userID: string, queueID: string) => Promise<boolean>;
+  getListQueued: (filter?: Prisma.UserQueuedWhereInput) => Promise<UserQueued[]>;
 }
 
 const initQueueRepository = (prisma: PrismaClient) => {
   const repo: QueueRepository = {
     addUserToQueue: async (userID, queueID) => {
-      const userqueued = await prisma.userQueued.create({ data: { player_id: userID, queue_id: queueID } });
-      return
+      const queued = await prisma.userQueued.create({ data: { player_id: userID, queue_id: queueID } });
+      return queued;
     },
-    getLatestQueue: async () => {
-        const queue = await prisma.queue.findFirst({ orderBy: { started_at: 'desc' }, where: { status: 'STARTED' } })
-        return queue
+    removeUserFromQueue: async (userID, queueID) => {
+      const queued = await prisma.userQueued.delete({
+        where: { player_id_queue_id: { player_id: userID, queue_id: queueID } }
+      });
+      return !!queued;
+    },
+    getListQueued: async (filter) => {
+      const queued = await prisma.userQueued.findMany({ where: filter });
+      return queued;
     }
   };
   return repo;
