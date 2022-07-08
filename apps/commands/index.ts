@@ -16,11 +16,11 @@ const queueCmd = new SlashCommandBuilder()
 	.setDescription("Queue up for a high quality game of lego legends")
 const leaveCmd = new SlashCommandBuilder().setName("leave").setDescription("Leave and touch grass")
 const roleCmd = new SlashCommandBuilder()
-	.setName("profile")
+	.setName("roles")
 	.setDescription("Boast about your role")
 	.addSubcommand((subcommand) =>
 		subcommand
-			.setName("set")
+			.setName("add")
 			.setDescription("Alters a user's roles")
 			.addStringOption((option) =>
 				option
