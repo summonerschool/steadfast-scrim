@@ -1,0 +1,35 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "cockroachdb"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id         String       @id
+  league_ign String       @unique
+  UserQueued UserQueued[]
+}
+
+model Queue {
+  id         String       @id @default(uuid())
+  server     String
+  UserQueued UserQueued[]
+}
+
+model UserQueued {
+  player    User    @relation(fields: [player_id], references: [id])
+  player_id String
+  queue     Queue   @relation(fields: [queue_id], references: [id])
+  queue_id  String
+  popped    Boolean @default(false)
+
+  queuedAt DateTime @default(now())
+
+  @@id([player_id, queue_id])
+}

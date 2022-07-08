@@ -4,11 +4,21 @@ import path from 'path';
 import CatLoggr from 'cat-loggr/ts';
 import HelloCommand from './commands/hello';
 import QueueCommand from './commands/queue';
+import { initQueueRepository } from './services/repo/queue-repository';
+import { PrismaClient } from '@prisma/client';
+import { initQueueService } from './services/queue-service';
 
 let dotenvPath = path.join(process.cwd(), '.env');
 if (path.parse(process.cwd()).name === 'dist') dotenvPath = path.join(process.cwd(), '..', '.env');
 
 dotenv.config({ path: dotenvPath });
+
+// Clients
+const prisma = new PrismaClient();
+// Repositories
+const queueRepo = initQueueRepository(prisma);
+// Services
+const queueService = initQueueService(queueRepo);
 
 const logger = new CatLoggr().setLevel(process.env.COMMANDS_DEBUG === 'true' ? 'debug' : 'info');
 const creator = new SlashCreator({
@@ -23,13 +33,20 @@ creator.on('debug', (message) => logger.log(message));
 creator.on('warn', (message) => logger.warn(message));
 creator.on('error', (error) => logger.error(error));
 creator.on('synced', () => logger.info('Commands synced!'));
-creator.on('commandRun', (command, _, ctx) =>
-  logger.info(`${ctx.user.username}#${ctx.user.discriminator} (${ctx.user.id}) ran command ${command.commandName}`)
-);
+creator.on('commandRun', (command, _, ctx) => {
+  // TODO: move this command handler to somewhere else
+  switch (command.commandName) {
+    case 'queue':
+      break;
+    default:
+      break;
+  }
+  logger.info(`${ctx.user.username}#${ctx.user.discriminator} (${ctx.user.id}) ran command ${command.commandName}`);
+});
 creator.on('commandRegister', (command) => logger.info(`Registered command ${command.commandName}`));
 creator.on('commandError', (command, error) => logger.error(`Command ${command.commandName}:`, error));
 
-const server = creator.withServer(new FastifyServer()).registerCommands([HelloCommand, QueueCommand])
+const server = creator.withServer(new FastifyServer()).registerCommands([HelloCommand, QueueCommand]);
 server.startServer();
 
 console.log(`Starting server at "localhost:${creator.options.serverPort}/interactions"`);

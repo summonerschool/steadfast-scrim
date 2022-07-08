@@ -1,4 +1,4 @@
-import { SlashCommand, CommandOptionType } from "slash-create";
+import { SlashCommand, CommandOptionType, CommandContext } from "slash-create";
 
 class HelloCommand extends SlashCommand {
   constructor(creator) {
@@ -15,8 +15,9 @@ class HelloCommand extends SlashCommand {
     this.filePath = __filename;
   }
 
-  async run(ctx) {
-    return ctx.options.food ? `You like ${ctx.options.food}? Nice!` : `Hello, ${ctx.user.username}!`;
+  async run(ctx: CommandContext) {
+    console.info(ctx.user.id)
+    return ctx.options.food ? `You like ${ctx.options.food}? Nice!` : `Hello, ${ctx.user.id}(${ctx.user.username})!`;
   }
 }
 
