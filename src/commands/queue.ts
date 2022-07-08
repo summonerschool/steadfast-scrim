@@ -1,25 +1,27 @@
-import { SlashCommandBuilder } from '@discordjs/builders';
+import { SlashCommand, CommandOptionType } from 'slash-create';
 
-const ROLES = [
-	{ name: "Top", value: "TOP" },
-	{ name: "Jungle", value: "JUNGLE" },
-	{ name: "Mid", value: "MID" },
-	{ name: "Adc", value: "ADC" },
-	{ name: "Support", value: "SUPPORT" }
-]
+ class QueueCommand extends SlashCommand {
+    constructor(creator) {
+        super(creator, {
+            name: 'queue',
+            description: 'Queue',
+            options: [{
+                type: CommandOptionType.SUB_COMMAND,
+                name: 'join',
+                description: 'Here is the first sub command',
+            }, {
+                type: CommandOptionType.SUB_COMMAND,
+                name: 'leave',
+                description: 'Leave the thingie',
+                
+            }]
+        });
+        this.filePath = __filename;
+    }
+    async run(ctx) {
+        // returns the subcommand, option, and option value
+        return "LOSER"
+    }
+};
 
-const queueCmd = new SlashCommandBuilder()
-  .setName('queue')
-  .setDescription('Queue')
-  .addSubcommand((subcommand) =>
-    subcommand
-      .setName('join')
-      .setDescription('join a queue')
-  )
-  .addSubcommand((subcommand) =>
-    subcommand
-      .setName('leave')
-      .setDescription('Leave a queue')
-  )
-
-  export default queueCmd
+export default QueueCommand
