@@ -7,7 +7,7 @@ interface QueueService {
   getQueueByGuild: (guildID: string) => Queue | undefined;
 }
 
-const initQueueService = (queueRepo: QueueRepository) => {
+export const initQueueService = (queueRepo: QueueRepository) => {
   const service: QueueService = {
     joinQueue: async (userID: string, queueID: string) => {
       const queue = await queueRepo.addUserToQueue(userID, queueID);

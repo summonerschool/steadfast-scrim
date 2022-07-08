@@ -6,7 +6,7 @@ export interface QueueRepository {
   getListQueued: (filter?: Prisma.UserQueuedWhereInput) => Promise<UserQueued[]>;
 }
 
-const initQueueRepository = (prisma: PrismaClient) => {
+export const initQueueRepository = (prisma: PrismaClient) => {
   const repo: QueueRepository = {
     addUserToQueue: async (userID, queueID) => {
       const queued = await prisma.userQueued.create({ data: { player_id: userID, queue_id: queueID } });
