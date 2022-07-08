@@ -48,5 +48,3 @@ axios
 	.put(APP_URL, JSON.stringify(data), {
 		headers: headers
 	})
-	.then((res) => console.log(res.data))
-	.catch((err) => console.log(err))
