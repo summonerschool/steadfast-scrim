@@ -10,6 +10,16 @@ const ROLES = [
 
 const queueCmd = new SlashCommandBuilder()
   .setName('queue')
-  .setDescription('Queue up for a high quality game of lego legends');
+  .setDescription('Queue')
+  .addSubcommand((subcommand) =>
+    subcommand
+      .setName('join')
+      .setDescription('join a queue')
+  )
+  .addSubcommand((subcommand) =>
+    subcommand
+      .setName('leave')
+      .setDescription('Leave a queue')
+  )
 
   export default queueCmd
