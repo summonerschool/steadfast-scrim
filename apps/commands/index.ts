@@ -8,6 +8,13 @@ This should run during CI (GitHub actions) which updates the list of available c
 
 */
 
+const ROLES = [
+	{ name: "Top", value: "TOP" },
+	{ name: "Jungle", value: "JUNGLE" },
+	{ name: "Mid", value: "MID" },
+	{ name: "Adc", value: "ADC" },
+	{ name: "Support", value: "SUPPORT" }
+]
 
 const APP_URL = `https://discord.com/api/v8/applications/${process.env.APP_ID}/guilds/${process.env.GUILD_ID}/commands`
 
@@ -21,21 +28,16 @@ const roleCmd = new SlashCommandBuilder()
 	.addSubcommand((subcommand) =>
 		subcommand
 			.setName("add")
-			.setDescription("Alters a user's roles")
+			.setDescription("Add a new role")
 			.addStringOption((option) =>
 				option
 					.setName("role")
 					.setDescription("League of legends role")
-					.addChoices(
-						{ name: "Top", value: "TOP" },
-						{ name: "Jungle", value: "JUNGLE" },
-						{ name: "Mid", value: "MID" },
-						{ name: "Adc", value: "ADC" },
-						{ name: "Support", value: "SUPPORT" }
-					)
+					.addChoices(...ROLES)
 					.setRequired(true)
 			)
 	)
+	.addSubcommand((subcommand) => subcommand.setName("info").setDescription("Show my roles"))
 
 const headers = {
 	Authorization: `Bot ${process.env.BOT_TOKEN}`,
@@ -48,3 +50,4 @@ axios
 	.put(APP_URL, JSON.stringify(data), {
 		headers: headers
 	})
+	.then((res) => console.log(res.data))
