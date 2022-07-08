@@ -4,7 +4,7 @@ on:
   push:
     branches: ["main"]
     paths:
-      - 'apps/commands'
+      - 'apps/commands/**'
 
 jobs:
   build:
