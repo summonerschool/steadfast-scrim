@@ -11,13 +11,29 @@ datasource db {
 }
 
 model User {
-  id         String       @id
-  league_ign String       @unique
+  id           String       @id
+  league_ign   String       @unique
+  server       Server       @default(EUW)
+  rank         Rank
+  role         Role
+  win          Int          @default(0)
+  loss         Int          @default(0)
+  elo          Int          @default(0)
+  external_elo Int          @default(0)
+  UserQueued UserQueued[]
+}
+
+model Scrims {
+  id         String       @id @default(uuid())
+  queue      Queue        @relation(fields: [queue_id], references: [id])
+  queue_id   String
+  server     String
+  status     Status
   UserQueued UserQueued[]
 }
 
 model Queue {
-  id         String       @id @default(uuid())
+  id         String       @id @default(autoincrement())
   server     String
   UserQueued UserQueued[]
 }
@@ -32,4 +48,35 @@ model UserQueued {
   queuedAt DateTime @default(now())
 
   @@id([player_id, queue_id])
+}
+
+enum Status {
+  INPROGRESS
+  COMPLETED
+  REMADE
+}
+
+enum Server {
+  EUW
+  NA
+}
+
+enum Rank {
+  IRON
+  BRONZE
+  SILVER
+  GOLD
+  PLATINUM
+  DIAMOND
+  MASTER
+  GRANDMASTER
+  CHALLENGER
+}
+
+enum Role {
+  TOP
+  JUNGLE
+  MID
+  BOT
+  SUPPORT
 }
