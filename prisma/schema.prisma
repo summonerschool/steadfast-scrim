@@ -20,7 +20,7 @@ model User {
   loss         Int          @default(0)
   elo          Int          @default(0)
   external_elo Int          @default(0)
-  UserQueued UserQueued[]
+  UserQueued   UserQueued[]
 }
 
 model Scrims {
@@ -33,9 +33,10 @@ model Scrims {
 }
 
 model Queue {
-  id         String       @id @default(autoincrement())
-  server     String
+  id         String       @id @default(uuid())
+  server     String       @unique
   UserQueued UserQueued[]
+  Scrims     Scrims[]
 }
 
 model UserQueued {
@@ -47,6 +48,8 @@ model UserQueued {
 
   queuedAt DateTime @default(now())
 
+  Scrims   Scrims? @relation(fields: [scrimsId], references: [id])
+  scrimsId String?
   @@id([player_id, queue_id])
 }
 

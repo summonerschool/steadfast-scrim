@@ -1,4 +1,5 @@
-import { SlashCommand, CommandOptionType } from 'slash-create';
+import { SlashCommand, CommandOptionType, CommandContext } from 'slash-create';
+import { queueService } from '../services';
 
 class QueueCommand extends SlashCommand {
   constructor(creator) {
@@ -20,9 +21,17 @@ class QueueCommand extends SlashCommand {
     });
     this.filePath = __filename;
   }
-  async run(ctx) {
+  async run(ctx: CommandContext) {
     // returns the subcommand, option, and option value
-    return 'Go and touch grass you loser';
+    const queue = await queueService.getOrCreateQueueToGuild(ctx.guildID);
+    if (ctx.subcommands[0] === 'join') {
+      const count = await queueService.joinQueue(ctx.user.id, queue.id);
+      return `A player joined. ${count} players currently in queue`;
+    } else if (ctx.subcommands[0] === 'leave') {
+      const count = await queueService.leaveQueue(ctx.user.id, queue.id);
+      return `A player left. ${count} players currently in queue`;
+    }
+    return 'No such subcommand';
   }
 }
 
