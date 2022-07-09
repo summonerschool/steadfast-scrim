@@ -1,25 +1,14 @@
-import { CommandOptionType, ComponentType, SlashCommand } from 'slash-create';
+import { Rank, Role } from '@prisma/client';
+import { CommandContext, CommandOptionType, ComponentType, SlashCommand } from 'slash-create';
+import { userService } from '../services';
 
-enum Roles {
-  IRON = 'Iron',
-  BRONZE = 'Bronze',
-  SILVER = 'Silver',
-  GOLD = 'Gold',
-  PLATINUM = 'Platinum',
-  DIAMOND = 'Diamond',
-  MASTER = 'Master',
-  GRANDMASTER = 'Grandmaster',
-  CHALLENGER = 'Challenger'
-}
+const roles = Object.entries(Rank).map(([key, val]) => ({ label: val, value: key }));
+console.log(roles);
 
 class SetupCommand extends SlashCommand {
-  private user_data = {
-    discord_id: null,
-    league_ign: null,
-    rank: null,
-    server: null,
-    role: null
-  };
+  private rank: string | undefined = undefined;
+  private server: string | undefined = undefined;
+  private role: string | undefined = undefined;
 
   constructor(creator) {
     super(creator, {
@@ -38,7 +27,7 @@ class SetupCommand extends SlashCommand {
     this.filePath = __filename;
   }
 
-  async run(ctx) {
+  async run(ctx: CommandContext) {
     console.log(ctx.options.ign);
     await ctx.defer(true);
     await ctx.send('Please fill in all the options below', {
@@ -88,7 +77,7 @@ class SetupCommand extends SlashCommand {
               placeholder: 'Choose your rank',
               min_values: 1,
               max_values: 1,
-              options: Object.keys(Roles).map((key) => ({ label: Roles[key], value: key }))
+              options: roles
             }
           ]
         },
@@ -132,37 +121,42 @@ class SetupCommand extends SlashCommand {
     const followup = await ctx.sendFollowUp('Awaiting replies...');
     const command = this;
 
+    const userID = ctx.user.id;
+    const ign = ctx.options.ign;
     ctx.registerComponent('server', async (selectCtx) => {
-      this.user_data.server = selectCtx.values.join(', ');
-      await followup.edit(command.followUpMsg());
+      this.server = selectCtx.values.join(', ');
+      await followup.edit(await command.followUpMsg(userID, ign));
     });
 
     ctx.registerComponent('rank', async (selectCtx) => {
-      this.user_data.rank = selectCtx.values.join(', ');
-      await followup.edit(command.followUpMsg());
+      this.rank = selectCtx.values.join(', ');
+      await followup.edit(await command.followUpMsg(userID, ign));
     });
 
     ctx.registerComponent('role', async (selectCtx) => {
-      this.user_data.role = selectCtx.values.join(', ');
-      const test = command.followUpMsg();
+      this.role = selectCtx.values.join(', ');
+      const test = await command.followUpMsg(userID, ign);
       await followup.edit(test);
     });
   }
 
-  followUpMsg(data = this.user_data) {
+  async followUpMsg(discordID: string, leagueIGN: string) {
     let msg = 'You selected the following: \n';
-    if (data.server) {
-      msg += '\nServer: ' + data.server;
+    if (this.server) {
+      msg += '\nServer: ' + this.server;
     }
 
-    if (data.rank) {
-      msg += '\nRank: ' + data.rank;
+    if (this.rank) {
+      msg += '\nRank: ' + this.rank;
     }
 
-    if (data.role) {
-      msg += '\nRole: ' + data.role;
+    if (this.role) {
+      msg += '\nRole: ' + this.role;
     }
-
+    if (this.server && this.rank && this.role) {
+      console.log('HELLO WORLD');
+      await userService.registerUser(discordID, leagueIGN, this.rank, this.server, this.role);
+    }
     return msg;
   }
 }
