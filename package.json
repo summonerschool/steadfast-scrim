@@ -16,10 +16,12 @@
     "@discordjs/builders": "^0.15.0",
     "@prisma/client": "^4.0.0",
     "cat-loggr": "^1.1.0",
+    "discord.js": "^13.8.1",
     "dotenv": "^8.2.0",
     "esno": "^0.16.3",
     "fastify": "^3.9.2",
-    "slash-create": "^5.2.0"
+    "slash-create": "^5.2.0",
+    "zod": "^3.17.3"
   },
   "devDependencies": {
     "@types/express": "^4.17.11",
