@@ -13,13 +13,6 @@ if (path.parse(process.cwd()).name === 'dist') dotenvPath = path.join(process.cw
 
 dotenv.config({ path: dotenvPath });
 
-// Clients
-const prisma = new PrismaClient();
-// Repositories
-const queueRepo = initQueueRepository(prisma);
-// Services
-const queueService = initQueueService(queueRepo);
-
 const logger = new CatLoggr().setLevel(process.env.COMMANDS_DEBUG === 'true' ? 'debug' : 'info');
 const creator = new SlashCreator({
   applicationID: process.env.DISCORD_APP_ID,
@@ -34,13 +27,6 @@ creator.on('warn', (message) => logger.warn(message));
 creator.on('error', (error) => logger.error(error));
 creator.on('synced', () => logger.info('Commands synced!'));
 creator.on('commandRun', (command, _, ctx) => {
-  // TODO: move this command handler to somewhere else
-  switch (command.commandName) {
-    case 'queue':
-      break;
-    default:
-      break;
-  }
   logger.info(`${ctx.user.username}#${ctx.user.discriminator} (${ctx.user.id}) ran command ${command.commandName}`);
 });
 creator.on('commandRegister', (command) => logger.info(`Registered command ${command.commandName}`));
