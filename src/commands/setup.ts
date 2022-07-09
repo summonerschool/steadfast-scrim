@@ -1,25 +1,48 @@
-import { SlashCommand, CommandOptionType, ComponentType, TextInputStyle } from 'slash-create';
+import { CommandOptionType, ComponentType, SlashCommand } from 'slash-create';
 
 class SetupCommand extends SlashCommand {
+  private user_data = {
+    discord_id: null,
+    league_ign: null,
+    rank: null,
+    server: null,
+    role: null
+  };
+
   constructor(creator) {
     super(creator, {
       name: 'setup',
-      description: 'First time setup'
+      description: 'First time setup',
+      options: [
+        {
+          type: CommandOptionType.STRING,
+          name: 'ign',
+          required: true,
+          description: 'Type your league in-game name'
+        }
+      ]
     });
 
     this.filePath = __filename;
   }
 
   async run(ctx) {
-    const data = {
-      rank: null,
-      server: null,
-      role: null
-    };
-
-    await ctx.defer();
+    console.log(ctx.options.ign);
+    await ctx.defer(true);
     await ctx.send('Please fill in all the options below', {
+      ephemeral: true,
       components: [
+        // { TODO: THIS IS BUGGED CURRENTLY, WONT LET ME ADD A TEXT INPUT DIRECT
+        //   type: ComponentType.ACTION_ROW,
+        //   components: [
+        //     {
+        //       type: ComponentType.TEXT_INPUT,
+        //       custom_id: 'link',
+        //       label: 'Choose a server',
+        //       style: TextInputStyle.SHORT
+        //     }
+        //   ]
+        // },
         {
           type: ComponentType.ACTION_ROW,
           components: [
@@ -135,23 +158,23 @@ class SetupCommand extends SlashCommand {
     const command = this;
 
     ctx.registerComponent('server', async (selectCtx) => {
-      data.server = selectCtx.values.join(', ');
-      await followup.edit(command.followUpMsg(data));
+      this.user_data.server = selectCtx.values.join(', ');
+      await followup.edit(command.followUpMsg());
     });
 
     ctx.registerComponent('rank', async (selectCtx) => {
-      data.rank = selectCtx.values.join(', ');
-      await followup.edit(command.followUpMsg(data));
+      this.user_data.rank = selectCtx.values.join(', ');
+      await followup.edit(command.followUpMsg());
     });
 
     ctx.registerComponent('role', async (selectCtx) => {
-      data.role = selectCtx.values.join(', ');
-      const test = command.followUpMsg(data);
+      this.user_data.role = selectCtx.values.join(', ');
+      const test = command.followUpMsg();
       await followup.edit(test);
     });
   }
 
-  followUpMsg(data) {
+  followUpMsg(data = this.user_data) {
     let msg = 'You selected the following: \n';
     if (data.server) {
       msg += '\nServer: ' + data.server;
