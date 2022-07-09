@@ -1,23 +1,25 @@
-import { PrismaClient, User } from '@prisma/client';
+import { PrismaClient } from '@prisma/client';
+import { User, mapToUser } from '../../entities/user';
 
 export interface UserRepository {
-  createUser: (payload: User) => Promise<User>;
-  getUserByID: (id: User['id']) => Promise<User | null>;
+  upsertUser: (payload: User) => Promise<User>;
+  getUserByID: (id: User['id']) => Promise<User | undefined>;
 }
 
 // TODO: map the database user to the entity verison
 export const initUserRepository = (prisma: PrismaClient) => {
   const repo: UserRepository = {
-    createUser: async (payload) => {
-      const user = await prisma.user.create({
-        data: payload
+    upsertUser: async (payload) => {
+      const user = await prisma.user.upsert({
+        where: { id: payload.id },
+        create: { ...payload, league_ign: payload.leagueIGN, external_elo: payload.externalElo },
+        update: { ...payload, league_ign: payload.leagueIGN, external_elo: payload.externalElo }
       });
-      return user;
+      return mapToUser(user);
     },
     getUserByID: async (id) => {
       const user = await prisma.user.findUnique({ where: { id } });
-      if (!user) return null;
-      return user;
+      return user ? mapToUser(user) : undefined;
     }
   };
   return repo;

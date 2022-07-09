@@ -15,7 +15,7 @@ model User {
   league_ign   String       @unique
   server       Server
   rank         Rank
-  role         Role
+  role         Role[]
   win          Int          @default(0)
   loss         Int          @default(0)
   elo          Int          @default(0)
@@ -24,7 +24,7 @@ model User {
 }
 
 model Scrims {
-  id         String       @id @default(uuid())
+  id         BigInt       @id @default(autoincrement())
   queue      Queue        @relation(fields: [queue_id], references: [id])
   queue_id   String
   server     String
@@ -49,14 +49,14 @@ model UserQueued {
   queuedAt DateTime @default(now())
 
   Scrims   Scrims? @relation(fields: [scrimsId], references: [id])
-  scrimsId String?
+  scrimsId BigInt?
 
   @@id([player_id, queue_id])
 }
 
 enum Status {
-  INPROGRESS
-  COMPLETED
+  LOBBY // Drafting, Scouting, etc....???
+  COMPLETED // 
   REMADE
 }
 

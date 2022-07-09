@@ -1,5 +1,5 @@
 import { Rank, Role } from '@prisma/client';
-import { CommandContext, CommandOptionType, ComponentType, SlashCommand } from 'slash-create';
+import { CommandContext, CommandOptionType, ComponentType, SlashCommand, SlashCreator } from 'slash-create';
 import { userService } from '../services';
 
 const roles = Object.entries(Rank).map(([key, val]) => ({ label: val, value: key }));
@@ -8,9 +8,9 @@ console.log(roles);
 class SetupCommand extends SlashCommand {
   private rank: string | undefined = undefined;
   private server: string | undefined = undefined;
-  private role: string | undefined = undefined;
+  private roles: string[] | undefined = undefined;
 
-  constructor(creator) {
+  constructor(creator: SlashCreator) {
     super(creator, {
       name: 'setup',
       description: 'First time setup',
@@ -28,7 +28,6 @@ class SetupCommand extends SlashCommand {
   }
 
   async run(ctx: CommandContext) {
-    console.log(ctx.options.ign);
     await ctx.defer(true);
     await ctx.send('Please fill in all the options below', {
       ephemeral: true,
@@ -134,30 +133,18 @@ class SetupCommand extends SlashCommand {
     });
 
     ctx.registerComponent('role', async (selectCtx) => {
-      this.role = selectCtx.values.join(', ');
+      this.roles = selectCtx.values;
       const test = await command.followUpMsg(userID, ign);
       await followup.edit(test);
     });
   }
 
   async followUpMsg(discordID: string, leagueIGN: string) {
-    let msg = 'You selected the following: \n';
-    if (this.server) {
-      msg += '\nServer: ' + this.server;
+    
+    if (this.server && this.rank && this.roles) {
+      await userService.setUserProfile(discordID, leagueIGN, this.rank, this.server, this.roles);
     }
-
-    if (this.rank) {
-      msg += '\nRank: ' + this.rank;
-    }
-
-    if (this.role) {
-      msg += '\nRole: ' + this.role;
-    }
-    if (this.server && this.rank && this.role) {
-      console.log('HELLO WORLD');
-      await userService.registerUser(discordID, leagueIGN, this.rank, this.server, this.role);
-    }
-    return msg;
+    return "";
   }
 }
 

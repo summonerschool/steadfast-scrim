@@ -1,7 +1,7 @@
-import { SlashCommand, CommandOptionType, CommandContext } from 'slash-create';
+import { SlashCommand, CommandOptionType, CommandContext, SlashCreator } from 'slash-create';
 
 class HelloCommand extends SlashCommand {
-  constructor(creator) {
+  constructor(creator: SlashCreator) {
     super(creator, {
       name: 'hello',
       description: 'Says hello to you.',
@@ -10,7 +10,7 @@ class HelloCommand extends SlashCommand {
           type: CommandOptionType.STRING,
           name: 'food',
           description: 'What food do you like?'
-        }
+        },
       ]
     });
 

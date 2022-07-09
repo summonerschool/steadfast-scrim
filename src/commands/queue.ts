@@ -1,8 +1,8 @@
-import { SlashCommand, CommandOptionType, CommandContext } from 'slash-create';
+import { SlashCommand, CommandOptionType, CommandContext, SlashCreator } from 'slash-create';
 import { queueService } from '../services';
 
 class QueueCommand extends SlashCommand {
-  constructor(creator) {
+  constructor(creator: SlashCreator) {
     super(creator, {
       name: 'queue',
       description: 'Queue',
@@ -23,7 +23,7 @@ class QueueCommand extends SlashCommand {
   }
   async run(ctx: CommandContext) {
     // returns the subcommand, option, and option value
-    const queue = await queueService.getOrCreateQueueToGuild(ctx.guildID);
+    const queue = await queueService.getOrCreateQueueToGuild(ctx.guildID!!);
     if (ctx.subcommands[0] === 'join') {
       const count = await queueService.joinQueue(ctx.user.id, queue.id);
       return `A player joined. ${count} players currently in queue`;
