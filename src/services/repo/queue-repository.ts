@@ -21,8 +21,8 @@ export const initQueueRepository = (prisma: PrismaClient) => {
         // THIS IS TEMPORARY
         queued = await prisma.userQueued.create({
           data: {
-            player: { connectOrCreate: { create: { id: userID, league_ign: 'Temp' }, where: { id: userID } } },
-            queue: { connect: { id: queueID } }
+            player_id: userID,
+            queue_id: queueID
           }
         });
       }
