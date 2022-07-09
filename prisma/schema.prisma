@@ -15,7 +15,7 @@ model User {
   league_ign   String       @unique
   server       Server
   rank         Rank
-  role         Role[]
+  roles        Role[]
   win          Int          @default(0)
   loss         Int          @default(0)
   elo          Int          @default(0)

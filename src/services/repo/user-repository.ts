@@ -10,11 +10,25 @@ export interface UserRepository {
 export const initUserRepository = (prisma: PrismaClient) => {
   const repo: UserRepository = {
     upsertUser: async (payload) => {
+      const { id, rank, server, roles, externalElo, leagueIGN } = payload;
       const user = await prisma.user.upsert({
         where: { id: payload.id },
-        create: { ...payload, league_ign: payload.leagueIGN, external_elo: payload.externalElo },
-        update: { ...payload, league_ign: payload.leagueIGN, external_elo: payload.externalElo }
+        create: {
+          id,
+          league_ign: leagueIGN,
+          rank,
+          server,
+          roles
+        },
+        update: {
+          league_ign: leagueIGN,
+          external_elo: externalElo,
+          rank,
+          server,
+          roles
+        }
       });
+      console.log(user);
       return mapToUser(user);
     },
     getUserByID: async (id) => {

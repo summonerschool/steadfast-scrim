@@ -124,12 +124,12 @@ class SetupCommand extends SlashCommand {
     const ign = ctx.options.ign;
     ctx.registerComponent('server', async (selectCtx) => {
       this.server = selectCtx.values.join(', ');
-      await followup.edit(await command.followUpMsg(userID, ign));
+      await command.followUpMsg(userID, ign);
     });
 
     ctx.registerComponent('rank', async (selectCtx) => {
       this.rank = selectCtx.values.join(', ');
-      await followup.edit(await command.followUpMsg(userID, ign));
+      await command.followUpMsg(userID, ign);
     });
 
     ctx.registerComponent('role', async (selectCtx) => {
@@ -140,11 +140,12 @@ class SetupCommand extends SlashCommand {
   }
 
   async followUpMsg(discordID: string, leagueIGN: string) {
-    
     if (this.server && this.rank && this.roles) {
-      await userService.setUserProfile(discordID, leagueIGN, this.rank, this.server, this.roles);
+      const user = await userService.setUserProfile(discordID, leagueIGN, this.rank, this.server, this.roles);
+      return user.id;
+    } else {
+      return 'fail';
     }
-    return "";
   }
 }
 

@@ -6,7 +6,7 @@ export const userSchema = z.object({
   leagueIGN: z.string().max(18),
   rank: z.nativeEnum(Rank),
   server: z.nativeEnum(Server),
-  role: z.array(z.nativeEnum(Role)),
+  roles: z.array(z.nativeEnum(Role)),
   wins: z.number().int().positive().optional(),
   losses: z.number().int().positive().optional(),
   elo: z.number().int().positive().optional(),
@@ -21,5 +21,5 @@ export const mapToUser = (dbUser: PrismaUser) => {
     leagueIGN: dbUser.league_ign,
     externalElo: dbUser.external_elo
   });
-  return user
+  return user;
 };
