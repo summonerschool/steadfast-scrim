@@ -26,14 +26,14 @@ model User {
 model Scrims {
   id         String       @id @default(uuid())
   queue      Queue        @relation(fields: [queue_id], references: [id])
-  queue_id   Int
+  queue_id   String
   server     String
   status     Status
   UserQueued UserQueued[]
 }
 
 model Queue {
-  id         Int          @id @default(sequence())
+  id         String       @id @default(uuid())
   server     String       @unique
   UserQueued UserQueued[]
   Scrims     Scrims[]
@@ -43,13 +43,14 @@ model UserQueued {
   player    User    @relation(fields: [player_id], references: [id])
   player_id String
   queue     Queue   @relation(fields: [queue_id], references: [id])
-  queue_id  Int
+  queue_id  String
   popped    Boolean @default(false)
 
   queuedAt DateTime @default(now())
 
   Scrims   Scrims? @relation(fields: [scrimsId], references: [id])
   scrimsId String?
+
   @@id([player_id, queue_id])
 }
 

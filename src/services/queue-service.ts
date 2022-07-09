@@ -2,15 +2,15 @@ import { Queue } from '@prisma/client';
 import { QueueRepository } from './repo/queue-repository';
 
 interface QueueService {
-  joinQueue: (userID: string, queueID: number) => Promise<number>;
-  leaveQueue: (userID: string, queueID: number) => Promise<number>;
+  joinQueue: (userID: string, queueID: string) => Promise<number>;
+  leaveQueue: (userID: string, queueID: string) => Promise<number>;
   getOrCreateQueueToGuild: (guildID: string) => Promise<Queue>;
-  getUsersInQueue: (queueID: number) => Promise<number>;
+  getUsersInQueue: (queueID: string) => Promise<number>;
 }
 
 export const initQueueService = (queueRepo: QueueRepository) => {
   const service: QueueService = {
-    joinQueue: async (userID: string, queueID: number) => {
+    joinQueue: async (userID: string, queueID: string) => {
       console.info(`${userID} tries to join ${queueID}`);
       const queue = await queueRepo.addUserToQueue(userID, queueID);
       const activeUserQueues = await queueRepo.getListQueued({ queue_id: queue.queue_id });
@@ -33,7 +33,7 @@ export const initQueueService = (queueRepo: QueueRepository) => {
       }
       return queue;
     },
-    getUsersInQueue: async (queueID: number) => {
+    getUsersInQueue: async (queueID: string) => {
       const queuedUsers = await queueRepo.getListQueued({ queue_id: queueID });
       return queuedUsers.length;
     }

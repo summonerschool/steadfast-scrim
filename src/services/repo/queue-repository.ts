@@ -1,8 +1,8 @@
 import { Prisma, PrismaClient, Queue, UserQueued } from '@prisma/client';
 
 export interface QueueRepository {
-  addUserToQueue: (userID: string, queueID: number) => Promise<UserQueued>;
-  removeUserFromQueue: (userID: string, queueID: number) => Promise<UserQueued>;
+  addUserToQueue: (userID: string, queueID: string) => Promise<UserQueued>;
+  removeUserFromQueue: (userID: string, queueID: string) => Promise<UserQueued>;
   getListQueued: (filter?: Prisma.UserQueuedWhereInput) => Promise<UserQueued[]>;
   getQueueByGuildID: (guildID: string) => Promise<Queue | null>;
   createQueue: (guildID: string) => Promise<Queue>;

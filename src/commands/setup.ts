@@ -1,5 +1,17 @@
 import { CommandOptionType, ComponentType, SlashCommand } from 'slash-create';
 
+enum Roles {
+  IRON = 'Iron',
+  BRONZE = 'Bronze',
+  SILVER = 'Silver',
+  GOLD = 'Gold',
+  PLATINUM = 'Platinum',
+  DIAMOND = 'Diamond',
+  MASTER = 'Master',
+  GRANDMASTER = 'Grandmaster',
+  CHALLENGER = 'Challenger'
+}
+
 class SetupCommand extends SlashCommand {
   private user_data = {
     discord_id: null,
@@ -76,44 +88,7 @@ class SetupCommand extends SlashCommand {
               placeholder: 'Choose your rank',
               min_values: 1,
               max_values: 1,
-              options: [
-                {
-                  label: 'Iron',
-                  value: 'IRON'
-                },
-                {
-                  label: 'Bronze',
-                  value: 'BRONZE'
-                },
-                {
-                  label: 'Silver',
-                  value: 'SILVER'
-                },
-                {
-                  label: 'Gold',
-                  value: 'GOLD'
-                },
-                {
-                  label: 'Platinum',
-                  value: 'PLATINUM'
-                },
-                {
-                  label: 'Diamond',
-                  value: 'DIAMOND'
-                },
-                {
-                  label: 'Master',
-                  value: 'MASTER'
-                },
-                {
-                  label: 'Grandmaster',
-                  value: 'GRANDMASTER'
-                },
-                {
-                  label: 'Challenger',
-                  value: 'CHALLENGER'
-                }
-              ]
+              options: Object.keys(Roles).map((key) => ({ label: Roles[key], value: key }))
             }
           ]
         },
