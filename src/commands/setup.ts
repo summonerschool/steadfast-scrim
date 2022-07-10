@@ -221,7 +221,10 @@ class SetupCommand extends SlashCommand {
 
     ctx.registerComponentFrom(followup.id, 'confirm_setup', async (selectCtx) => {
       console.log('confirm');
+      const user = await userService.setUserProfile(this.discord_id, this.ign, this.rank, this.server, this.roles);
       await followup.delete();
+
+      // TODO : DELETE THE EPHEMERAL AND SEND THE EMBED AS A MESSSAGE SO EVERYONE CAN SEE NEW PLAYERS?
       // await ctx.editOriginal('');
       // await ctx.delete(followup.id);
     });
@@ -230,16 +233,7 @@ class SetupCommand extends SlashCommand {
       console.log('cancel');
       // await ctx.delete(followup.id);
     });
-
-    // const user = await userService.setUserProfile(this.discord_id, this.ign, this.rank, this.server, this.roles);
   }
-
-  // async followUpMsg(ctx) {
-  //   if (this.server && this.rank && this.roles) {
-  //   } else {
-  //     return 'fail';
-  //   }
-  // }
 }
 
 export default SetupCommand;
