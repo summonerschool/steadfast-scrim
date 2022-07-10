@@ -29,6 +29,8 @@ model Scrims {
   queue_id   String
   server     String
   status     Status
+  players    User[]
+  voice_ids  String[]
   UserQueued UserQueued[]
 }
 
@@ -55,8 +57,9 @@ model UserQueued {
 }
 
 enum Status {
-  LOBBY // Drafting, Scouting, etc....???
-  COMPLETED // 
+  LOBBY
+  INGAME
+  COMPLETED
   REMADE
 }
 

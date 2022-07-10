@@ -1,10 +1,9 @@
-import { SlashCommand, CommandOptionType, CommandContext } from 'slash-create';
-import { Message, Guild, Client, Intents } from 'discord.js';
-const { REST } = require('@discordjs/rest');
-const { Routes } = require('discord-api-types/v9');
+import { SlashCommand, CommandOptionType, CommandContext, SlashCreator } from 'slash-create';
+import { client } from '../index';
+import { CategoryChannel } from 'discord.js';
 
 class VoiceCommand extends SlashCommand {
-  constructor(creator) {
+  constructor(creator: SlashCreator) {
     super(creator, {
       name: 'voice',
       description: 'Voice Channels',
@@ -26,14 +25,14 @@ class VoiceCommand extends SlashCommand {
   }
 
   async run(ctx: CommandContext) {
-    // const client = new Client({ intents: [Intents.FLAGS.GUILDS] });
-    // const guild = client.guilds.fetch();
-    console.log(this.client);
-
-    // client.channels.client.message.guild.channels.create('name', {
-    //   type: 'GUILD_TEXT'
-    // });
-    // const rest = new REST({ version: '9' }).setToken(token);
+    if (ctx.subcommands[0] === 'create') {
+      // TODO: MOVE THIS TO THE QUEUE POP ACTION -> STORE THE VOICE CHANNELS IDS IN THE SCRIM TABLE
+      const guild = await client.guilds.fetch({ guild: '826232163082698794' });
+      const category = await guild.channels.fetch('826232163082698796');
+      if (category instanceof CategoryChannel) {
+        console.log(category.createChannel('scrim ' + Math.random() + ' red team', { type: 'GUILD_VOICE' }));
+      }
+    }
     return 'ok';
   }
 }
