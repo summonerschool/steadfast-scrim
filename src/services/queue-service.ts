@@ -8,17 +8,24 @@ interface QueueService {
   leaveQueue: (userID: string, queueID: string) => Promise<Queuer>;
   getOrCreateQueueToGuild: (guildID: string) => Promise<Queue>;
   showUsersInQueue: (queueID: string) => Promise<Queuer[]>;
+  attemptMatchmaking: (queueID: string) => void;
 }
 
 export const initQueueService = (queueRepo: QueueRepository, userRepo: UserRepository) => {
   const service: QueueService = {
-    joinQueue: async (userID: string, queueID: string) => {
+    joinQueue: async (userID, queueID) => {
       const user = await userRepo.getUserByID(userID);
       if (!user) {
         throw new NotFoundError("You can't join a queue without a profile. Please use /setup");
       }
       const queuer = await queueRepo.addUserToQueue(user.id, queueID);
       return queuer;
+    },
+    attemptMatchmaking: async (queueID) => {
+      const queuers = await queueRepo.getUsersInQueue({ popped: false, queue_id: queueID });
+      if (queuers.length >= 10) {
+        console.log('QUEUE POPPED');
+      }
     },
     leaveQueue: async (userID, queueID) => {
       const queuer = await queueRepo.removeUserFromQueue(userID, queueID);

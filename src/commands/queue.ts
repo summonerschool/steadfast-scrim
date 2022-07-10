@@ -33,7 +33,9 @@ class QueueCommand extends SlashCommand {
     if (ctx.subcommands[0] === 'join') {
       try {
         const queuer = await queueService.joinQueue(ctx.user.id, queue.id);
-        return { content: `<@${queuer.player_id}> has joined the queue`, allowedMentions: { everyone: false } };
+        ctx.send({ content: `<@${queuer.player_id}> has joined the queue`, allowedMentions: { everyone: false } });
+        await queueService.attemptMatchmaking(queuer.queue_id);
+        return;
       } catch (err) {
         if (err instanceof NotFoundError) {
           return err.message;
