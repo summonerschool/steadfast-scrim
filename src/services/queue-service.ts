@@ -1,30 +1,28 @@
 import { Queue, Queuer } from '@prisma/client';
+import { NotFoundError } from '../errors/errors';
 import { QueueRepository } from './repo/queue-repository';
+import { UserRepository } from './repo/user-repository';
 
 interface QueueService {
-  joinQueue: (userID: string, queueID: string) => Promise<number>;
-  leaveQueue: (userID: string, queueID: string) => Promise<number>;
+  joinQueue: (userID: string, queueID: string) => Promise<Queuer>;
+  leaveQueue: (userID: string, queueID: string) => Promise<Queuer>;
   getOrCreateQueueToGuild: (guildID: string) => Promise<Queue>;
-  showQueuers: (queueID: string) => Promise<Queuer[]>;
+  showUsersInQueue: (queueID: string) => Promise<Queuer[]>;
 }
 
-export const initQueueService = (queueRepo: QueueRepository) => {
+export const initQueueService = (queueRepo: QueueRepository, userRepo: UserRepository) => {
   const service: QueueService = {
     joinQueue: async (userID: string, queueID: string) => {
-      console.info(`${userID} tries to join ${queueID}`);
-      const queuer = await queueRepo.addUserToQueue(userID, queueID);
-      const activeUserQueues = await queueRepo.getQueuers({ queue_id: queuer.queue_id });
-      console.info(`${activeUserQueues.length} players in queue`);
-      if (activeUserQueues.length > 10) {
-        // DODO logic;
-        console.info('POPPED');
+      const user = await userRepo.getUserByID(userID);
+      if (!user) {
+        throw new NotFoundError("You can't join a queue without a profile. Please use /setup");
       }
-      return activeUserQueues.length;
+      const queuer = await queueRepo.addUserToQueue(user.id, queueID);
+      return queuer;
     },
     leaveQueue: async (userID, queueID) => {
       const queuer = await queueRepo.removeUserFromQueue(userID, queueID);
-      const activeUserQueues = await queueRepo.getQueuers({ queue_id: queuer.queue_id });
-      return activeUserQueues.length;
+      return queuer;
     },
     getOrCreateQueueToGuild: async (guildID) => {
       let queue = await queueRepo.getQueueByGuildID(guildID);
@@ -33,8 +31,8 @@ export const initQueueService = (queueRepo: QueueRepository) => {
       }
       return queue;
     },
-    showQueuers: async (queueID: string) => {
-      const queuers = await queueRepo.getQueuers({ queue_id: queueID });
+    showUsersInQueue: async (queueID: string) => {
+      const queuers = await queueRepo.getUsersInQueue({ queue_id: queueID });
       return queuers;
     }
   };

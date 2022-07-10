@@ -21,8 +21,8 @@ model User {
   elo          Int      @default(0)
   external_elo Int      @default(0)
   queuer       Queuer[]
-  Player       Player[]
-  Scrim        Scrim[]
+  player       Player[]
+  scrim        Scrim[]
 }
 
 enum Team {

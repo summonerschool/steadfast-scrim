@@ -1,11 +1,12 @@
 import { User, userSchema } from '../entities/user';
+import { NotFoundError } from '../errors/errors';
 import { UserRepository } from './repo/user-repository';
 
 export interface UserService {
   setUserProfile: (id: string, leagueIGN: string, rank: string, server: string, roles: string[]) => Promise<User>;
   getUserProfile: (id: string) => Promise<User>;
   getUserRankImage: (rank: string | undefined) => string;
-  getUsersByScrim: (scrimID: string) => Promise<User[]>;
+  // getUsersByScrim: (scrimID: string) => Promise<User[]>;
 }
 
 export const initUserService = (userRepo: UserRepository) => {
@@ -17,7 +18,7 @@ export const initUserService = (userRepo: UserRepository) => {
     },
     getUserProfile: async (id) => {
       const user = await userRepo.getUserByID(id);
-      if (!user) throw new Error(`User(${id}) could not be found`);
+      if (!user) throw new NotFoundError(`User(<@${id}>) does not have a profile. Please use /setup`);
       return user;
     },
     getUserRankImage: (rank: string = 'IRON') => {
@@ -34,12 +35,11 @@ export const initUserService = (userRepo: UserRepository) => {
       };
 
       return rankImage[rank];
-    },
-    getUsersByScrim: async (scrimID) => {
-      // get IDS from a game
-      const users = await userRepo.getUsers({ s });
-      return users;
     }
+    // getUsersByScrim: async (scrimID) => {
+    //   // get IDS from a game
+    //   return;
+    // }
   };
   return service;
 };

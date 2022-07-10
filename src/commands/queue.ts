@@ -30,17 +30,17 @@ class QueueCommand extends SlashCommand {
     // returns the subcommand, option, and option value
     const queue = await queueService.getOrCreateQueueToGuild(ctx.guildID!!);
     if (ctx.subcommands[0] === 'join') {
-      const count = await queueService.joinQueue(ctx.user.id, queue.id);
-      return `A player joined. ${count} players currently in queue`;
+      const queuer = await queueService.joinQueue(ctx.user.id, queue.id);
+      return `@<${queuer.player_id}> has joined the queue`;
     } else if (ctx.subcommands[0] === 'leave') {
-      const count = await queueService.leaveQueue(ctx.user.id, queue.id);
-      return `A player left. ${count} players currently in queue`;
+      const queuer = await queueService.leaveQueue(ctx.user.id, queue.id);
+      return `@<${queuer.player_id}> has left the queue`;
     } else if (ctx.subcommands[0] === 'show') {
-      const queuer = await queueService.showQueuers(queue.id);
+      const queuer = await queueService.showUsersInQueue(queue.id);
       console.log(ctx.users);
-      const mentions = queuer.map((q) => `<@${q.player_id}>`);
+      const mentions = queuer.map((q) => `<@${q.player_id}>\n`);
       const message: MessageOptions = {
-        content: `${mentions} are in queue`,
+        content: `**In queue**\n${mentions}`,
         allowedMentions: { everyone: false },
         ephemeral: true
       };
