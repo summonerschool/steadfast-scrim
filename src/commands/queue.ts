@@ -1,4 +1,4 @@
-import { SlashCommand, CommandOptionType, CommandContext, SlashCreator } from 'slash-create';
+import { SlashCommand, CommandOptionType, CommandContext, SlashCreator, User } from 'slash-create';
 import { queueService } from '../services';
 
 class QueueCommand extends SlashCommand {
@@ -16,6 +16,11 @@ class QueueCommand extends SlashCommand {
           type: CommandOptionType.SUB_COMMAND,
           name: 'leave',
           description: 'Leave the thingie'
+        },
+        {
+          type: CommandOptionType.SUB_COMMAND,
+          name: 'show',
+          description: 'Show queue'
         }
       ]
     });
@@ -30,8 +35,14 @@ class QueueCommand extends SlashCommand {
     } else if (ctx.subcommands[0] === 'leave') {
       const count = await queueService.leaveQueue(ctx.user.id, queue.id);
       return `A player left. ${count} players currently in queue`;
+    } else if (ctx.subcommands[0] === 'show') {
+      const queued = await queueService.showQueuedUsers(queue.id);
+      console.log(ctx.users);
+      const users = queued.map((q) => q.player_id);
+      return `${users.join(', ')} are in queue`;
+    } else {
+      return 'no such command exists';
     }
-    return 'No such subcommand';
   }
 }
 

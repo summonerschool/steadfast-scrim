@@ -1,11 +1,11 @@
-import { Queue } from '@prisma/client';
+import { Queue, UserQueued } from '@prisma/client';
 import { QueueRepository } from './repo/queue-repository';
 
 interface QueueService {
   joinQueue: (userID: string, queueID: string) => Promise<number>;
   leaveQueue: (userID: string, queueID: string) => Promise<number>;
   getOrCreateQueueToGuild: (guildID: string) => Promise<Queue>;
-  getUsersInQueue: (queueID: string) => Promise<number>;
+  showQueuedUsers: (queueID: string) => Promise<UserQueued[]>;
 }
 
 export const initQueueService = (queueRepo: QueueRepository) => {
@@ -33,9 +33,9 @@ export const initQueueService = (queueRepo: QueueRepository) => {
       }
       return queue;
     },
-    getUsersInQueue: async (queueID: string) => {
+    showQueuedUsers: async (queueID: string) => {
       const queuedUsers = await queueRepo.getListQueued({ queue_id: queueID });
-      return queuedUsers.length;
+      return queuedUsers;
     }
   };
   return service;
