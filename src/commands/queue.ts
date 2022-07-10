@@ -1,4 +1,4 @@
-import { SlashCommand, CommandOptionType, CommandContext, SlashCreator, User } from 'slash-create';
+import { SlashCommand, CommandOptionType, CommandContext, SlashCreator, MessageOptions } from 'slash-create';
 import { queueService } from '../services';
 
 class QueueCommand extends SlashCommand {
@@ -38,8 +38,12 @@ class QueueCommand extends SlashCommand {
     } else if (ctx.subcommands[0] === 'show') {
       const queued = await queueService.showQueuedUsers(queue.id);
       console.log(ctx.users);
-      const users = queued.map((q) => q.player_id);
-      return `${users.join(', ')} are in queue`;
+      const mentions = queued.map((q) => `<@${q.player_id}>`);
+      const message: MessageOptions = {
+        content: `${mentions} are in queue`,
+        allowedMentions: { everyone: false }
+      };
+      return message;
     } else {
       return 'no such command exists';
     }
