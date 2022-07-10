@@ -29,7 +29,6 @@ model Scrims {
   queue_id   String
   server     String
   status     Status
-  players    User[]
   voice_ids  String[]
   UserQueued UserQueued[]
 }
