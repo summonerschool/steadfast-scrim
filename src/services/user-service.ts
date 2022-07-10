@@ -5,7 +5,7 @@ export interface UserService {
   setUserProfile: (id: string, leagueIGN: string, rank: string, server: string, roles: string[]) => Promise<User>;
   getUserProfile: (id: string) => Promise<User>;
   getUserRankImage: (rank: string | undefined) => string;
-  getUsersByGame: () => Promise<User[]>;
+  getUsersByScrim: (scrimID: string) => Promise<User[]>;
 }
 
 export const initUserService = (userRepo: UserRepository) => {
@@ -35,10 +35,9 @@ export const initUserService = (userRepo: UserRepository) => {
 
       return rankImage[rank];
     },
-    getUsersByGame: async () => {
+    getUsersByScrim: async (scrimID) => {
       // get IDS from a game
-      const playerIDs = ['asdf', '1234', '1234'];
-      const users = await userRepo.getUsers({ id: { in: playerIDs } });
+      const users = await userRepo.getUsers({ s });
       return users;
     }
   };

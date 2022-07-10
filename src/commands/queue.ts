@@ -36,9 +36,9 @@ class QueueCommand extends SlashCommand {
       const count = await queueService.leaveQueue(ctx.user.id, queue.id);
       return `A player left. ${count} players currently in queue`;
     } else if (ctx.subcommands[0] === 'show') {
-      const queued = await queueService.showQueuedUsers(queue.id);
+      const queuer = await queueService.showQueuers(queue.id);
       console.log(ctx.users);
-      const mentions = queued.map((q) => `<@${q.player_id}>`);
+      const mentions = queuer.map((q) => `<@${q.player_id}>`);
       const message: MessageOptions = {
         content: `${mentions} are in queue`,
         allowedMentions: { everyone: false },

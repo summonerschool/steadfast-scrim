@@ -11,46 +11,62 @@ datasource db {
 }
 
 model User {
-  id           String       @id
-  league_ign   String       @unique
+  id           String   @id
+  league_ign   String   @unique
   server       Server
   rank         Rank
   roles        Role[]
-  win          Int          @default(0)
-  loss         Int          @default(0)
-  elo          Int          @default(0)
-  external_elo Int          @default(0)
-  UserQueued   UserQueued[]
+  win          Int      @default(0)
+  loss         Int      @default(0)
+  elo          Int      @default(0)
+  external_elo Int      @default(0)
+  queuer       Queuer[]
+  Player       Player[]
+  Scrim        Scrim[]
 }
 
-model Scrims {
-  id         BigInt       @id @default(autoincrement())
-  queue      Queue        @relation(fields: [queue_id], references: [id])
-  queue_id   String
-  server     String
-  status     Status
-  voice_ids  String[]
-  UserQueued UserQueued[]
+enum Team {
+  RED
+  BLUE
+}
+
+model Player {
+  player  User   @relation(fields: [userId], references: [id])
+  scrim   Scrim  @relation(fields: [scrimId], references: [id])
+  userId  String
+  scrimId BigInt
+  role    Role
+  team    Team
+
+  @@id([userId, scrimId])
+}
+
+model Scrim {
+  id            BigInt   @id @default(autoincrement())
+  status        Status
+  voice_ids     String[]
+  players       Player[]
+  queue         Queue    @relation(fields: [queue_id], references: [id])
+  queue_id      String
+  lobby_creator User     @relation(fields: [userId], references: [id])
+  userId        String
 }
 
 model Queue {
-  id         String       @id @default(uuid())
-  server     String       @unique
-  UserQueued UserQueued[]
-  Scrims     Scrims[]
+  id     String   @id @default(uuid())
+  server String   @unique
+  queuer Queuer[]
+  Scrims Scrim[]
 }
 
-model UserQueued {
-  player    User    @relation(fields: [player_id], references: [id])
+model Queuer {
+  player    User     @relation(fields: [player_id], references: [id])
   player_id String
-  queue     Queue   @relation(fields: [queue_id], references: [id])
+  queue     Queue    @relation(fields: [queue_id], references: [id])
   queue_id  String
-  popped    Boolean @default(false)
+  popped    Boolean  @default(false)
+  queuedAt  DateTime @default(now())
 
-  queuedAt DateTime @default(now())
-
-  Scrims   Scrims? @relation(fields: [scrimsId], references: [id])
-  scrimsId BigInt?
 
   @@id([player_id, queue_id])
 }
