@@ -41,7 +41,8 @@ class QueueCommand extends SlashCommand {
       const mentions = queued.map((q) => `<@${q.player_id}>`);
       const message: MessageOptions = {
         content: `${mentions} are in queue`,
-        allowedMentions: { everyone: false }
+        allowedMentions: { everyone: false },
+        ephemeral: true
       };
       return message;
     } else {
