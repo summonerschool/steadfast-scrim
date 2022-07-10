@@ -1,11 +1,11 @@
 import { User, userSchema } from '../entities/user';
 import { UserRepository } from './repo/user-repository';
 
-interface UserService {
+export interface UserService {
   setUserProfile: (id: string, leagueIGN: string, rank: string, server: string, roles: string[]) => Promise<User>;
   getUserProfile: (id: string) => Promise<User>;
   getUserRankImage: (rank: string | undefined) => string;
-  // createScoutingLink: (ids: string[]) => string;
+  getUsersByGame: () => Promise<User[]>;
 }
 
 export const initUserService = (userRepo: UserRepository) => {
@@ -34,6 +34,12 @@ export const initUserService = (userRepo: UserRepository) => {
       };
 
       return rankImage[rank];
+    },
+    getUsersByGame: async () => {
+      // get IDS from a game
+      const playerIDs = ['asdf', '1234', '1234'];
+      const users = await userRepo.getUsers({ id: { in: playerIDs } });
+      return users;
     }
   };
   return service;
