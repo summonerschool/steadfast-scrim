@@ -11,8 +11,13 @@ export interface QueueRepository {
 export const initQueueRepository = (prisma: PrismaClient) => {
   const repo: QueueRepository = {
     addUserToQueue: async (userID, queueID) => {
-      const queuer = await prisma.queuer.create({
-        data: { player_id: userID, queue_id: queueID }
+      // dont add to queue if the user is already queued up.
+      const queuer = await prisma.queuer.upsert({
+        where: {
+          player_id_queue_id: { player_id: userID, queue_id: queueID }
+        },
+        create: { player_id: userID, queue_id: queueID },
+        update: {}
       });
       return queuer;
     },

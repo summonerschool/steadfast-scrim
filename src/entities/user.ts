@@ -7,10 +7,10 @@ export const userSchema = z.object({
   rank: z.nativeEnum(Rank),
   server: z.nativeEnum(Server),
   roles: z.array(z.nativeEnum(Role)),
-  wins: z.number().int().positive().optional(),
-  losses: z.number().int().positive().optional(),
-  elo: z.number().int().positive().optional(),
-  externalElo: z.number().int().positive().optional()
+  wins: z.number().int().min(0).optional(),
+  losses: z.number().int().min(0).optional(),
+  elo: z.number().int().min(0).optional(),
+  externalElo: z.number().int().min(0).optional()
 });
 
 export type User = z.infer<typeof userSchema>;

@@ -10,5 +10,5 @@ const prisma = new PrismaClient();
 const queueRepo = initQueueRepository(prisma);
 const userRepo = initUserRepository(prisma);
 // Services
-export const queueService = initQueueService(queueRepo);
+export const queueService = initQueueService(queueRepo, userRepo);
 export const userService = initUserService(userRepo);

@@ -1,4 +1,5 @@
 import { SlashCommand, CommandOptionType, CommandContext, SlashCreator, MessageOptions } from 'slash-create';
+import { NotFoundError } from '../errors/errors';
 import { queueService } from '../services';
 
 class QueueCommand extends SlashCommand {
@@ -30,14 +31,21 @@ class QueueCommand extends SlashCommand {
     // returns the subcommand, option, and option value
     const queue = await queueService.getOrCreateQueueToGuild(ctx.guildID!!);
     if (ctx.subcommands[0] === 'join') {
-      const queuer = await queueService.joinQueue(ctx.user.id, queue.id);
-      return `@<${queuer.player_id}> has joined the queue`;
+      try {
+        const queuer = await queueService.joinQueue(ctx.user.id, queue.id);
+        return { content: `<@${queuer.player_id}> has joined the queue`, allowedMentions: { everyone: false } };
+      } catch (err) {
+        if (err instanceof NotFoundError) {
+          return err.message;
+        } else {
+          console.error(err);
+        }
+      }
     } else if (ctx.subcommands[0] === 'leave') {
       const queuer = await queueService.leaveQueue(ctx.user.id, queue.id);
-      return `@<${queuer.player_id}> has left the queue`;
+      return { content: `<@${queuer.player_id}> has left the queue`, allowedMentions: { everyone: false } };
     } else if (ctx.subcommands[0] === 'show') {
       const queuer = await queueService.showUsersInQueue(queue.id);
-      console.log(ctx.users);
       const mentions = queuer.map((q) => `<@${q.player_id}>\n`);
       const message: MessageOptions = {
         content: `**In queue**\n${mentions}`,

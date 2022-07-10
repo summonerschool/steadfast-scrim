@@ -54,7 +54,7 @@ model Scrim {
 
 model Queue {
   id     String   @id @default(uuid())
-  server String   @unique
+  server String   @unique // Discord server
   queuer Queuer[]
   Scrims Scrim[]
 }
