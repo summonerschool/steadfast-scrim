@@ -3,17 +3,17 @@ import { chance } from '../lib/chance';
 import { UserRepository } from './repo/user-repository';
 
 export interface ScrimService {
-  getScoutingLink: (scrimID: number) => Promise<string>;
+  getScoutingLink: (scrimID: number, team: 'RED' | 'BLUE') => Promise<string>;
   createScrim: (queueID: string, users: string[]) => Promise<boolean>;
   randomTeambalance: (userIDs: string[]) => Promise<Player[]>;
 }
 
 export const initScrimService = (userRepo: UserRepository) => {
   const service: ScrimService = {
-    getScoutingLink: async (scrimID) => {
-      const users = await userRepo.getUsers({ player: { some: { scrim_id: scrimID } } });
-      const summoners = users.map((user) => user.leagueIGN).join(',');
+    getScoutingLink: async (scrimID, team) => {
+      const users = await userRepo.getUsers({ player: { some: { scrim_id: scrimID, team: team } } });
       const server = users[0].server.toLocaleLowerCase();
+      const summoners = encodeURIComponent(users.map((user) => user.leagueIGN).join(','));
       const link = `https://${server}.op.gg/multisearch/${server}?summoners=${summoners}`;
       return link;
     },
