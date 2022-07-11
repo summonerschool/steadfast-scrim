@@ -3,14 +3,14 @@ import { chance } from '../lib/chance';
 import { UserRepository } from './repo/user-repository';
 
 export interface ScrimService {
-  getScoutingLink: (scrimID: number, team: 'RED' | 'BLUE') => Promise<string>;
+  generateScoutingLink: (scrimID: number, team: 'RED' | 'BLUE') => Promise<string>;
   createScrim: (queueID: string, users: string[]) => Promise<boolean>;
   randomTeambalance: (userIDs: string[]) => Promise<Player[]>;
 }
 
 export const initScrimService = (userRepo: UserRepository) => {
   const service: ScrimService = {
-    getScoutingLink: async (scrimID, team) => {
+    generateScoutingLink: async (scrimID, team) => {
       const users = await userRepo.getUsers({ player: { some: { scrim_id: scrimID, team: team } } });
       const server = users[0].server.toLocaleLowerCase();
       const summoners = encodeURIComponent(users.map((user) => user.leagueIGN).join(','));
