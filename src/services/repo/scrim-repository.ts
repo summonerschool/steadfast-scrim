@@ -13,7 +13,6 @@ export const initScrimRepository = (prisma: PrismaClient) => {
       const res = await prisma.scrim.create({
         data: {
           queue_id: queueID,
-          lobby_creator_id: chance.pickone(players).userID,
           players: {
             createMany: {
               data: playerData,

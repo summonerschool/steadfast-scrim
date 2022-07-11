@@ -12,7 +12,6 @@ export const scrimSchema = z.object({
   status: z.nativeEnum(Status),
   voiceIDs: z.array(z.string()),
   players: z.array(playerSchema),
-  lobbyCreatorID: z.string(),
   queueID: z.string()
 });
 
@@ -31,7 +30,6 @@ export const mapToScrim = (dbScrim: PrismaScrim, dbPlayers: PrismaPlayer[]) => {
   const scrim = scrimSchema.parse({
     ...dbScrim,
     voiceIDs: dbScrim.voice_ids,
-    lobbyCreatorID: dbScrim.lobby_creator_id,
     queueID: dbScrim.queue_id,
     players: dbPlayers.map(mapToPlayer)
   });

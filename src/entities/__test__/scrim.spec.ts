@@ -39,14 +39,12 @@ describe('Scrim entities', () => {
 
     const scrim: PrismaScrim = {
       id: 1,
-      lobby_creator_id: '1',
       queue_id: '1',
       status: 'LOBBY',
       voice_ids: []
     };
     const mapped = mapToScrim(scrim, players);
     expect(mapped.players.length).toEqual(3);
-    expect(mapped.lobbyCreatorID).toEqual(scrim.lobby_creator_id);
     expect(mapped.queueID).toEqual(scrim.queue_id);
     expect(mapped.voiceIDs).toEqual(scrim.voice_ids);
   });

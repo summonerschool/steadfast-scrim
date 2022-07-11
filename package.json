@@ -8,6 +8,7 @@
     "sync:dev": "slash-up sync -e development",
     "start": "cd dist && node index.js",
     "dev": "esno src/index",
+    "seed": "esno src/scripts/seed-users",
     "build": "npx tsc",
     "lint": "npx eslint --ext .ts ./src",
     "lint:fix": "npx eslint --ext .ts ./src --fix",

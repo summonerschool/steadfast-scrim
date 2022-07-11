@@ -2,7 +2,7 @@ import { MessageEmbed } from 'discord.js';
 import { SlashCommand, CommandOptionType, CommandContext, SlashCreator, MessageOptions } from 'slash-create';
 import { NotFoundError } from '../errors/errors';
 import { queueService, scrimService } from '../services';
-import { matchMessage } from "../messages/match"
+import { matchMessage } from '../messages/match';
 
 class QueueCommand extends SlashCommand {
   constructor(creator: SlashCreator) {
@@ -45,9 +45,8 @@ class QueueCommand extends SlashCommand {
             queuer.queue_id,
             matchmaking.queuers.map((p) => p.player_id)
           );
-          const embed = matchMessage(scrim)
-          return { embeds: [embed] }
-          return;
+          const embed = matchMessage(scrim);
+          return { embeds: [embed] };
         } catch (err) {
           if (err instanceof NotFoundError) {
             return err.message;
@@ -55,6 +54,7 @@ class QueueCommand extends SlashCommand {
             console.error(err);
           }
         }
+        break;
       }
       case 'leave': {
         const queuer = await queueService.leaveQueue(ctx.user.id, queue.id);
@@ -62,7 +62,7 @@ class QueueCommand extends SlashCommand {
       }
       case 'show': {
         const queuer = await queueService.showUsersInQueue(queue.id);
-        const mentions = queuer.map((q) => `<@${q.player_id}>\n`);
+        const mentions = queuer.map((q) => `<@${q.player_id}>`).join('\n');
         const message: MessageOptions = {
           content: `**In queue**\n${mentions}`,
           allowedMentions: { everyone: false },

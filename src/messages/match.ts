@@ -1,5 +1,6 @@
 import { MessageEmbed } from 'discord.js';
 import { Player, Scrim } from '../entities/scrim';
+import { chance } from '../lib/chance';
 
 const ROLES_ORDER = {
   TOP: 1,
@@ -15,22 +16,29 @@ const sortByRole = (p1: Player, p2: Player) => {
 const teamToString = (player: Player) => `${player.role}: <@${player.userID}>`;
 
 export const matchMessage = (scrim: Scrim) => {
-  const red = scrim.players.filter((p) => p.team === 'RED').sort(sortByRole);
-  const blue = scrim.players.filter((p) => p.team === 'BLUE').sort(sortByRole);
+  const lobbyCreator = chance.pickone(scrim.players);
+  const red = scrim.players
+    .filter((p) => p.team === 'RED')
+    .sort(sortByRole)
+    .map(teamToString);
+  const blue = scrim.players
+    .filter((p) => p.team === 'BLUE')
+    .sort(sortByRole)
+    .map(teamToString);
 
   return new MessageEmbed()
     .setColor('#698371')
-    .setTitle(`Match ${scrim.id}`)
+    .setTitle(`Queue Popped!`)
     .setDescription(
       `
     No autofilled players in this, feel free to swap roles among yourselves.\n
     MATCH ID: ${scrim.id}\n
+    Lobby creator: <@${lobbyCreator.userID}>\n
     `
     )
     .addFields(
       { name: 'Team Blue', value: blue.join('\n'), inline: true },
-      { name: 'Team Red', value: red.join('\n'), inline: true },
-      { name: 'Regular field title', value: `Lobby creator: <@${scrim.lobbyCreatorID}>` }
+      { name: 'Team Red', value: red.join('\n'), inline: true }
     )
     .setTimestamp()
     .setFooter({ text: 'Anything wrong? spam the shit out of Tikka Masala' });

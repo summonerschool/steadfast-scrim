@@ -22,7 +22,6 @@ model User {
   external_elo Int      @default(0)
   queuer       Queuer[]
   player       Player[]
-  scrim        Scrim[]
 }
 
 enum Team {
@@ -42,14 +41,12 @@ model Player {
 }
 
 model Scrim {
-  id               Int      @id @default(sequence())
-  status           Status
-  voice_ids        String[]
-  players          Player[]
-  queue            Queue    @relation(fields: [queue_id], references: [id])
-  queue_id         String
-  lobby_creator    User     @relation(fields: [lobby_creator_id], references: [id])
-  lobby_creator_id String
+  id        Int      @id @default(sequence())
+  status    Status
+  voice_ids String[]
+  players   Player[]
+  queue     Queue    @relation(fields: [queue_id], references: [id])
+  queue_id  String
 }
 
 model Queue {
