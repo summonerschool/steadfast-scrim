@@ -6,6 +6,7 @@ export interface QueueRepository {
   getUsersInQueue: (filter?: Prisma.QueuerWhereInput) => Promise<Queuer[]>;
   getQueueByGuildID: (guildID: string) => Promise<Queue | null>;
   createQueue: (guildID: string) => Promise<Queue>;
+  updateQueuers: (filter: Prisma.QueuerWhereInput, data: Prisma.QueuerUpdateManyArgs['data']) => Promise<number>;
 }
 
 export const initQueueRepository = (prisma: PrismaClient) => {
@@ -38,6 +39,13 @@ export const initQueueRepository = (prisma: PrismaClient) => {
     createQueue: async (guildID) => {
       const gameQueue = await prisma.queue.create({ data: { server: guildID } });
       return gameQueue;
+    },
+    updateQueuers: async (filter, data) => {
+      const res = await prisma.queuer.updateMany({
+        data,
+        where: filter
+      });
+      return res.count;
     }
   };
   return repo;

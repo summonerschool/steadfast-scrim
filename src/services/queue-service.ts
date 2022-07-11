@@ -24,7 +24,10 @@ export const initQueueService = (queueRepo: QueueRepository, userRepo: UserRepos
     attemptMatchmaking: async (queueID) => {
       const queuers = await queueRepo.getUsersInQueue({ popped: false, queue_id: queueID });
       if (queuers.length >= 10) {
-        console.log('QUEUE POPPED');
+        const users = queuers.map((queuer) => queuer.player_id);
+        // pop the queue to all these users
+        const updateCount = await queueRepo.updateQueuers({ player_id: { in: users } }, { popped: true });
+        console.log(updateCount);
       }
     },
     leaveQueue: async (userID, queueID) => {

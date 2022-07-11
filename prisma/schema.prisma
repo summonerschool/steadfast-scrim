@@ -31,25 +31,25 @@ enum Team {
 }
 
 model Player {
-  player  User   @relation(fields: [userId], references: [id])
-  scrim   Scrim  @relation(fields: [scrimId], references: [id])
-  userId  String
-  scrimId BigInt
-  role    Role
-  team    Team
+  user     User   @relation(fields: [user_id], references: [id])
+  scrim    Scrim  @relation(fields: [scrim_id], references: [id])
+  user_id  String @map("userId")
+  scrim_id Int    @map("scrimId")
+  role     Role
+  team     Team
 
-  @@id([userId, scrimId])
+  @@id([user_id, scrim_id])
 }
 
 model Scrim {
-  id            BigInt   @id @default(autoincrement())
-  status        Status
-  voice_ids     String[]
-  players       Player[]
-  queue         Queue    @relation(fields: [queue_id], references: [id])
-  queue_id      String
-  lobby_creator User     @relation(fields: [userId], references: [id])
-  userId        String
+  id               Int      @id @default(sequence())
+  status           Status
+  voice_ids        String[]
+  players          Player[]
+  queue            Queue    @relation(fields: [queue_id], references: [id])
+  queue_id         String
+  lobby_creator    User     @relation(fields: [lobby_creator_id], references: [id])
+  lobby_creator_id String
 }
 
 model Queue {
