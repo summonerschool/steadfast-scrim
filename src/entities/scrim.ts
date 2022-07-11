@@ -22,19 +22,18 @@ export type Scrim = z.infer<typeof scrimSchema>;
 export const mapToPlayer = (p: PrismaPlayer) => {
   return playerSchema.parse({
     role: p.role,
-    team: p.team,
-    userID: p.user_id
+    userID: p.user_id,
+    team: p.team
   });
 };
 
 export const mapToScrim = (dbScrim: PrismaScrim, dbPlayers: PrismaPlayer[]) => {
-  const players = dbPlayers.map(mapToPlayer);
   const scrim = scrimSchema.parse({
     ...dbScrim,
     voiceIDs: dbScrim.voice_ids,
     lobbyCreatorID: dbScrim.lobby_creator_id,
     queueID: dbScrim.queue_id,
-    players: players
+    players: dbPlayers.map(mapToPlayer)
   });
   return scrim;
 };

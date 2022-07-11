@@ -6,9 +6,13 @@ export interface ScrimService {
   generateScoutingLink: (scrimID: number, team: 'RED' | 'BLUE') => Promise<string>;
   createScrim: (queueID: string, users: string[]) => Promise<boolean>;
   randomTeambalance: (userIDs: string[]) => Promise<Player[]>;
+  sortPlayerByTeam: (players: Player[]) => { RED: Player[]; BLUE: Player[] };
+  isValidTeam: (players: Player[]) => boolean;
 }
 
 export const initScrimService = (userRepo: UserRepository) => {
+  const TEAM_SIZE = 5;
+
   const service: ScrimService = {
     generateScoutingLink: async (scrimID, team) => {
       const users = await userRepo.getUsers({ player: { some: { scrim_id: scrimID, team: team } } });
@@ -38,6 +42,19 @@ export const initScrimService = (userRepo: UserRepository) => {
         });
       });
       return players;
+    },
+    sortPlayerByTeam: (players) => {
+      const red = players.filter((p) => p.team === 'RED');
+      const blue = players.filter((p) => p.team === 'BLUE');
+      return { RED: red, BLUE: blue };
+    },
+    // Checks if the team size is correct and that the team has 5 unique different roles.
+    isValidTeam: (players: Player[]) => {
+      if (players.length != TEAM_SIZE) {
+        return false;
+      }
+      const roles = players.map((p) => p.role);
+      return new Set(roles).size === roles.length;
     }
   };
   return service;

@@ -12,14 +12,10 @@ describe('ScrimService', () => {
     const userIDs = [...Array(10)].map(() => chance.integer({ min: 10 ** 7, max: 10 ** 8 }).toString());
     const players = await scrimService.randomTeambalance(userIDs);
     // Check if team each team is same size
-    const blueTeam = players.filter((player) => player.team === 'BLUE');
-    const redTeam = players.filter((player) => player.team === 'RED');
-    expect(blueTeam.length).toEqual(redTeam.length);
-    // Check if roles are equally distributed
-    const blueRoles = blueTeam.map((player) => player.role);
-    const redRoles = redTeam.map((player) => player.role);
-    expect(new Set(blueRoles).size).toEqual(blueRoles.length);
-    expect(new Set(redRoles).size).toEqual(redRoles.length);
+    const teams = scrimService.sortPlayerByTeam(players);
+    expect(scrimService.isValidTeam(teams.BLUE)).toBe(true);
+    expect(scrimService.isValidTeam(teams.RED)).toBe(true);
+    expect(teams.RED != teams.BLUE).toBe(true);
   });
 
   it('Creates a valid scouting link', async () => {
