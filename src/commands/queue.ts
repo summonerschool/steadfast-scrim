@@ -1,6 +1,8 @@
+import { MessageEmbed } from 'discord.js';
 import { SlashCommand, CommandOptionType, CommandContext, SlashCreator, MessageOptions } from 'slash-create';
 import { NotFoundError } from '../errors/errors';
 import { queueService, scrimService } from '../services';
+import { matchMessage } from "../messages/match"
 
 class QueueCommand extends SlashCommand {
   constructor(creator: SlashCreator) {
@@ -43,6 +45,8 @@ class QueueCommand extends SlashCommand {
             queuer.queue_id,
             matchmaking.queuers.map((p) => p.player_id)
           );
+          const embed = matchMessage(scrim)
+          return { embeds: [embed] }
           return;
         } catch (err) {
           if (err instanceof NotFoundError) {

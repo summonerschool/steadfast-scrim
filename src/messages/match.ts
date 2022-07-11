@@ -1,26 +1,37 @@
-import { MessageEmbed } from "discord.js";
-import { Scrim } from "../entities/scrim";
+import { MessageEmbed } from 'discord.js';
+import { Player, Scrim } from '../entities/scrim';
 
+const ROLES_ORDER = {
+  TOP: 1,
+  JUNGLE: 2,
+  MID: 3,
+  BOT: 4,
+  SUPPORT: 5
+};
 
-const matchMessage= (scrim: Scrim) => {
-    return  new MessageEmbed()
-	.setColor('#698371')
-	.setTitle(`Match ${scrim.id}`)
+const sortByRole = (p1: Player, p2: Player) => {
+  return ROLES_ORDER[p1.role] - ROLES_ORDER[p2.role];
+};
+const teamToString = (player: Player) => `${player.role}: <@${player.userID}>`;
 
-}
-const exampleEmbed = new MessageEmbed()
+export const matchMessage = (scrim: Scrim) => {
+  const red = scrim.players.filter((p) => p.team === 'RED').sort(sortByRole);
+  const blue = scrim.players.filter((p) => p.team === 'BLUE').sort(sortByRole);
 
-	.setURL('https://discord.js.org/')
-	.setAuthor({ name: 'Some name', iconURL: 'https://i.imgur.com/AfFp7pu.png', url: 'https://discord.js.org' })
-	.setDescription('NICE')
-	.setThumbnail('https://i.imgur.com/AfFp7pu.png')
-	.addFields(
-		{ name: 'Regular field title', value: 'Some value here' },
-		{ name: '\u200B', value: '\u200B' },
-		{ name: 'Inline field title', value: 'Some value here', inline: true },
-		{ name: 'Inline field title', value: 'Some value here', inline: true },
-	)
-	.addField('Inline field title', 'Some value here', true)
-	.setImage('https://i.imgur.com/AfFp7pu.png')
-	.setTimestamp()
-	.setFooter({ text: 'Some footer text here', iconURL: 'https://i.imgur.com/AfFp7pu.png' });
+  return new MessageEmbed()
+    .setColor('#698371')
+    .setTitle(`Match ${scrim.id}`)
+    .setDescription(
+      `
+    No autofilled players in this, feel free to swap roles among yourselves.\n
+    MATCH ID: ${scrim.id}\n
+    `
+    )
+    .addFields(
+      { name: 'Team Blue', value: blue.join('\n'), inline: true },
+      { name: 'Team Red', value: red.join('\n'), inline: true },
+      { name: 'Regular field title', value: `Lobby creator: <@${scrim.lobbyCreatorID}>` }
+    )
+    .setTimestamp()
+    .setFooter({ text: 'Anything wrong? spam the shit out of Tikka Masala' });
+};
