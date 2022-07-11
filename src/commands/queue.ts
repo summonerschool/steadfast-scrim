@@ -1,6 +1,6 @@
 import { SlashCommand, CommandOptionType, CommandContext, SlashCreator, MessageOptions } from 'slash-create';
 import { NotFoundError } from '../errors/errors';
-import { queueService } from '../services';
+import { queueService, scrimService } from '../services';
 
 class QueueCommand extends SlashCommand {
   constructor(creator: SlashCreator) {
@@ -35,8 +35,14 @@ class QueueCommand extends SlashCommand {
       case 'join': {
         try {
           const queuer = await queueService.joinQueue(ctx.user.id, queue.id);
-          ctx.send({ content: `<@${queuer.player_id}> has joined the queue`, allowedMentions: { everyone: false } });
-          await queueService.attemptMatchmaking(queuer.queue_id);
+          const matchmaking = await queueService.attemptMatchmaking(queuer.queue_id);
+          if (!matchmaking.valid) {
+            return { content: `<@${queuer.player_id}> has joined the queue`, allowedMentions: { everyone: false } };
+          }
+          const scrim = await scrimService.createBalancedScrim(
+            queuer.queue_id,
+            matchmaking.queuers.map((p) => p.player_id)
+          );
           return;
         } catch (err) {
           if (err instanceof NotFoundError) {

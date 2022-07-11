@@ -1,16 +1,16 @@
-import { PrismaClient, Scrim } from '@prisma/client';
-import { Player } from '../../entities/scrim';
+import { PrismaClient } from '@prisma/client';
+import { mapToScrim, Player, Scrim } from '../../entities/scrim';
 import { chance } from '../../lib/chance';
 
 export interface ScrimRepository {
   createScrim: (queueID: string, players: Player[]) => Promise<Scrim>;
 }
 
-const initScrimRepopository = (prisma: PrismaClient) => {
+export const initScrimRepository = (prisma: PrismaClient) => {
   const repo: ScrimRepository = {
     createScrim: async (queueID, players) => {
       const playerData = players.map((player) => ({ user_id: player.userID, role: player.role, team: player.team }));
-      const scrim = await prisma.scrim.create({
+      const res = await prisma.scrim.create({
         data: {
           queue_id: queueID,
           lobby_creator_id: chance.pickone(players).userID,
@@ -27,7 +27,7 @@ const initScrimRepopository = (prisma: PrismaClient) => {
           players: true
         }
       });
-      return scrim;
+      return mapToScrim(res, res.players);
     }
   };
   return repo;

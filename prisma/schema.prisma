@@ -33,8 +33,8 @@ enum Team {
 model Player {
   user     User   @relation(fields: [user_id], references: [id])
   scrim    Scrim  @relation(fields: [scrim_id], references: [id])
-  user_id  String @map("userId")
-  scrim_id Int    @map("scrimId")
+  user_id  String
+  scrim_id Int
   role     Role
   team     Team
 
