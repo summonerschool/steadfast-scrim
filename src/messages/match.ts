@@ -1,4 +1,4 @@
-import { MessageButton, MessageEmbed } from 'discord.js';
+import { MessageEmbed } from 'discord.js';
 import { Player, Scrim } from '../entities/scrim';
 import { chance } from '../lib/chance';
 import { scrimService } from '../services';
@@ -26,6 +26,7 @@ export const matchMessage = async (scrim: Scrim) => {
     [**Blue OP.GG**](${opggBlue})
     [**Red OP.GG**](${opggRed})
   `;
+
   const redText = teams.RED.sort(sortByRole).map(teamToString);
   const blueText = teams.BLUE.sort(sortByRole).map(teamToString);
 
