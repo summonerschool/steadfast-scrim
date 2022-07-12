@@ -1,4 +1,4 @@
-import { MessageEmbed } from 'discord.js';
+import { MessageButton, MessageEmbed } from 'discord.js';
 import { Player, Scrim } from '../entities/scrim';
 import { chance } from '../lib/chance';
 import { scrimService } from '../services';
@@ -19,12 +19,12 @@ const teamToString = (player: Player) => `${player.role}: <@${player.userID}>`;
 export const matchMessage = async (scrim: Scrim) => {
   const lobbyCreator = chance.pickone(scrim.players);
   const teams = scrimService.sortPlayerByTeam(scrim.players);
-  const scoutBlue = await scrimService.generateScoutingLink(scrim.id, 'BLUE');
-  const scoutRed = await scrimService.generateScoutingLink(scrim.id, 'RED');
+  const opggBlue = await scrimService.generateScoutingLink(scrim.id, 'BLUE');
+  const opggRed = await scrimService.generateScoutingLink(scrim.id, 'RED');
 
   const scoutingLinksMsg = `
-    **Blue**: ${scoutBlue}
-    **Red**: ${scoutRed}
+    [**Blue OP.GG**](${opggBlue})
+    [**Red OP.GG**](${opggRed})
   `;
   const redText = teams.RED.sort(sortByRole).map(teamToString);
   const blueText = teams.BLUE.sort(sortByRole).map(teamToString);
@@ -42,7 +42,7 @@ export const matchMessage = async (scrim: Scrim) => {
     .addFields(
       { name: 'Team Blue', value: blueText.join('\n'), inline: true },
       { name: 'Team Red', value: redText.join('\n'), inline: true },
-      { name: 'Scouting links', value: scoutingLinksMsg }
+      { name: 'Scouting links:', value: scoutingLinksMsg }
     )
     .setTimestamp()
     .setFooter({ text: 'Anything wrong? spam the shit out of Tikka Masala' });
