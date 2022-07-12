@@ -44,7 +44,6 @@ CREATE TABLE "Scrim" (
     "status" "Status" NOT NULL,
     "voice_ids" STRING[],
     "queue_id" STRING NOT NULL,
-    "lobby_creator_id" STRING NOT NULL,
 
     CONSTRAINT "Scrim_pkey" PRIMARY KEY ("id")
 );
@@ -52,26 +51,26 @@ CREATE TABLE "Scrim" (
 -- CreateTable
 CREATE TABLE "Queue" (
     "id" STRING NOT NULL,
-    "server" STRING NOT NULL,
+    "guild_id" STRING NOT NULL,
 
     CONSTRAINT "Queue_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
 CREATE TABLE "Queuer" (
-    "player_id" STRING NOT NULL,
+    "user_id" STRING NOT NULL,
     "queue_id" STRING NOT NULL,
     "popped" BOOL NOT NULL DEFAULT false,
     "queuedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
-    CONSTRAINT "Queuer_pkey" PRIMARY KEY ("player_id","queue_id")
+    CONSTRAINT "Queuer_pkey" PRIMARY KEY ("user_id","queue_id")
 );
 
 -- CreateIndex
 CREATE UNIQUE INDEX "User_league_ign_key" ON "User"("league_ign");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "Queue_server_key" ON "Queue"("server");
+CREATE UNIQUE INDEX "Queue_guild_id_key" ON "Queue"("guild_id");
 
 -- AddForeignKey
 ALTER TABLE "Player" ADD CONSTRAINT "Player_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
@@ -80,13 +79,10 @@ ALTER TABLE "Player" ADD CONSTRAINT "Player_user_id_fkey" FOREIGN KEY ("user_id"
 ALTER TABLE "Player" ADD CONSTRAINT "Player_scrim_id_fkey" FOREIGN KEY ("scrim_id") REFERENCES "Scrim"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "Scrim" ADD CONSTRAINT "Scrim_lobby_creator_id_fkey" FOREIGN KEY ("lobby_creator_id") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
 ALTER TABLE "Scrim" ADD CONSTRAINT "Scrim_queue_id_fkey" FOREIGN KEY ("queue_id") REFERENCES "Queue"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "Queuer" ADD CONSTRAINT "Queuer_player_id_fkey" FOREIGN KEY ("player_id") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "Queuer" ADD CONSTRAINT "Queuer_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "Queuer" ADD CONSTRAINT "Queuer_queue_id_fkey" FOREIGN KEY ("queue_id") REFERENCES "Queue"("id") ON DELETE RESTRICT ON UPDATE CASCADE;

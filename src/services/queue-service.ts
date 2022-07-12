@@ -26,9 +26,9 @@ export const initQueueService = (queueRepo: QueueRepository, userRepo: UserRepos
       // might sort or filter or order more here
       const queuers = await queueRepo.getUsersInQueue({ popped: false, queue_id: queueID });
       if (queuers.length >= 10) {
-        const users = queuers.map((queuer) => queuer.player_id);
+        const users = queuers.map((queuer) => queuer.user_id);
         // pop the queue to all these users
-        const updateCount = await queueRepo.updateQueuers({ player_id: { in: users } }, { popped: true });
+        const updateCount = await queueRepo.updateQueuers({ user_id: { in: users } }, { popped: true });
         return updateCount === 10 ? { queuers, valid: true } : { valid: false };
       }
       return { valid: false };

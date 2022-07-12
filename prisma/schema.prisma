@@ -50,22 +50,22 @@ model Scrim {
 }
 
 model Queue {
-  id     String   @id @default(uuid())
-  server String   @unique // Discord server
-  queuer Queuer[]
-  Scrims Scrim[]
+  id       String   @id @default(uuid())
+  guild_id String   @unique // Discord 
+  queuer   Queuer[]
+  Scrims   Scrim[]
 }
 
 model Queuer {
-  player    User     @relation(fields: [player_id], references: [id])
-  player_id String
-  queue     Queue    @relation(fields: [queue_id], references: [id])
-  queue_id  String
-  popped    Boolean  @default(false)
-  queuedAt  DateTime @default(now())
+  user     User     @relation(fields: [user_id], references: [id])
+  user_id  String
+  queue    Queue    @relation(fields: [queue_id], references: [id])
+  queue_id String
+  popped   Boolean  @default(false)
+  queuedAt DateTime @default(now())
 
 
-  @@id([player_id, queue_id])
+  @@id([user_id, queue_id])
 }
 
 enum Status {

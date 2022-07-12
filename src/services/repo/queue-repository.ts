@@ -15,16 +15,16 @@ export const initQueueRepository = (prisma: PrismaClient) => {
       // dont add to queue if the user is already queued up.
       const queuer = await prisma.queuer.upsert({
         where: {
-          player_id_queue_id: { player_id: userID, queue_id: queueID }
+          user_id_queue_id: { user_id: userID, queue_id: queueID }
         },
-        create: { player_id: userID, queue_id: queueID },
+        create: { user_id: userID, queue_id: queueID },
         update: {}
       });
       return queuer;
     },
     removeUserFromQueue: async (userID, queueID) => {
       const queuer = await prisma.queuer.delete({
-        where: { player_id_queue_id: { player_id: userID, queue_id: queueID } }
+        where: { user_id_queue_id: { user_id: userID, queue_id: queueID } }
       });
       return queuer;
     },
@@ -33,11 +33,11 @@ export const initQueueRepository = (prisma: PrismaClient) => {
       return queuers;
     },
     getQueueByGuildID: async (guildID) => {
-      const gameQueue = prisma.queue.findUnique({ where: { server: guildID } });
+      const gameQueue = prisma.queue.findUnique({ where: { guild_id: guildID } });
       return gameQueue;
     },
     createQueue: async (guildID) => {
-      const gameQueue = await prisma.queue.create({ data: { server: guildID } });
+      const gameQueue = await prisma.queue.create({ data: { guild_id: guildID } });
       return gameQueue;
     },
     updateQueuers: async (filter, data) => {
