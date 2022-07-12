@@ -1,4 +1,4 @@
-import { Rank } from '@prisma/client';
+import { Rank, Role } from '@prisma/client';
 import {
   ButtonStyle,
   CommandContext,
@@ -10,9 +10,12 @@ import {
   SlashCreator
 } from 'slash-create';
 import { userService } from '../services';
+// @ts-ignore
 import capitalize from 'capitalize';
+import { POSITION_EMOJI_TRANSLATION, RANK_IMAGE_TRANSLATION, SERVER_TO_RIOT_PLATFORM } from '../utils/utils'; // TODO: fix
 
-const roles = Object.entries(Rank).map(([key, val]) => ({ label: val, value: key }));
+const rank = Object.entries(Rank).map(([key, val]) => ({ label: val, value: key }));
+const roles = Object.entries(Role).map(([key, val]) => ({ label: capitalize(val), value: key }));
 
 class SetupCommand extends SlashCommand {
   private rank: string | undefined = undefined;
@@ -91,7 +94,7 @@ class SetupCommand extends SlashCommand {
               placeholder: 'Choose your rank',
               min_values: 1,
               max_values: 1,
-              options: roles
+              options: rank
             }
           ]
         },
@@ -104,28 +107,7 @@ class SetupCommand extends SlashCommand {
               placeholder: 'Choose your roles',
               min_values: 1,
               max_values: 5,
-              options: [
-                {
-                  label: 'Top',
-                  value: 'TOP'
-                },
-                {
-                  label: 'Jungle',
-                  value: 'JUNGLE'
-                },
-                {
-                  label: 'Mid',
-                  value: 'MID'
-                },
-                {
-                  label: 'Bot',
-                  value: 'BOT'
-                },
-                {
-                  label: 'Support',
-                  value: 'SUPPORT'
-                }
-              ]
+              options: roles
             }
           ]
         }
@@ -137,8 +119,12 @@ class SetupCommand extends SlashCommand {
     });
 
     ctx.registerComponent('server', async (selectCtx) => {
-      // TODO VERIFY VALID USERNAME + SERVER COMBO HERE, FAIL IF NOT
       this.server = selectCtx.values.join(', ');
+      await userService.fetchRiotUser(SERVER_TO_RIOT_PLATFORM[this.server], this.ign).catch(() => {
+        followup.edit(':x: **League user not found, please check correct server or try /setup command again.**');
+        return;
+      });
+      await followup.edit(':white_check_mark:   **League username found, awaiting replies...**');
       await this.submitSetup(followup, selectCtx);
     });
 
@@ -159,16 +145,24 @@ class SetupCommand extends SlashCommand {
     }
 
     // Format text for the embed
-    const rankImage = userService.getUserRankImage(this.rank);
+    const rankInfo = await userService.fetchMyMMR(this.server, this.ign).catch(async () => {
+      return await userService.fetchRiotRank(SERVER_TO_RIOT_PLATFORM[this.server || 'EUW'], this.ign);
+    });
+
+    const roles_to_image = this.roles.map((x) => {
+      // return `![${x}](${POSITION_IMAGE_TRANSLATION[x]})`;
+      return `${POSITION_EMOJI_TRANSLATION[x]}`;
+    });
 
     // setup is complete here, show them the info and confirm button
     await followup.edit('', {
       embeds: [
         {
-          title: `Scrim Player Setup - <@${this.discord_id}>`, // TODO: RENDER THIS AS @
+          title: `Scrim Player Setup`,
+          description: `<@${this.discord_id}>`,
           color: 0x000,
           thumbnail: {
-            url: `${rankImage}`
+            url: `${RANK_IMAGE_TRANSLATION[this.rank]}`
           },
           fields: [
             {
@@ -178,7 +172,7 @@ class SetupCommand extends SlashCommand {
             },
             {
               name: `Server`,
-              value: `${capitalize(this.server)}`,
+              value: `${this.server}`,
               inline: true
             },
             {
@@ -188,13 +182,19 @@ class SetupCommand extends SlashCommand {
             },
             {
               name: `Roles`,
-              value: `${capitalize.words(this.roles?.join(', '))}`,
-              inline: false
+              value: `${roles_to_image.join(', ')}`,
+              inline: true
             },
             {
-              name: `OP.GG`,
-              value: `[OP.GG](https://op.gg/summoners/${this.server}/${this.ign})`
+              name: `Estimated Elo`,
+              value: `${rankInfo.elo}`,
+              inline: true
             }
+            // {
+            //   name: `OP.GG`,
+            //   value: `[OP.GG](https://op.gg/summoners/${this.server}/${encodeURI(this.ign)})`,
+            //   inline: true
+            // }
           ]
         }
       ],
@@ -221,6 +221,9 @@ class SetupCommand extends SlashCommand {
 
     ctx.registerComponentFrom(followup.id, 'confirm_setup', async (selectCtx) => {
       console.log('confirm');
+      if (!(this.server && this.rank && this.roles && this.ign)) {
+        return;
+      }
       const user = await userService.setUserProfile(this.discord_id, this.ign, this.rank, this.server, this.roles);
       await followup.delete();
 

@@ -17,6 +17,7 @@
   "dependencies": {
     "@discordjs/builders": "^0.15.0",
     "@discordjs/rest": "^0.5.0",
+    "@fightmegg/riot-api": "^0.0.8",
     "@prisma/client": "^4.0.0",
     "capitalize": "^2.0.4",
     "cat-loggr": "^1.1.0",

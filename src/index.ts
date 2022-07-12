@@ -1,8 +1,11 @@
 import dotenv from 'dotenv';
 import path from 'path';
-import { SlashCreator, FastifyServer, AWSLambdaServer } from 'slash-create';
+import { FastifyServer, SlashCreator } from 'slash-create';
 import Discord, { Intents } from 'discord.js';
 import CatLoggr from 'cat-loggr/ts';
+import { PlatformId, RiotAPI, RiotAPITypes } from '@fightmegg/riot-api';
+import { userService } from './services';
+import { Server } from '@prisma/client';
 
 let dotenvPath = path.join(process.cwd(), '.env');
 if (path.parse(process.cwd()).name === 'dist') dotenvPath = path.join(process.cwd(), '..', '.env');
@@ -19,6 +22,9 @@ const creator = new SlashCreator({
 });
 
 export const client = new Discord.Client({ intents: [Intents.FLAGS.GUILDS] });
+
+const config: RiotAPITypes.Config = { debug: true };
+export const rAPI = new RiotAPI(process.env.RIOT_API_KEY!!, config);
 
 creator.on('debug', (message) => logger.log(message));
 creator.on('warn', (message) => logger.warn(message));
