@@ -1,7 +1,8 @@
 import { Prisma, PrismaClient } from '@prisma/client';
-import { chance } from '../lib/chance';
+import { Chance } from 'chance';
 
 const prisma = new PrismaClient();
+const chance = new Chance('best-seed');
 
 const users: Prisma.UserCreateManyInput[] = [...new Array(9)].map(() => ({
   id: chance.guid(),

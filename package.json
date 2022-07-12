@@ -9,6 +9,7 @@
     "start": "cd dist && node index.js",
     "dev": "esno src/index",
     "seed": "esno src/scripts/seed-users",
+    "resetqueue": "esno src/scripts/reset-queue",
     "build": "npx tsc",
     "lint": "npx eslint --ext .ts ./src",
     "lint:fix": "npx eslint --ext .ts ./src --fix",

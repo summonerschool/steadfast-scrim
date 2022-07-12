@@ -3,7 +3,7 @@ import { SlashCommand, CommandOptionType, CommandContext, SlashCreator, MessageO
 import { NotFoundError } from '../errors/errors';
 import { queueService, scrimService } from '../services';
 import { matchMessage } from '../components/match-message';
-import { initScrimService } from '../services/scrim-service';
+import { ScrimResultActionRow } from '../components/button';
 
 class QueueCommand extends SlashCommand {
   constructor(creator: SlashCreator) {
@@ -49,7 +49,29 @@ class QueueCommand extends SlashCommand {
             matchmaking.queuers.map((p) => p.userID)
           );
           const embed = await matchMessage(scrim);
-          return { embeds: [embed] };
+          const buttons = ScrimResultActionRow();
+          const msg = await ctx.send({
+            embeds: [embed as any],
+            components: [buttons as any]
+          });
+          ctx.registerComponent('blue-win', async (btnCtx) => {
+            if (typeof msg != 'boolean') {
+              await msg.edit({
+                embeds: [embed as any],
+                content: 'Blue team has been registered as victors',
+                components: []
+              });
+            }
+          });
+          ctx.registerComponent('red-win', async (btnCtx) => {
+            if (typeof msg != 'boolean') {
+              await msg.edit({
+                embeds: [embed as any],
+                content: 'Red team has been regisitred as victors',
+                components: []
+              });
+            }
+          });
         } catch (err) {
           if (err instanceof NotFoundError) {
             return err.message;

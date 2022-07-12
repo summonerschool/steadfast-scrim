@@ -22,3 +22,5 @@ dist/
 !.yarn/versions
 .pnp.*
 .idea
+
+package-lock.json
