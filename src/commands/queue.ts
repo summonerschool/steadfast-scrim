@@ -2,7 +2,7 @@ import { MessageEmbed } from 'discord.js';
 import { SlashCommand, CommandOptionType, CommandContext, SlashCreator, MessageOptions } from 'slash-create';
 import { NotFoundError } from '../errors/errors';
 import { queueService, scrimService } from '../services';
-import { matchMessage } from '../messages/match';
+import { matchMessage } from '../components/match-message';
 import { initScrimService } from '../services/scrim-service';
 
 class QueueCommand extends SlashCommand {
