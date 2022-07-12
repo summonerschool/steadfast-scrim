@@ -3,6 +3,7 @@ import { SlashCommand, CommandOptionType, CommandContext, SlashCreator, MessageO
 import { NotFoundError } from '../errors/errors';
 import { queueService, scrimService } from '../services';
 import { matchMessage } from '../messages/match';
+import { initScrimService } from '../services/scrim-service';
 
 class QueueCommand extends SlashCommand {
   constructor(creator: SlashCreator) {
@@ -31,21 +32,23 @@ class QueueCommand extends SlashCommand {
   }
   async run(ctx: CommandContext) {
     // returns the subcommand, option, and option value
+    // TODO: Get queue by the user's server and guild in the future
     const queue = await queueService.getOrCreateQueueToGuild(ctx.guildID!!);
 
     switch (ctx.subcommands[0]) {
       case 'join': {
         try {
           const queuer = await queueService.joinQueue(ctx.user.id, queue.id);
-          const matchmaking = await queueService.attemptMatchmaking(queuer.queue_id);
+          const matchmaking = await queueService.attemptMatchmaking(queue.id);
+          console.log(matchmaking);
           if (!matchmaking.valid) {
-            return { content: `<@${queuer.player_id}> has joined the queue`, allowedMentions: { everyone: false } };
+            return { content: `<@${queuer.userID}> has joined the queue`, allowedMentions: { everyone: false } };
           }
           const scrim = await scrimService.createBalancedScrim(
-            queuer.queue_id,
-            matchmaking.queuers.map((p) => p.player_id)
+            queue.id,
+            matchmaking.queuers.map((p) => p.userID)
           );
-          const embed = matchMessage(scrim);
+          const embed = await matchMessage(scrim);
           return { embeds: [embed] };
         } catch (err) {
           if (err instanceof NotFoundError) {
@@ -58,11 +61,11 @@ class QueueCommand extends SlashCommand {
       }
       case 'leave': {
         const queuer = await queueService.leaveQueue(ctx.user.id, queue.id);
-        return { content: `<@${queuer.player_id}> has left the queue`, allowedMentions: { everyone: false } };
+        return { content: `<@${queuer.userID}> has left the queue`, allowedMentions: { everyone: false } };
       }
       case 'show': {
-        const queuer = await queueService.showUsersInQueue(queue.id);
-        const mentions = queuer.map((q) => `<@${q.player_id}>`).join('\n');
+        const queueWithUsers = await queueService.fetchQueuers(queue);
+        const mentions = queueWithUsers.inQueue.map((q) => `<@${q.userID}>`).join('\n');
         const message: MessageOptions = {
           content: `**In queue**\n${mentions}`,
           allowedMentions: { everyone: false },

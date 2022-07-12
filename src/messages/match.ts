@@ -1,6 +1,7 @@
 import { MessageEmbed } from 'discord.js';
 import { Player, Scrim } from '../entities/scrim';
 import { chance } from '../lib/chance';
+import { scrimService } from '../services';
 
 const ROLES_ORDER = {
   TOP: 1,
@@ -15,16 +16,18 @@ const sortByRole = (p1: Player, p2: Player) => {
 };
 const teamToString = (player: Player) => `${player.role}: <@${player.userID}>`;
 
-export const matchMessage = (scrim: Scrim) => {
+export const matchMessage = async (scrim: Scrim) => {
   const lobbyCreator = chance.pickone(scrim.players);
-  const red = scrim.players
-    .filter((p) => p.team === 'RED')
-    .sort(sortByRole)
-    .map(teamToString);
-  const blue = scrim.players
-    .filter((p) => p.team === 'BLUE')
-    .sort(sortByRole)
-    .map(teamToString);
+  const teams = scrimService.sortPlayerByTeam(scrim.players);
+  const scoutBlue = await scrimService.generateScoutingLink(scrim.id, 'BLUE');
+  const scoutRed = await scrimService.generateScoutingLink(scrim.id, 'RED');
+
+  const scoutingLinksMsg = `
+    **Blue**: ${scoutBlue}
+    **Red**: ${scoutRed}
+  `;
+  const redText = teams.RED.sort(sortByRole).map(teamToString);
+  const blueText = teams.BLUE.sort(sortByRole).map(teamToString);
 
   return new MessageEmbed()
     .setColor('#698371')
@@ -32,13 +35,14 @@ export const matchMessage = (scrim: Scrim) => {
     .setDescription(
       `
     No autofilled players in this, feel free to swap roles among yourselves.\n
-    MATCH ID: ${scrim.id}\n
-    Lobby creator: <@${lobbyCreator.userID}>\n
+    **MATCH ID**: **${scrim.id}**\n
+    **Lobby creator**: <@${lobbyCreator.userID}>\n
     `
     )
     .addFields(
-      { name: 'Team Blue', value: blue.join('\n'), inline: true },
-      { name: 'Team Red', value: red.join('\n'), inline: true }
+      { name: 'Team Blue', value: blueText.join('\n'), inline: true },
+      { name: 'Team Red', value: redText.join('\n'), inline: true },
+      { name: 'Scouting links', value: scoutingLinksMsg }
     )
     .setTimestamp()
     .setFooter({ text: 'Anything wrong? spam the shit out of Tikka Masala' });

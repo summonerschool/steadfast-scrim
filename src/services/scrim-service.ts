@@ -1,4 +1,5 @@
 import { Player, playerSchema, Scrim } from '../entities/scrim';
+import { User } from '../entities/user';
 import { chance } from '../lib/chance';
 import { ScrimRepository } from './repo/scrim-repository';
 import { UserRepository } from './repo/user-repository';
@@ -9,6 +10,7 @@ export interface ScrimService {
   randomTeambalance: (userIDs: string[]) => Promise<Player[]>;
   sortPlayerByTeam: (players: Player[]) => { RED: Player[]; BLUE: Player[] };
   isValidTeam: (players: Player[]) => boolean;
+  getUserProfilesInScrim: (scrimID: number) => Promise<User[]>;
 }
 
 export const initScrimService = (scrimRepo: ScrimRepository, userRepo: UserRepository) => {
@@ -17,10 +19,14 @@ export const initScrimService = (scrimRepo: ScrimRepository, userRepo: UserRepos
   const service: ScrimService = {
     generateScoutingLink: async (scrimID, team) => {
       const users = await userRepo.getUsers({ player: { some: { scrim_id: scrimID, team: team } } });
-      const server = users[0].server.toLocaleLowerCase();
       const summoners = encodeURIComponent(users.map((user) => user.leagueIGN).join(','));
-      const link = `https://${server}.op.gg/multisearch/${server}?summoners=${summoners}`;
+      const server = users[0].server.toLocaleLowerCase();
+      const link = `https://op.gg/multisearch/${server}?summoners=${summoners}`;
       return link;
+    },
+    getUserProfilesInScrim: async (scrimID: number) => {
+      const users = await userRepo.getUsers({ player: { some: { scrim_id: scrimID } } });
+      return users;
     },
     createBalancedScrim: async (queueID, users) => {
       // Create scrim from queue id and a list of player ids

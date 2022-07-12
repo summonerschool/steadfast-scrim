@@ -31,7 +31,7 @@ describe('ScrimService', () => {
     }));
     userRepository.getUsers.mockResolvedValueOnce(mockGetUsersResult);
     const summoners = encodeURIComponent(mockGetUsersResult.map((user) => user.leagueIGN).join(','));
-    const expected = `https://euw.op.gg/multisearch/euw?summoners=${summoners}`;
+    const expected = `https://op.gg/multisearch/euw?summoners=${summoners}`;
     await expect(scrimService.generateScoutingLink(1, 'RED')).resolves.toEqual(expected);
   });
 

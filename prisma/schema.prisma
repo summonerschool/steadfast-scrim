@@ -57,12 +57,12 @@ model Queue {
 }
 
 model Queuer {
-  user     User     @relation(fields: [user_id], references: [id])
-  user_id  String
-  queue    Queue    @relation(fields: [queue_id], references: [id])
-  queue_id String
-  popped   Boolean  @default(false)
-  queuedAt DateTime @default(now())
+  user      User     @relation(fields: [user_id], references: [id])
+  user_id   String
+  queue     Queue    @relation(fields: [queue_id], references: [id])
+  queue_id  String
+  popped    Boolean  @default(false)
+  queued_at DateTime @default(now())
 
 
   @@id([user_id, queue_id])

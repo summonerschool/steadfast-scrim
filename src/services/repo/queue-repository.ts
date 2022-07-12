@@ -1,10 +1,11 @@
-import { Prisma, PrismaClient, Queue, Queuer } from '@prisma/client';
+import { Prisma, PrismaClient } from '@prisma/client';
+import { mapToQueue, mapToQueuer, Queue, Queuer } from '../../entities/queue';
 
 export interface QueueRepository {
   addUserToQueue: (userID: string, queueID: string) => Promise<Queuer>;
   removeUserFromQueue: (userID: string, queueID: string) => Promise<Queuer>;
   getUsersInQueue: (filter?: Prisma.QueuerWhereInput) => Promise<Queuer[]>;
-  getQueueByGuildID: (guildID: string) => Promise<Queue | null>;
+  getQueueByGuildID: (guildID: string) => Promise<Queue | undefined>;
   createQueue: (guildID: string) => Promise<Queue>;
   updateQueuers: (filter: Prisma.QueuerWhereInput, data: Prisma.QueuerUpdateManyArgs['data']) => Promise<number>;
 }
@@ -20,25 +21,25 @@ export const initQueueRepository = (prisma: PrismaClient) => {
         create: { user_id: userID, queue_id: queueID },
         update: {}
       });
-      return queuer;
+      return mapToQueuer(queuer);
     },
     removeUserFromQueue: async (userID, queueID) => {
       const queuer = await prisma.queuer.delete({
         where: { user_id_queue_id: { user_id: userID, queue_id: queueID } }
       });
-      return queuer;
+      return mapToQueuer(queuer);
     },
     getUsersInQueue: async (filter) => {
       const queuers = await prisma.queuer.findMany({ where: filter });
-      return queuers;
+      return queuers.map(mapToQueuer);
     },
     getQueueByGuildID: async (guildID) => {
-      const gameQueue = prisma.queue.findUnique({ where: { guild_id: guildID } });
-      return gameQueue;
+      const gameQueue = await prisma.queue.findUnique({ where: { guild_id: guildID } });
+      return gameQueue ? mapToQueue(gameQueue, []) : undefined;
     },
     createQueue: async (guildID) => {
       const gameQueue = await prisma.queue.create({ data: { guild_id: guildID } });
-      return gameQueue;
+      return mapToQueue(gameQueue, []);
     },
     updateQueuers: async (filter, data) => {
       const res = await prisma.queuer.updateMany({

@@ -1,14 +1,13 @@
-import { Queue, Queuer } from '@prisma/client';
+import { Queue, Queuer } from '../entities/queue';
 import { NotFoundError } from '../errors/errors';
 import { QueueRepository } from './repo/queue-repository';
 import { UserRepository } from './repo/user-repository';
-import { ScrimService } from './scrim-service';
 
 interface QueueService {
   joinQueue: (userID: string, queueID: string) => Promise<Queuer>;
   leaveQueue: (userID: string, queueID: string) => Promise<Queuer>;
   getOrCreateQueueToGuild: (guildID: string) => Promise<Queue>;
-  showUsersInQueue: (queueID: string) => Promise<Queuer[]>;
+  fetchQueuers: (queue: Queue) => Promise<Queue>;
   attemptMatchmaking: (queueID: string) => Promise<{ queuers: Queuer[]; valid: true } | { valid: false }>;
 }
 
@@ -26,7 +25,7 @@ export const initQueueService = (queueRepo: QueueRepository, userRepo: UserRepos
       // might sort or filter or order more here
       const queuers = await queueRepo.getUsersInQueue({ popped: false, queue_id: queueID });
       if (queuers.length >= 10) {
-        const users = queuers.map((queuer) => queuer.user_id);
+        const users = queuers.map((queuer) => queuer.userID);
         // pop the queue to all these users
         const updateCount = await queueRepo.updateQueuers({ user_id: { in: users } }, { popped: true });
         return updateCount === 10 ? { queuers, valid: true } : { valid: false };
@@ -44,9 +43,10 @@ export const initQueueService = (queueRepo: QueueRepository, userRepo: UserRepos
       }
       return queue;
     },
-    showUsersInQueue: async (queueID: string) => {
-      const queuers = await queueRepo.getUsersInQueue({ queue_id: queueID });
-      return queuers;
+    fetchQueuers: async (queue: Queue) => {
+      const queuers = await queueRepo.getUsersInQueue({ queue_id: queue.id });
+      queue.inQueue = queuers;
+      return queue;
     }
   };
   return service;
