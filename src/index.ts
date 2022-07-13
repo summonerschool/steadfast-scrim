@@ -21,7 +21,9 @@ const creator = new SlashCreator({
   serverHost: '0.0.0.0'
 });
 
-export const client = new Discord.Client({ intents: [Intents.FLAGS.GUILDS] });
+export const client = new Discord.Client({
+  intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES, Intents.FLAGS.DIRECT_MESSAGES]
+});
 
 const config: RiotAPITypes.Config = { debug: true };
 export const rAPI = new RiotAPI(process.env.RIOT_API_KEY!!, config);

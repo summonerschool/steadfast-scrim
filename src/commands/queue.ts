@@ -1,8 +1,7 @@
-import { MessageEmbed } from 'discord.js';
-import { SlashCommand, CommandOptionType, CommandContext, SlashCreator, MessageOptions } from 'slash-create';
+import { CommandContext, CommandOptionType, SlashCommand, SlashCreator } from 'slash-create';
 import { NotFoundError } from '../errors/errors';
 import { queueService, scrimService } from '../services';
-import { matchMessage } from '../components/match-message';
+import { matchMessage, showQueueMessage } from '../components/match-message';
 import { ScrimResultActionRow } from '../components/button';
 
 class QueueCommand extends SlashCommand {
@@ -86,14 +85,14 @@ class QueueCommand extends SlashCommand {
         return { content: `<@${queuer.userID}> has left the queue`, allowedMentions: { everyone: false } };
       }
       case 'show': {
+        await ctx.defer(true);
         const queueWithUsers = await queueService.fetchQueuers(queue);
-        const mentions = queueWithUsers.inQueue.map((q) => `<@${q.userID}>`).join('\n');
-        const message: MessageOptions = {
-          content: `**In queue**\n${mentions}`,
+        const embed = await showQueueMessage(queueWithUsers.inQueue);
+        return await ctx.send('', {
+          embeds: [embed as any],
           allowedMentions: { everyone: false },
           ephemeral: true
-        };
-        return message;
+        });
       }
       default:
         return 'no such command exists';

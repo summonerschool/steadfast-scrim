@@ -4,7 +4,7 @@ import { mapToQueue, mapToQueuer, Queue, Queuer } from '../../entities/queue';
 export interface QueueRepository {
   addUserToQueue: (userID: string, queueID: string) => Promise<Queuer>;
   removeUserFromQueue: (userID: string, queueID: string) => Promise<Queuer>;
-  getUsersInQueue: (filter?: Prisma.QueuerWhereInput) => Promise<Queuer[]>;
+  getUsersInQueue: (filter?: Prisma.QueuerWhereInput, include?: object | null) => Promise<Queuer[]>;
   getQueueByGuildID: (guildID: string) => Promise<Queue | undefined>;
   createQueue: (guildID: string) => Promise<Queue>;
   updateQueuers: (filter: Prisma.QueuerWhereInput, data: Prisma.QueuerUpdateManyArgs['data']) => Promise<number>;
@@ -29,8 +29,11 @@ export const initQueueRepository = (prisma: PrismaClient) => {
       });
       return mapToQueuer(queuer);
     },
-    getUsersInQueue: async (filter) => {
-      const queuers = await prisma.queuer.findMany({ where: filter });
+    getUsersInQueue: async (filter, include = null) => {
+      const queuers = await prisma.queuer.findMany({
+        where: filter,
+        include: include
+      });
       return queuers.map(mapToQueuer);
     },
     getQueueByGuildID: async (guildID) => {

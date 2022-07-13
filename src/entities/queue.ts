@@ -1,10 +1,12 @@
 import { infer, z } from 'zod';
-import { Queue as PrismaQueue, Queuer as PrismaQueuer } from '@prisma/client';
+import { Queue as PrismaQueue, Queuer as PrismaQueuer, Rank, Role, Server } from '@prisma/client';
 
 export const queuerSchema = z.object({
   userID: z.string(),
   popped: z.boolean(),
-  queuedAt: z.date()
+  queuedAt: z.date(),
+  roles: z.array(z.nativeEnum(Role)).optional(),
+  rank: z.nativeEnum(Rank).optional()
 });
 
 export const queueSchema = z.object({
@@ -16,11 +18,14 @@ export const queueSchema = z.object({
 export type Queuer = z.infer<typeof queuerSchema>;
 export type Queue = z.infer<typeof queueSchema>;
 
-export const mapToQueuer = (dbQueuer: PrismaQueuer) =>
+// todo: fix any here
+export const mapToQueuer = (dbQueuer: any) =>
   queuerSchema.parse({
     userID: dbQueuer.user_id,
     popped: dbQueuer.popped,
-    queuedAt: dbQueuer.queued_at
+    queuedAt: dbQueuer.queued_at,
+    roles: dbQueuer.user.roles,
+    rank: dbQueuer.user.rank
   });
 
 export const mapToQueue = (dbQueue: PrismaQueue, dbQueuers: PrismaQueuer[]) => {

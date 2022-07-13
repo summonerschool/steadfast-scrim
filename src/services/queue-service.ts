@@ -18,8 +18,7 @@ export const initQueueService = (queueRepo: QueueRepository, userRepo: UserRepos
       if (!user) {
         throw new NotFoundError("You can't join a queue without a profile. Please use /setup");
       }
-      const queuer = await queueRepo.addUserToQueue(user.id, queueID);
-      return queuer;
+      return await queueRepo.addUserToQueue(user.id, queueID);
     },
     attemptMatchmaking: async (queueID) => {
       // might sort or filter or order more here
@@ -33,8 +32,7 @@ export const initQueueService = (queueRepo: QueueRepository, userRepo: UserRepos
       return { valid: false };
     },
     leaveQueue: async (userID, queueID) => {
-      const queuer = await queueRepo.removeUserFromQueue(userID, queueID);
-      return queuer;
+      return await queueRepo.removeUserFromQueue(userID, queueID);
     },
     getOrCreateQueueToGuild: async (guildID) => {
       let queue = await queueRepo.getQueueByGuildID(guildID);
@@ -44,8 +42,17 @@ export const initQueueService = (queueRepo: QueueRepository, userRepo: UserRepos
       return queue;
     },
     fetchQueuers: async (queue: Queue) => {
-      const queuers = await queueRepo.getUsersInQueue({ queue_id: queue.id });
-      queue.inQueue = queuers;
+      queue.inQueue = await queueRepo.getUsersInQueue(
+        { queue_id: queue.id },
+        {
+          user: {
+            select: {
+              roles: true,
+              rank: true
+            }
+          }
+        }
+      );
       return queue;
     }
   };

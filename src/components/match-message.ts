@@ -1,7 +1,11 @@
-import { MessageEmbed } from 'discord.js';
+import { EmbedFieldData, MessageEmbed } from 'discord.js';
 import { Player, Scrim } from '../entities/scrim';
+import { Queuer } from '../entities/queue';
 import { chance } from '../lib/chance';
 import { scrimService } from '../services';
+import { POSITION_EMOJI_TRANSLATION } from '../utils/utils';
+// @ts-ignore
+import capitalize from 'capitalize';
 
 const ROLES_ORDER = {
   TOP: 1,
@@ -47,4 +51,64 @@ export const matchMessage = async (scrim: Scrim) => {
     )
     .setTimestamp()
     .setFooter({ text: 'Anything wrong? spam the shit out of Tikka Masala' });
+};
+
+export const showQueueMessage = async (users: Queuer[]) => {
+  const mentions = users.map((q) => {
+    if (!q.userID.includes('-')) {
+      // todo: remove later
+      return `<@${q.userID}>`;
+    }
+  });
+
+  const embedfields: EmbedFieldData[] = [];
+  const ranksCount: {
+    IRON?: number;
+    BRONZE?: number;
+    SILVER?: number;
+    GOLD?: number;
+    PLATINUM?: number;
+    DIAMOND?: number;
+    MASTER?: number;
+    GRANDMASTER?: number;
+    CHALLENGER?: number;
+  } = {};
+
+  users.forEach(function (value) {
+    if (value.rank) {
+      if (ranksCount[value.rank]) {
+        ranksCount[value.rank] += 1;
+      } else {
+        ranksCount[value.rank] = 1;
+      }
+    }
+
+    let roles_img = '';
+    if (value.roles) {
+      const roles_to_image = value.roles.map((x) => {
+        return `${POSITION_EMOJI_TRANSLATION[x]}`;
+      });
+      roles_img = `${roles_to_image.join('')}`;
+    }
+    embedfields.push({
+      name: `${roles_img}`,
+      value: `${capitalize(value.rank)}`,
+      inline: true
+    });
+  });
+
+  let resultRanks = '';
+  Object.entries(ranksCount).forEach(([key, value]) => {
+    resultRanks += `**${capitalize(key)}**: ${value}\n`;
+  });
+
+  return new MessageEmbed()
+    .setColor('#698371')
+    .setTitle(`**${users.length} players in queue**\n`)
+    .setDescription(
+      `
+    **Total Ranks:**\n ${resultRanks}
+    **Players:**\n ${mentions}`
+    )
+    .addFields(embedfields);
 };
