@@ -10,16 +10,16 @@ export const userSchema = z.object({
   wins: z.number().int().min(0).optional(),
   losses: z.number().int().min(0).optional(),
   elo: z.number().int().min(0).optional(),
-  externalElo: z.number().int().min(0).optional()
+  external_elo: z.number().int().min(0).optional()
 });
 
 export type User = z.infer<typeof userSchema>;
 
 export const mapToUser = (dbUser: PrismaUser) => {
-  const user = userSchema.parse({
+  return userSchema.parse({
     ...dbUser,
     leagueIGN: dbUser.league_ign,
-    externalElo: dbUser.external_elo
+    elo: dbUser.elo,
+    external_elo: dbUser.external_elo
   });
-  return user;
 };

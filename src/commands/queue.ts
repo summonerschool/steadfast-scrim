@@ -67,7 +67,7 @@ class QueueCommand extends SlashCommand {
             if (typeof msg != 'boolean') {
               await msg.edit({
                 embeds: [embed as any],
-                content: 'Red team has been regisitred as victors',
+                content: 'Red team has been registered as victors',
                 components: []
               });
             }

@@ -12,7 +12,7 @@ import {
 import { userService } from '../services';
 // @ts-ignore
 import capitalize from 'capitalize';
-import { POSITION_EMOJI_TRANSLATION, RANK_IMAGE_TRANSLATION, SERVER_TO_RIOT_PLATFORM } from '../utils/utils'; // TODO: fix
+import { POSITION_EMOJI_TRANSLATION, RANK_IMAGE_TRANSLATION, SERVER_TO_RIOT_PLATFORM } from '../utils/utils';
 
 const rank = Object.entries(Rank).map(([key, val]) => ({ label: val, value: key }));
 const roles = Object.entries(Role).map(([key, val]) => ({ label: capitalize(val), value: key }));
@@ -46,7 +46,6 @@ class SetupCommand extends SlashCommand {
     this.ign = ctx.options.ign;
 
     await ctx.defer(true);
-
     await ctx.send('Please fill in all the options below', {
       ephemeral: true,
       components: [
@@ -219,22 +218,53 @@ class SetupCommand extends SlashCommand {
       ]
     });
 
-    ctx.registerComponentFrom(followup.id, 'confirm_setup', async (selectCtx) => {
-      console.log('confirm');
+    ctx.registerComponentFrom(followup.id, 'confirm_setup', async () => {
       if (!(this.server && this.rank && this.roles && this.ign)) {
         return;
       }
-      const user = await userService.setUserProfile(this.discord_id, this.ign, this.rank, this.server, this.roles);
-      await followup.delete();
 
-      // TODO : DELETE THE EPHEMERAL AND SEND THE EMBED AS A MESSSAGE SO EVERYONE CAN SEE NEW PLAYERS?
-      // await ctx.editOriginal('');
-      // await ctx.delete(followup.id);
+      try {
+        await userService.setUserProfile(
+          this.discord_id,
+          this.ign,
+          this.rank,
+          this.server,
+          this.roles,
+          rankInfo.elo,
+          rankInfo.elo
+        );
+      } catch (e) {
+        await followup.edit(':x: An error occurred, please try to run setup again.', {
+          embeds: [],
+          components: []
+        });
+        await ctx.editOriginal('** **', {
+          embeds: [],
+          components: []
+        });
+        return;
+      }
+
+      await followup.edit(':white_check_mark: Successfully registered', {
+        embeds: [],
+        components: []
+      });
+
+      await ctx.editOriginal('** **', {
+        embeds: [],
+        components: []
+      });
     });
 
-    ctx.registerComponentFrom(followup.id, 'cancel_setup', async (selectCtx) => {
-      console.log('cancel');
-      // await ctx.delete(followup.id);
+    ctx.registerComponentFrom(followup.id, 'cancel_setup', async () => {
+      await followup.edit(':x: Cancelled by the user, please run /setup again.', {
+        embeds: [],
+        components: []
+      });
+      await ctx.editOriginal('** **', {
+        embeds: [],
+        components: []
+      });
     });
   }
 }

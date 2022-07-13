@@ -8,7 +8,16 @@ import { userService } from './index';
 import { ELO_TRANSLATION } from '../utils/utils';
 
 export interface UserService {
-  setUserProfile: (id: string, leagueIGN: string, rank: string, server: string, roles: string[]) => Promise<User>;
+  setUserProfile: (
+    id: string,
+    leagueIGN: string,
+    rank: string,
+    server: string,
+    roles: string[],
+    elo?: number,
+    external_elo?: number
+  ) => Promise<User>;
+  setUserElo: (id: string, elo: number, external_elo?: number | undefined) => Promise<User>;
   getUserProfile: (id: string) => Promise<User>;
   fetchRiotUser: (server: RiotAPITypes.LoLRegion, league_ign: string) => Promise<RiotAPITypes.Summoner.SummonerDTO>;
   fetchRiotRank: (
@@ -21,8 +30,18 @@ export interface UserService {
 
 export const initUserService = (userRepo: UserRepository) => {
   const service: UserService = {
-    setUserProfile: async (id, leagueIGN, rank, server, roles) => {
-      const data = { id, leagueIGN, rank, server, roles };
+    setUserProfile: async (id, leagueIGN, rank, server, roles, elo?: number, external_elo?: number) => {
+      const data = { id, leagueIGN, rank, server, roles, elo, external_elo };
+      const user = userSchema.parse(data);
+      return userRepo.upsertUser(user);
+    },
+    setUserElo: async (id, elo, external_elo) => {
+      const data = { id, elo, external_elo };
+
+      if (!external_elo) {
+        delete data.external_elo;
+      }
+
       const user = userSchema.parse(data);
       return userRepo.upsertUser(user);
     },
