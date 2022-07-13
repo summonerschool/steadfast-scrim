@@ -1,3 +1,4 @@
+import { Role } from '@prisma/client';
 import { Player, playerSchema, Scrim } from '../entities/scrim';
 import { User } from '../entities/user';
 import { chance } from '../lib/chance';
@@ -11,6 +12,7 @@ export interface ScrimService {
   sortPlayerByTeam: (players: Player[]) => { RED: Player[]; BLUE: Player[] };
   isValidTeam: (players: Player[]) => boolean;
   getUserProfilesInScrim: (scrimID: number) => Promise<User[]>;
+  canCreatePerfectMatchup: (users: User[]) => boolean;
 }
 
 export const initScrimService = (scrimRepo: ScrimRepository, userRepo: UserRepository) => {
@@ -63,6 +65,15 @@ export const initScrimService = (scrimRepo: ScrimRepository, userRepo: UserRepos
       }
       const roles = players.map((p) => p.role);
       return new Set(roles).size === roles.length;
+    },
+    canCreatePerfectMatchup: (users) => {
+      // checks if we have a perfect match
+      const mainRoles = new Map<string, number>();
+      for (const user of users) {
+        mainRoles.set(user.roles[0], (mainRoles.get(user.roles[0]) || 0) + 1);
+      }
+      const twoPlayersPerRole = Object.values(mainRoles).every((count) => count === 2);
+      return twoPlayersPerRole;
     }
   };
   return service;
