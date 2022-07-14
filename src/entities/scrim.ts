@@ -1,10 +1,14 @@
-import { Role, Status, Team, Scrim as PrismaScrim, Player as PrismaPlayer } from '@prisma/client';
+import { Role, Status, Scrim as PrismaScrim, Player as PrismaPlayer } from '@prisma/client';
 import { z } from 'zod';
+
+const teamEnum = z.enum(["RED","BLUE"])
+
+export type Team= z.infer<typeof teamEnum>
 
 export const playerSchema = z.object({
   userID: z.string(),
   role: z.nativeEnum(Role),
-  team: z.nativeEnum(Team)
+  team: teamEnum
 });
 
 export const scrimSchema = z.object({
@@ -12,7 +16,8 @@ export const scrimSchema = z.object({
   status: z.nativeEnum(Status),
   voiceIDs: z.array(z.string()),
   players: z.array(playerSchema),
-  queueID: z.string()
+  queueID: z.string(),
+  winner: teamEnum.optional()
 });
 
 export type Player = z.infer<typeof playerSchema>;

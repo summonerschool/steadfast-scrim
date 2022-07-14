@@ -1,5 +1,4 @@
-import { Role } from '@prisma/client';
-import { Player, playerSchema, Scrim } from '../entities/scrim';
+import { Player, playerSchema, Scrim, Team } from '../entities/scrim';
 import { User } from '../entities/user';
 import { chance } from '../lib/chance';
 import { ScrimRepository } from './repo/scrim-repository';
@@ -13,6 +12,7 @@ export interface ScrimService {
   isValidTeam: (players: Player[]) => boolean;
   getUserProfilesInScrim: (scrimID: number) => Promise<User[]>;
   canCreatePerfectMatchup: (users: User[]) => boolean;
+  reportWinner: (scrim: Scrim, team: Team) => Promise<boolean>;
 }
 
 export const initScrimService = (scrimRepo: ScrimRepository, userRepo: UserRepository) => {
@@ -74,6 +74,10 @@ export const initScrimService = (scrimRepo: ScrimRepository, userRepo: UserRepos
       }
       const twoPlayersPerRole = Object.values(mainRoles).every((count) => count === 2);
       return twoPlayersPerRole;
+    },
+    reportWinner: async (scrim, team) => {
+      const updated = await scrimRepo.updateScrim({ ...scrim, winner: team });
+      return updated === 1;
     }
   };
   return service;

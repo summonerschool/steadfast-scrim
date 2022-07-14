@@ -47,6 +47,7 @@ model Scrim {
   players   Player[]
   queue     Queue    @relation(fields: [queue_id], references: [id])
   queue_id  String
+  winner    Team?
 }
 
 model Queue {

@@ -1,8 +1,9 @@
-import { CommandContext, CommandOptionType, SlashCommand, SlashCreator } from 'slash-create';
+import { SlashCommand, CommandOptionType, CommandContext, SlashCreator, MessageOptions } from 'slash-create';
 import { NotFoundError } from '../errors/errors';
 import { queueService, scrimService } from '../services';
 import { matchMessage, showQueueMessage } from '../components/match-message';
 import { ScrimResultActionRow } from '../components/button';
+import { Team } from '../entities/scrim';
 
 class QueueCommand extends SlashCommand {
   constructor(creator: SlashCreator) {
@@ -53,23 +54,24 @@ class QueueCommand extends SlashCommand {
             embeds: [embed as any],
             components: [buttons as any]
           });
-          ctx.registerComponent('blue-win', async (btnCtx) => {
-            if (typeof msg != 'boolean') {
+          const reportWin = async (team: Team) => {
+            if (typeof msg == 'boolean') {
+              return;
+            }
+            const hasReported = await scrimService.reportWinner(scrim, team);
+            if (hasReported) {
               await msg.edit({
                 embeds: [embed as any],
-                content: 'Blue team has been registered as victors',
+                content: `${team} team has been registered as victors`,
                 components: []
               });
             }
+          };
+          ctx.registerComponent('blue-win', async (btnCtx) => {
+            await reportWin('BLUE');
           });
           ctx.registerComponent('red-win', async (btnCtx) => {
-            if (typeof msg != 'boolean') {
-              await msg.edit({
-                embeds: [embed as any],
-                content: 'Red team has been registered as victors',
-                components: []
-              });
-            }
+            await reportWin('RED');
           });
         } catch (err) {
           if (err instanceof NotFoundError) {
@@ -91,7 +93,7 @@ class QueueCommand extends SlashCommand {
         return await ctx.send('', {
           embeds: [embed as any],
           allowedMentions: { everyone: false },
-          ephemeral: true
+          ephemeral: false
         });
       }
       default:

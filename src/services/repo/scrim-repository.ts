@@ -1,15 +1,15 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, Team } from '@prisma/client';
 import { mapToScrim, Player, Scrim } from '../../entities/scrim';
-import { chance } from '../../lib/chance';
 
 export interface ScrimRepository {
   createScrim: (queueID: string, players: Player[]) => Promise<Scrim>;
+  updateScrim: (scrim: Scrim) => Promise<number>
 }
 
 export const initScrimRepository = (prisma: PrismaClient) => {
   const repo: ScrimRepository = {
     createScrim: async (queueID, players) => {
-      const playerData = players.map((player) => ({ user_id: player.userID, role: player.role, team: player.team }));
+      const playerData = players.map((player) => ({ user_id: player.userID, role: player.role, team: Team[player.team]}));
       const res = await prisma.scrim.create({
         data: {
           queue_id: queueID,
@@ -27,7 +27,22 @@ export const initScrimRepository = (prisma: PrismaClient) => {
         }
       });
       return mapToScrim(res, res.players);
+    },
+    updateScrim: async (scrim) => {
+      const res = await prisma.scrim.update({
+        data: {
+          status: scrim.status,
+          queue_id: scrim.queueID,
+          voice_ids: scrim.voiceIDs,
+          winner: scrim.winner && Team[scrim.winner]
+        },
+        where: {
+          id: scrim.id
+        },
+      })
+      return res ? 1 : 0
     }
+
   };
   return repo;
 };
