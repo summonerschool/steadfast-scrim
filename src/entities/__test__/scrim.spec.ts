@@ -41,7 +41,8 @@ describe('Scrim entities', () => {
       id: 1,
       queue_id: '1',
       status: 'LOBBY',
-      voice_ids: []
+      voice_ids: [],
+      winner: null
     };
     const mapped = mapToScrim(scrim, players);
     expect(mapped.players.length).toEqual(3);

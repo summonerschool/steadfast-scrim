@@ -1,9 +1,9 @@
 import { Role, Status, Scrim as PrismaScrim, Player as PrismaPlayer } from '@prisma/client';
 import { z } from 'zod';
 
-const teamEnum = z.enum(["RED","BLUE"])
+export const teamEnum = z.enum(['RED', 'BLUE']);
 
-export type Team= z.infer<typeof teamEnum>
+export type Team = z.infer<typeof teamEnum>;
 
 export const playerSchema = z.object({
   userID: z.string(),
@@ -36,7 +36,8 @@ export const mapToScrim = (dbScrim: PrismaScrim, dbPlayers: PrismaPlayer[]) => {
     ...dbScrim,
     voiceIDs: dbScrim.voice_ids,
     queueID: dbScrim.queue_id,
-    players: dbPlayers.map(mapToPlayer)
+    players: dbPlayers.map(mapToPlayer),
+    winner: dbScrim.winner || undefined
   });
   return scrim;
 };

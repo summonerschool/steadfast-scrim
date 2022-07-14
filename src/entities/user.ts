@@ -1,12 +1,14 @@
-import { Rank, Role, Server, User as PrismaUser } from '@prisma/client';
+import { Rank, Role as PrismaRole, Server, User as PrismaUser } from '@prisma/client';
 import { z } from 'zod';
+
+export const roleEnum = z.enum(['TOP', 'JUNGLE', 'MID', 'BOT', 'SUPPORT']);
 
 export const userSchema = z.object({
   id: z.string(),
   leagueIGN: z.string().max(18),
   rank: z.nativeEnum(Rank),
   server: z.nativeEnum(Server),
-  roles: z.array(z.nativeEnum(Role)),
+  roles: z.array(z.nativeEnum(PrismaRole)),
   wins: z.number().int().min(0).optional(),
   losses: z.number().int().min(0).optional(),
   elo: z.number().int().min(0).optional(),
