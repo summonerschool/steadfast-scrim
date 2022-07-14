@@ -117,8 +117,10 @@ const calculatePlayerPool = (users: User[]) => {
   }
   return talentPool;
 };
+type RollPool = User[]
+type PlayerPool = [RollPool, RollPool, RollPool, RollPool, RollPool]
 
-const generateAllPossibleTeams = (pool: User[][]) => {
+const generateAllPossibleTeams = (pool: PlayerPool) => {
   const combinations: User[][] = [];
   // generates every team combination
   const combine = (lists: User[][], acum: User[]) => {
@@ -132,3 +134,11 @@ const generateAllPossibleTeams = (pool: User[][]) => {
   combine(pool, []);
   return combinations;
 };
+
+const removeDuplicates = (combinations: User[][]) => {
+  const unique: User[][] = []
+  for (const combo of combinations) {
+    for (const team of unique) {
+    }
+  }
+}
