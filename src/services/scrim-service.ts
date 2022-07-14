@@ -117,10 +117,10 @@ const calculatePlayerPool = (users: User[]) => {
   }
   return talentPool;
 };
-type RollPool = User[]
-type PlayerPool = [RollPool, RollPool, RollPool, RollPool, RollPool]
+type RollPool = User[];
+type PlayerPool = [RollPool, RollPool, RollPool, RollPool, RollPool];
 
-const generateAllPossibleTeams = (pool: PlayerPool) => {
+export const generateAllPossibleTeams = (pool: User[][]) => {
   const combinations: User[][] = [];
   // generates every team combination
   const combine = (lists: User[][], acum: User[]) => {
@@ -135,10 +135,16 @@ const generateAllPossibleTeams = (pool: PlayerPool) => {
   return combinations;
 };
 
-const removeDuplicates = (combinations: User[][]) => {
-  const unique: User[][] = []
-  for (const combo of combinations) {
-    for (const team of unique) {
-    }
+export const removeDuplicates = (combinations: User[][]) => {
+  const firstHalf = combinations.slice(0, combinations.length / 2);
+  const secondhalf = combinations.slice(combinations.length / 2).reverse();
+  for (let i = 0; i < combinations.length / 2; i++) {
+    const team1 = firstHalf[i];
+    const team2 = secondhalf[i];
+    const difference = calculateEloDifference(team1, team2);
   }
-}
+};
+
+export const noCommonPlayers = (t1: User[], t2: User[]) => {
+  return !t1.some((player) => t2.includes(player));
+};

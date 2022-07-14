@@ -2,6 +2,7 @@ import { Rank, Role as PrismaRole, Server, User as PrismaUser } from '@prisma/cl
 import { z } from 'zod';
 
 export const roleEnum = z.enum(['TOP', 'JUNGLE', 'MID', 'BOT', 'SUPPORT']);
+export type Role = z.infer<typeof roleEnum>;
 
 export const userSchema = z.object({
   id: z.string(),

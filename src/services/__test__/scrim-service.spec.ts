@@ -1,10 +1,19 @@
 import { initUserRepository, UserRepository } from '../repo/user-repository';
-import { initScrimService } from '../scrim-service';
+import { generateAllPossibleTeams, initScrimService, noCommonPlayers, removeDuplicates } from '../scrim-service';
 import { mockDeep } from 'jest-mock-extended';
 import { chance } from '../../lib/chance';
-import { roleEnum, User, userSchema } from '../../entities/user';
-import { initScrimRepository, ScrimRepository } from '../repo/scrim-repository';
-import { PrismaClient, Rank, Role, Server } from '@prisma/client';
+import { Role, roleEnum, User, userSchema } from '../../entities/user';
+import { ScrimRepository } from '../repo/scrim-repository';
+import { Rank } from '@prisma/client';
+
+const roleToPlayer = (role: Role): User =>
+  userSchema.parse({
+    id: chance.guid(),
+    leagueIGN: chance.name(),
+    rank: 'GOLD',
+    server: 'EUW',
+    roles: [role]
+  });
 
 describe('ScrimService', () => {
   const scrimRepository = mockDeep<ScrimRepository>();
@@ -58,42 +67,43 @@ describe('ScrimService', () => {
     }));
     const twoOfEachRole = scrimService.canCreatePerfectMatchup(users);
     expect(twoOfEachRole).toBe(true);
-    scrimService.matchmakeTwoEach(users);
-    users[0].roles = ['MID'];
-    const notTwoOfEach = scrimService.canCreatePerfectMatchup(users);
-    expect(notTwoOfEach).toBe(false);
   });
+
   it('creates perfect match', async () => {
-    const roles = [...roleEnum.options, ...roleEnum.options];
-    console.log(roles)
-    let users: User[] = roles.map((role) => ({
+    let tenUsers: User[] = [...roleEnum.options, ...roleEnum.options].map((role) => ({
       id: chance.guid(),
       leagueIGN: chance.name(),
       rank: 'GOLD',
       server: 'EUW',
       roles: [role]
     }));
-    users.
+    const blue = tenUsers.slice(0, 5);
+    let red = tenUsers.slice(5, 10);
+    expect(noCommonPlayers(blue, red)).toBe(true);
+    red = [...red.slice(0, 4), blue[0]];
+    expect(noCommonPlayers(blue, red)).toBe(false);
   });
 
-  // it('hmm', async () => {
-  //   const client = new PrismaClient();
-  //   const ids = [...new Array(10)].map(() => chance.guid());
-  //   const users = await client.user.createMany({
-  //     data: ids.map((id) => ({
-  //       id: id,
-  //       league_ign: chance.name(),
-  //       server: Server.EUW,
-  //       rank: Rank.BRONZE,
-  //       roles: [Role.JUNGLE]
-  //     }))
-  //   });
-  //   const realS = initScrimRepository(client);
-  //   const realU = initUserRepository(client);
-  //   const realService = initScrimService(realS, realU);
-  //   realService
-  //     .createBalancedScrim('6e39f3c5-e4cf-4966-b15f-a02340240a4e', ids)
-  //     .then((res) => console.log(res))
-  //     .catch((err) => console.log(err));
-  // });
+  it('hmm', async () => {
+    const pool: Role[][] = [
+      ['TOP', 'TOP'],
+      ['JUNGLE', 'JUNGLE'],
+      ['MID', 'MID'],
+      ['BOT', 'BOT'],
+      ['SUPPORT', 'SUPPORT']
+    ];
+    let i = 0;
+    const elos = [2100, 1821, 2400, 1700, 1400, 1657, 2400, 1900, 1800, 659];
+    const playerPool: User[][] = pool.map((rolePool) =>
+      rolePool.map((role) => {
+        const user = roleToPlayer(role);
+        user.elo = elos[i];
+        i += 1;
+        return user;
+      })
+    );
+
+    const combinations = generateAllPossibleTeams(playerPool);
+    removeDuplicates(combinations);
+  });
 });
