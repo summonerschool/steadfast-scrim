@@ -1,5 +1,5 @@
 import { initUserRepository, UserRepository } from '../repo/user-repository';
-import { generateAllPossibleTeams, initScrimService, noCommonPlayers, removeDuplicates } from '../scrim-service';
+import { generateAllPossibleTeams, initScrimService, noCommonPlayers } from '../scrim-service';
 import { mockDeep } from 'jest-mock-extended';
 import { chance } from '../../lib/chance';
 import { Role, roleEnum, User, userSchema } from '../../entities/user';
@@ -9,7 +9,7 @@ import { Rank } from '@prisma/client';
 const roleToPlayer = (role: Role): User =>
   userSchema.parse({
     id: chance.guid(),
-    leagueIGN: chance.name(),
+    leagueIGN: chance.name({ full: false }),
     rank: 'GOLD',
     server: 'EUW',
     roles: [role]
@@ -85,25 +85,29 @@ describe('ScrimService', () => {
   });
 
   it('hmm', async () => {
-    const pool: Role[][] = [
-      ['TOP', 'TOP'],
-      ['JUNGLE', 'JUNGLE'],
-      ['MID', 'MID'],
-      ['BOT', 'BOT'],
-      ['SUPPORT', 'SUPPORT']
-    ];
-    let i = 0;
-    const elos = [2100, 1821, 2400, 1700, 1400, 1657, 2400, 1900, 1800, 659];
-    const playerPool: User[][] = pool.map((rolePool) =>
-      rolePool.map((role) => {
-        const user = roleToPlayer(role);
-        user.elo = elos[i];
-        i += 1;
-        return user;
-      })
-    );
-
-    const combinations = generateAllPossibleTeams(playerPool);
-    removeDuplicates(combinations);
+    scrimService.createMatchupNoAutofill(users);
   });
 });
+
+const createTestUser = (role?: Role, name?: string, elo?: number) =>
+  userSchema.parse({
+    id: chance.guid(),
+    leagueIGN: name || chance.name(),
+    rank: 'GOLD',
+    server: 'EUW',
+    roles: role ? [role] : ['MID'],
+    elo: elo
+  });
+
+const users: User[] = [
+  createTestUser('TOP', 'huzzle', 2100),
+  createTestUser('TOP', 'rayann', 1821),
+  createTestUser('JUNGLE', 'mika', 2400),
+  createTestUser('JUNGLE', 'kharann', 1700),
+  createTestUser('MID', 'zero', 1400),
+  createTestUser('MID', 'yyaen', 1657),
+  createTestUser('BOT', 'mo', 2400),
+  createTestUser('BOT', 'z', 1900),
+  createTestUser('SUPPORT', 'tikka', 1800),
+  createTestUser('SUPPORT', 'zironic', 659)
+];

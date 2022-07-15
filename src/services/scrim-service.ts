@@ -83,9 +83,19 @@ export const initScrimService = (scrimRepo: ScrimRepository, userRepo: UserRepos
       }
       return twoOfEach;
     },
-    createMatchupNoAutofill: async (users) => {
+    createMatchupNoAutofill: (users) => {
       const playerPool = calculatePlayerPool(users);
       const combinations = generateAllPossibleTeams(playerPool);
+      const matchups = combinationsToMatchups(combinations);
+      const sortedMatchups = matchups.sort(
+        (a, b) => calculateEloDifference(a[0], a[1]) - calculateEloDifference(b[0], b[1])
+      );
+      for (let matchup of matchups) {
+        const team1 = matchup[0].map((user) => user.leagueIGN);
+        const team2 = matchup[1].map((user) => user.leagueIGN);
+        const eloDiff = Math.abs(calculateEloDifference(matchup[0], matchup[1]));
+        console.log({ team1, team2, eloDiff });
+      }
     },
     reportWinner: async (scrim, team) => {
       const updated = await scrimRepo.updateScrim({ ...scrim, winner: team });
@@ -95,13 +105,7 @@ export const initScrimService = (scrimRepo: ScrimRepository, userRepo: UserRepos
   return service;
 };
 
-const calculateEloDifference = (t1: User[], t2: User[]) => {
-  const elo1 = t1.reduce((prev, curr) => prev + (curr.elo || 0), 0);
-  const elo2 = t2.reduce((prev, curr) => prev + (curr.elo || 0), 0);
-  return elo1 - elo2;
-};
-
-const order = {
+export const order = {
   TOP: 0,
   JUNGLE: 1,
   MID: 2,
@@ -109,20 +113,30 @@ const order = {
   SUPPORT: 4
 };
 
-const calculatePlayerPool = (users: User[]) => {
+const calculatePlayerPool = (users: User[], requireFill = false) => {
   const talentPool: User[][] = [[], [], [], [], []];
   for (const user of users) {
     const mainRole = user.roles[0];
     talentPool[order[mainRole]].push(user);
+  }
+  // Adds top 5 players secondary role to the pool
+  if (requireFill) {
+    const top5 = users.sort((u) => u.elo!!);
+    for (const user of top5) {
+      const secondary = user.roles[1];
+      talentPool[order[secondary]].push(user);
+    }
   }
   return talentPool;
 };
 type RollPool = User[];
 type PlayerPool = [RollPool, RollPool, RollPool, RollPool, RollPool];
 
+type UserTeam = [User, User, User, User, User];
+
 export const generateAllPossibleTeams = (pool: User[][]) => {
   const combinations: User[][] = [];
-  // generates every team combination
+  // generates every team combination, very inefficent
   const combine = (lists: User[][], acum: User[]) => {
     const last = lists.length === 1;
     for (let i in lists[0]) {
@@ -132,19 +146,28 @@ export const generateAllPossibleTeams = (pool: User[][]) => {
     }
   };
   combine(pool, []);
-  return combinations;
+  return combinations as UserTeam[];
 };
 
-export const removeDuplicates = (combinations: User[][]) => {
-  const firstHalf = combinations.slice(0, combinations.length / 2);
-  const secondhalf = combinations.slice(combinations.length / 2).reverse();
-  for (let i = 0; i < combinations.length / 2; i++) {
-    const team1 = firstHalf[i];
-    const team2 = secondhalf[i];
-    const difference = calculateEloDifference(team1, team2);
+type Matchup = [UserTeam, UserTeam];
+
+export const combinationsToMatchups = (combinations: UserTeam[]) => {
+  const half = combinations.length / 2;
+  const firstHalf = combinations.slice(0, half);
+  const secondhalf = combinations.slice(half).reverse();
+  const matchups: Matchup[] = [];
+  for (let i = 0; i < half; i++) {
+    matchups.push([firstHalf[i], secondhalf[i]]);
   }
+  return matchups;
 };
 
 export const noCommonPlayers = (t1: User[], t2: User[]) => {
   return !t1.some((player) => t2.includes(player));
+};
+
+const calculateEloDifference = (t1: UserTeam, t2: UserTeam) => {
+  const elo1 = t1.reduce((prev, curr) => prev + (curr.elo || 0), 0);
+  const elo2 = t2.reduce((prev, curr) => prev + (curr.elo || 0), 0);
+  return elo1 - elo2;
 };
