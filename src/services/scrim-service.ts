@@ -4,6 +4,8 @@ import { chance } from '../lib/chance';
 import { ScrimRepository } from './repo/scrim-repository';
 import { UserRepository } from './repo/user-repository';
 
+type Matchup = [UserTeam, UserTeam];
+
 export interface ScrimService {
   generateScoutingLink: (scrimID: number, team: 'RED' | 'BLUE') => Promise<string>;
   createBalancedScrim: (queueID: string, users: string[]) => Promise<Scrim>;
@@ -12,7 +14,7 @@ export interface ScrimService {
   isValidTeam: (players: Player[]) => boolean;
   getUserProfilesInScrim: (scrimID: number) => Promise<User[]>;
   canCreatePerfectMatchup: (users: User[]) => boolean;
-  createMatchupNoAutofill: (users: User[]) => void;
+  createMatchupNoAutofill: (users: User[]) => Matchup[];
   reportWinner: (scrim: Scrim, team: Team) => Promise<boolean>;
 }
 
@@ -88,14 +90,9 @@ export const initScrimService = (scrimRepo: ScrimRepository, userRepo: UserRepos
       const combinations = generateAllPossibleTeams(playerPool);
       const matchups = combinationsToMatchups(combinations);
       const sortedMatchups = matchups.sort(
-        (a, b) => calculateEloDifference(a[0], a[1]) - calculateEloDifference(b[0], b[1])
+        (a, b) => Math.abs(calculateEloDifference(a[0], a[1])) - Math.abs(calculateEloDifference(b[0], b[1]))
       );
-      for (let matchup of matchups) {
-        const team1 = matchup[0].map((user) => user.leagueIGN);
-        const team2 = matchup[1].map((user) => user.leagueIGN);
-        const eloDiff = Math.abs(calculateEloDifference(matchup[0], matchup[1]));
-        console.log({ team1, team2, eloDiff });
-      }
+      return sortedMatchups
     },
     reportWinner: async (scrim, team) => {
       const updated = await scrimRepo.updateScrim({ ...scrim, winner: team });
@@ -146,7 +143,6 @@ export const generateAllPossibleTeams = (pool: User[][]) => {
   return combinations as UserTeam[];
 };
 
-type Matchup = [UserTeam, UserTeam];
 
 export const combinationsToMatchups = (combinations: UserTeam[]) => {
   const half = combinations.length / 2;
@@ -163,7 +159,7 @@ export const noCommonPlayers = (t1: User[], t2: User[]) => {
   return !t1.some((player) => t2.includes(player));
 };
 
-const calculateEloDifference = (t1: UserTeam, t2: UserTeam) => {
+export const calculateEloDifference = (t1: UserTeam, t2: UserTeam) => {
   const elo1 = t1.reduce((prev, curr) => prev + (curr.elo || 0), 0);
   const elo2 = t2.reduce((prev, curr) => prev + (curr.elo || 0), 0);
   return elo1 - elo2;

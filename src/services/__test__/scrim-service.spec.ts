@@ -1,5 +1,5 @@
 import { UserRepository } from '../repo/user-repository';
-import { initScrimService } from '../scrim-service';
+import { calculateEloDifference, initScrimService } from '../scrim-service';
 import { mockDeep } from 'jest-mock-extended';
 import { chance } from '../../lib/chance';
 import { Role, roleEnum, User, userSchema } from '../../entities/user';
@@ -70,20 +70,20 @@ describe('ScrimService', () => {
   //   expect(twoOfEachRole).toBe(true);
   // });
 
-  // it('creates perfect match', async () => {
-  //   let tenUsers: User[] = [...roleEnum.options, ...roleEnum.options].map((role) => ({
-  //     id: chance.guid(),
-  //     leagueIGN: chance.name(),
-  //     rank: 'GOLD',
-  //     server: 'EUW',
-  //     roles: [role]
-  //   }));
-  //   const blue = tenUsers.slice(0, 5);
-  //   let red = tenUsers.slice(5, 10);
-  //   expect(noCommonPlayers(blue, red)).toBe(true);
-  //   red = [...red.slice(0, 4), blue[0]];
-  //   expect(noCommonPlayers(blue, red)).toBe(false);
-  // });
+  it('creates perfect match', async () => {
+    let tenUsers: User[] = users.map((user) => ({
+      id: chance.guid(),
+      leagueIGN:user.leagueIGN,
+      rank: user.rank,
+      region: 'EUW',
+      main: user.main,
+      secondary: user.secondary,
+      elo: user.elo
+    }));
+    const matchups = scrimService.createMatchupNoAutofill(tenUsers)
+    expect(Math.abs(calculateEloDifference(matchups[0][0], matchups[0][1]))).toEqual(37)
+    
+  });
 
   // it('hmm', async () => {
   //   scrimService.createMatchupNoAutofill(users);
@@ -96,8 +96,8 @@ const createTestUser = (role?: Role, name?: string, elo?: number) =>
     leagueIGN: name || chance.name(),
     rank: 'GOLD',
     region: 'EUW',
-    main: 'JUNGLE',
-    secondary: 'MID',
+    main: role,
+    secondary: role == 'MID' ? "SUPPORT": "MID",
     elo: elo
   });
 
