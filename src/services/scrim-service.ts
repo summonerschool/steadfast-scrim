@@ -124,7 +124,6 @@ const calculatePlayerPool = (users: User[], requireFill = false) => {
   }
   return talentPool;
 };
-type RollPool = User[];
 
 type UserTeam = [User, User, User, User, User];
 

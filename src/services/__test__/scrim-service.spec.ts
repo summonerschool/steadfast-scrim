@@ -82,7 +82,6 @@ describe('ScrimService', () => {
     }));
     const matchups = scrimService.createMatchupNoAutofill(tenUsers)
     expect(Math.abs(calculateEloDifference(matchups[0][0], matchups[0][1]))).toEqual(37)
-    
   });
 
   // it('hmm', async () => {
