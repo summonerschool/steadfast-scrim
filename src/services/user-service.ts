@@ -1,8 +1,7 @@
 import { User, userSchema } from '../entities/user';
 import { NotFoundError } from '../errors/errors';
 import { UserRepository } from './repo/user-repository';
-import { rAPI } from '../index';
-import { RiotAPITypes } from '@fightmegg/riot-api';
+import { RiotAPI, RiotAPITypes } from '@fightmegg/riot-api';
 import fetch from 'node-fetch';
 import { userService } from './index';
 import { ELO_TRANSLATION } from '../utils/utils';
@@ -13,13 +12,14 @@ export interface UserService {
     leagueIGN: string,
     rank: string,
     server: string,
-    roles: string[],
+    main: string,
+    secondary: string,
     elo?: number,
     external_elo?: number
   ) => Promise<User>;
   setUserElo: (id: string, elo: number, external_elo?: number | undefined) => Promise<User>;
   getUserProfile: (id: string) => Promise<User>;
-  fetchRiotUser: (server: RiotAPITypes.LoLRegion, league_ign: string) => Promise<RiotAPITypes.Summoner.SummonerDTO>;
+  fetchRiotUser: (server: RiotAPITypes.LoLRegion, league_ign: string) => Promise<RiotAPITypes.Summoner.SummonerDTO>
   fetchRiotRank: (
     server: RiotAPITypes.LoLRegion,
     summoner: RiotAPITypes.Summoner.SummonerDTO | string
@@ -28,11 +28,13 @@ export interface UserService {
   // getUsersByScrim: (scrimID: string) => Promise<User[]>;
 }
 
-export const initUserService = (userRepo: UserRepository) => {
+export const initUserService = (userRepo: UserRepository, rAPI: RiotAPI): UserService => {
   const service: UserService = {
-    setUserProfile: async (id, leagueIGN, rank, server, roles, elo?: number, external_elo?: number) => {
-      const data = { id, leagueIGN, rank, server, roles, elo, external_elo };
+    setUserProfile: async (id, leagueIGN, rank, region, main, secondary, elo?: number, external_elo?: number) => {
+      const data = { id, leagueIGN, rank, region, main, secondary, elo, external_elo };
+      console.log(data)
       const user = userSchema.parse(data);
+      console.log(user)
       return userRepo.upsertUser(user);
     },
     setUserElo: async (id, elo, external_elo) => {
@@ -67,23 +69,23 @@ export const initUserService = (userRepo: UserRepository) => {
       let elo = ELO_TRANSLATION[rank];
 
       if (typeof summoner === 'string') {
-        summoner = await userService.fetchRiotUser(server, summoner);
+        // summoner = await userService.fetchRiotUser(server, summoner);
       }
 
-      const entries = await rAPI.league
-        .getEntriesBySummonerId({
-          region: server,
-          summonerId: summoner.id
-        })
-        .catch(() => {
-          throw new NotFoundError(`League user not found, please verify details and try again.`);
-        });
+      // const entries = await rAPI.league
+      //   .getEntriesBySummonerId({
+      //     region: server,
+      //     summonerId: summoner.id
+      //   })
+      //   .catch(() => {
+      //     throw new NotFoundError(`League user not found, please verify details and try again.`);
+      //   });
 
-      if (entries.length) {
-        const entry = entries[0];
-        rank = entry.tier;
-        elo = ELO_TRANSLATION[rank];
-      }
+      // if (entries.length) {
+      //   const entry = entries[0];
+      //   rank = entry.tier;
+      //   elo = ELO_TRANSLATION[rank];
+      // }
 
       return {
         rank: rank,

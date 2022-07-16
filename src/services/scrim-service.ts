@@ -23,7 +23,7 @@ export const initScrimService = (scrimRepo: ScrimRepository, userRepo: UserRepos
     generateScoutingLink: async (scrimID, team) => {
       const users = await userRepo.getUsers({ player: { some: { scrim_id: scrimID, team: team } } });
       const summoners = encodeURIComponent(users.map((user) => user.leagueIGN).join(','));
-      const server = users[0].server.toLocaleLowerCase();
+      const server = users[0].region.toLocaleLowerCase();
       const link = `https://op.gg/multisearch/${server}?summoners=${summoners}`;
       return link;
     },
@@ -72,7 +72,7 @@ export const initScrimService = (scrimRepo: ScrimRepository, userRepo: UserRepos
       const mainRoles = new Map<string, number>();
       for (const user of users) {
         // Initialize role at 0 if its not there
-        mainRoles.set(user.roles[0], (mainRoles.get(user.roles[0]) || 0) + 1);
+        mainRoles.set(user.main, (mainRoles.get(user.main) || 0) + 1);
       }
       let twoOfEach = true;
       for (let count of mainRoles.values()) {
@@ -116,21 +116,18 @@ export const order = {
 const calculatePlayerPool = (users: User[], requireFill = false) => {
   const talentPool: User[][] = [[], [], [], [], []];
   for (const user of users) {
-    const mainRole = user.roles[0];
-    talentPool[order[mainRole]].push(user);
+    talentPool[order[user.main]].push(user);
   }
   // Adds top 5 players secondary role to the pool
   if (requireFill) {
     const top5 = users.sort((u) => u.elo!!);
     for (const user of top5) {
-      const secondary = user.roles[1];
-      talentPool[order[secondary]].push(user);
+      talentPool[order[user.secondary]].push(user);
     }
   }
   return talentPool;
 };
 type RollPool = User[];
-type PlayerPool = [RollPool, RollPool, RollPool, RollPool, RollPool];
 
 type UserTeam = [User, User, User, User, User];
 

@@ -1,18 +1,51 @@
-import { Rank, Role as PrismaRole, Server, User as PrismaUser } from '@prisma/client';
+import { Role as PrismaRole, User as PrismaUser } from '@prisma/client';
 import { z } from 'zod';
 
+enum Rank {
+  IRON = 400,
+  BRONZE = 800,
+  SILVER = 1200,
+  GOLD = 1600,
+  PLATINUM = 2000,
+  DIAMOND = 2400,
+  MASTER = 2800,
+  GRANDMASTER = 2800,
+  CHALLENGER = 3000
+}
+
+export const regionEnum = z.enum(['EUW', 'NA']);
 export const roleEnum = z.enum(['TOP', 'JUNGLE', 'MID', 'BOT', 'SUPPORT']);
+export const rankEnum = z.enum([
+  'IRON',
+  'BRONZE',
+  'SILVER',
+  'GOLD',
+  'PLATINUM',
+  'DIAMOND',
+  'MASTER',
+  'GRANDMASTER',
+  'CHALLENGER'
+]);
+
 export type Role = z.infer<typeof roleEnum>;
+export const ROLE_ORDER: { [key in Role]: number } = {
+  TOP: 1,
+  JUNGLE: 2,
+  MID: 3,
+  BOT: 4,
+  SUPPORT: 5
+};
 
 export const userSchema = z.object({
   id: z.string(),
   leagueIGN: z.string().max(18),
-  rank: z.nativeEnum(Rank),
-  server: z.nativeEnum(Server),
-  roles: z.array(z.nativeEnum(PrismaRole)),
-  wins: z.number().int().min(0).optional(),
+  rank: rankEnum,
+  region: regionEnum,
+  main: roleEnum,
+  secondary: roleEnum,
+  wins: z.number().int().min(0).optional(), // profile stuff
   losses: z.number().int().min(0).optional(),
-  elo: z.number().int().min(0).optional(),
+  elo: z.number().int().min(0).default(0),
   external_elo: z.number().int().min(0).optional()
 });
 

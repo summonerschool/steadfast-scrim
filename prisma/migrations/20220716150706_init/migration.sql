@@ -5,7 +5,7 @@ CREATE TYPE "Team" AS ENUM ('RED', 'BLUE');
 CREATE TYPE "Status" AS ENUM ('LOBBY', 'INGAME', 'COMPLETED', 'REMADE');
 
 -- CreateEnum
-CREATE TYPE "Server" AS ENUM ('EUW', 'NA');
+CREATE TYPE "Region" AS ENUM ('EUW', 'NA');
 
 -- CreateEnum
 CREATE TYPE "Rank" AS ENUM ('IRON', 'BRONZE', 'SILVER', 'GOLD', 'PLATINUM', 'DIAMOND', 'MASTER', 'GRANDMASTER', 'CHALLENGER');
@@ -17,9 +17,10 @@ CREATE TYPE "Role" AS ENUM ('TOP', 'JUNGLE', 'MID', 'BOT', 'SUPPORT');
 CREATE TABLE "User" (
     "id" STRING NOT NULL,
     "league_ign" STRING NOT NULL,
-    "server" "Server" NOT NULL,
+    "region" "Region" NOT NULL,
     "rank" "Rank" NOT NULL,
-    "roles" "Role"[],
+    "main" "Role" NOT NULL,
+    "secondary" "Role" NOT NULL,
     "win" INT4 NOT NULL DEFAULT 0,
     "loss" INT4 NOT NULL DEFAULT 0,
     "elo" INT4 NOT NULL DEFAULT 0,
@@ -44,6 +45,7 @@ CREATE TABLE "Scrim" (
     "status" "Status" NOT NULL,
     "voice_ids" STRING[],
     "queue_id" STRING NOT NULL,
+    "winner" "Team",
 
     CONSTRAINT "Scrim_pkey" PRIMARY KEY ("id")
 );
@@ -61,7 +63,7 @@ CREATE TABLE "Queuer" (
     "user_id" STRING NOT NULL,
     "queue_id" STRING NOT NULL,
     "popped" BOOL NOT NULL DEFAULT false,
-    "queuedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "queued_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "Queuer_pkey" PRIMARY KEY ("user_id","queue_id")
 );

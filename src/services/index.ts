@@ -1,3 +1,4 @@
+import { RiotAPI, RiotAPITypes } from '@fightmegg/riot-api';
 import { PrismaClient } from '@prisma/client';
 import { initQueueService } from './queue-service';
 import { initQueueRepository } from './repo/queue-repository';
@@ -8,11 +9,13 @@ import { initUserService } from './user-service';
 
 // Clients
 const prisma = new PrismaClient();
+const config: RiotAPITypes.Config = { debug: true };
+const rAPI = new RiotAPI(process.env.RIOT_API_KEY!!, config);
 // Repositories
 const queueRepo = initQueueRepository(prisma);
 const userRepo = initUserRepository(prisma);
 const scrimRepo = initScrimRepository(prisma);
 // Services
-export const userService = initUserService(userRepo);
+export const userService = initUserService(userRepo, rAPI);
 export const scrimService = initScrimService(scrimRepo, userRepo);
 export const queueService = initQueueService(queueRepo, userRepo);

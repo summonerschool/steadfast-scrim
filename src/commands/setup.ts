@@ -229,11 +229,13 @@ class SetupCommand extends SlashCommand {
           this.ign,
           this.rank,
           this.server,
-          this.roles,
+          this.roles[0],
+          this.roles[1],
           rankInfo.elo,
           rankInfo.elo
         );
       } catch (e) {
+        console.log(e)
         await followup.edit(':x: An error occurred, please try to run setup again.', {
           embeds: [],
           components: []

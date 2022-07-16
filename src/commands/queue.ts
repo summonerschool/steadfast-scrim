@@ -1,4 +1,4 @@
-import { SlashCommand, CommandOptionType, CommandContext, SlashCreator, MessageOptions } from 'slash-create';
+import { SlashCommand, CommandOptionType, CommandContext, SlashCreator } from 'slash-create';
 import { NotFoundError } from '../errors/errors';
 import { queueService, scrimService } from '../services';
 import { matchMessage, showQueueMessage } from '../components/match-message';

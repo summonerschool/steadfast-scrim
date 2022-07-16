@@ -1,3 +1,4 @@
+import { SlashCommandBuilder } from '@discordjs/builders';
 import { SlashCommand, CommandOptionType, CommandContext, SlashCreator } from 'slash-create';
 
 class HelloCommand extends SlashCommand {
