@@ -1,5 +1,5 @@
 import { UserRepository } from '../repo/user-repository';
-import { calculateEloDifference, initScrimService } from '../scrim-service';
+import { calculateEloDifference, calculatePlayerPool, generateAllPossibleTeams, initScrimService } from '../scrim-service';
 import { mockDeep } from 'jest-mock-extended';
 import { chance } from '../../lib/chance';
 import { Role, roleEnum, User, userSchema } from '../../entities/user';
@@ -81,8 +81,22 @@ describe('ScrimService', () => {
       elo: user.elo
     }));
     const matchups = scrimService.createMatchupNoAutofill(tenUsers)
-    expect(Math.abs(calculateEloDifference(matchups[0][0], matchups[0][1]))).toEqual(37)
+    expect(matchups[0].eloDifference).toEqual(37)
   });
+  // it('huh', async () => {
+  //   let tenUsers: User[] = users.map((user) => ({
+  //     id: chance.guid(),
+  //     leagueIGN:user.leagueIGN,
+  //     rank: user.rank,
+  //     region: 'EUW',
+  //     main: user.main,
+  //     secondary: user.secondary,
+  //     elo: user.elo
+  //   }));
+  //   const pools = calculatePlayerPool(tenUsers)
+  //   pools[0].push(users[3])
+  //   console.log(generateAllPossibleTeams(pools))
+  // });
 
   // it('hmm', async () => {
   //   scrimService.createMatchupNoAutofill(users);

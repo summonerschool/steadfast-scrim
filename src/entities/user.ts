@@ -28,12 +28,13 @@ export const rankEnum = z.enum([
 ]);
 
 export type Role = z.infer<typeof roleEnum>;
+
 export const ROLE_ORDER: { [key in Role]: number } = {
-  TOP: 1,
-  JUNGLE: 2,
-  MID: 3,
-  BOT: 4,
-  SUPPORT: 5
+  TOP: 0,
+  JUNGLE: 1,
+  MID: 2,
+  BOT: 3,
+  SUPPORT: 4
 };
 
 export const userSchema = z.object({
@@ -48,6 +49,7 @@ export const userSchema = z.object({
   elo: z.number().int().min(0).default(0),
   external_elo: z.number().int().min(0).optional()
 });
+
 
 export type User = z.infer<typeof userSchema>;
 
