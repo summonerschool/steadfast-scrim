@@ -4,7 +4,7 @@ import { FastifyServer, SlashCreator } from 'slash-create';
 import Discord, { Intents } from 'discord.js';
 import CatLoggr from 'cat-loggr/ts';
 import { RiotAPI, RiotAPITypes } from '@fightmegg/riot-api';
-import "./services"
+import './services';
 
 let dotenvPath = path.join(process.cwd(), '.env');
 if (path.parse(process.cwd()).name === 'dist') dotenvPath = path.join(process.cwd(), '..', '.env');
@@ -24,8 +24,6 @@ export const client = new Discord.Client({
   intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES, Intents.FLAGS.DIRECT_MESSAGES]
 });
 
-
-
 creator.on('debug', (message) => logger.log(message));
 creator.on('warn', (message) => logger.warn(message));
 creator.on('error', (error) => logger.error(error));
@@ -39,7 +37,7 @@ creator.on('commandError', (command, error) => logger.error(`Command ${command.c
 const server = creator
   .withServer(new FastifyServer())
   .registerCommandsIn(path.join(__dirname, 'commands'), ['.ts'])
-  .syncCommands();
+  .syncCommands({ deleteCommands: true });
 
 server.startServer().then(() => {});
 
