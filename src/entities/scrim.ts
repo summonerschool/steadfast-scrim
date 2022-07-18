@@ -1,5 +1,6 @@
 import { Role, Status, Scrim as PrismaScrim, Player as PrismaPlayer } from '@prisma/client';
 import { z } from 'zod';
+import { roleEnum } from './user';
 
 export const gamesideEnum = z.enum(['RED', 'BLUE']);
 
@@ -7,8 +8,8 @@ export type GameSide = z.infer<typeof gamesideEnum>;
 
 export const playerSchema = z.object({
   userID: z.string(),
-  role: z.nativeEnum(Role),
-  team: gamesideEnum
+  role: roleEnum,
+  side: gamesideEnum
 });
 
 export const scrimSchema = z.object({

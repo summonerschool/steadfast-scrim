@@ -1,12 +1,12 @@
 import { Matchup, Pool, Team } from '../entities/matchmaking';
-import { Player, playerSchema } from '../entities/scrim';
+import { GameSide, Player, playerSchema } from '../entities/scrim';
 import { Role, ROLE_ORDER, User } from '../entities/user';
 import { chance } from '../lib/chance';
 
 export interface MatchmakingService {
   randomTeambalance: (userIDs: string[]) => Promise<Player[]>;
   canCreatePerfectMatchup: (users: User[]) => boolean;
-  matchmakeUsers: (users: User[]) => Matchup;
+  matchmakeUsers: (users: User[]) => Player[];
 }
 
 export const initMatchmakingService = () => {
@@ -51,10 +51,23 @@ export const initMatchmakingService = () => {
       const matchups = generateMatchups(combinations, users);
       const sortedMatchups = matchups.sort((a, b) => a.eloDifference - b.eloDifference);
       // MAYBE GIVE THEM OPTIONS?
-      return sortedMatchups[0];
+      const { team1, team2 } = sortedMatchups[0];
+      const firstPick = chance.integer({min: 1, max: 2})
+      const blueTeam = teamToPlayers(firstPick == 1 ? team1 : team2, "BLUE", users) 
+      const redTeam = teamToPlayers(firstPick == 1 ? team2: team1, "RED", users) 
+      return [...blueTeam, ...redTeam];
     }
   };
   return service;
+};
+
+const teamToPlayers = (team: Team, side: GameSide, users: User[]) => {
+  const players: Player[] = team.map((player) => {
+    const user = users.find((u) => u.id == player.id)!!;
+    const isOnOffrole = user.elo > player.elo;
+    return { userID: user.id, role: isOnOffrole ? user.secondary : user.main, side: side };
+  });
+  return players
 };
 
 // Probably needs adjustments
@@ -144,22 +157,4 @@ export const calculateEloDifference = (t1: Team, t2: Team) => {
 };
 
 // Assign an unsorted list of players (team) into their Main role (or secondary if on offrole)
-const sortTeam = (team: Team, users: User[]) => {
-  const sorted: { [key in Role]: User | undefined } = {
-    TOP: undefined,
-    JUNGLE: undefined,
-    MID: undefined,
-    BOT: undefined,
-    SUPPORT: undefined
-  };
-  for (const player of team) {
-    const user = users.find((u) => u.id == player.id)!!;
-    // Is on offroled if the elo is lower than initial
-    const isOnOffrole = user.elo > player.elo;
-    if (isOnOffrole) {
-      sorted[user.secondary] = player;
-    } else {
-      sorted[user.main] = player;
-    }
-  }
-};
+const assignUsersToRoles = (team: Team, users: User[]) => {};
