@@ -1,9 +1,10 @@
 import { UserRepository } from '../repo/user-repository';
-import { calculateEloDifference, calculatePlayerPool, generateAllPossibleTeams, initScrimService } from '../scrim-service';
+import { initScrimService } from '../scrim-service';
 import { mockDeep } from 'jest-mock-extended';
 import { chance } from '../../lib/chance';
-import { Role, roleEnum, User, userSchema } from '../../entities/user';
+import { Role, User, userSchema } from '../../entities/user';
 import { ScrimRepository } from '../repo/scrim-repository';
+import { initMatchmakingService } from '../matchmaking-service';
 
 const roleToPlayer = (role: Role): User =>
   userSchema.parse({
@@ -17,7 +18,8 @@ const roleToPlayer = (role: Role): User =>
 describe('ScrimService', () => {
   const scrimRepository = mockDeep<ScrimRepository>();
   const userRepository = mockDeep<UserRepository>();
-  const scrimService = initScrimService(scrimRepository, userRepository);
+  const matchmakingRepository = initMatchmakingService();
+  const scrimService = initScrimService(scrimRepository, userRepository, matchmakingRepository);
   const ELO_TRANSLATION: { [key: string]: number } = {
     IRON: 400,
     BRONZE: 800,
@@ -30,16 +32,6 @@ describe('ScrimService', () => {
     CHALLENGER: 3000
   };
 
-  it('Randomly distributes roles and teams to 10 players', async () => {
-    const userIDs = [...Array(10)].map(() => chance.integer({ min: 10 ** 7, max: 10 ** 8 }).toString());
-    const players = await scrimService.randomTeambalance(userIDs);
-    // Check if team each team is same size
-    const teams = scrimService.sortPlayerByTeam(players);
-    expect(scrimService.isValidTeam(teams.BLUE)).toBe(true);
-    expect(scrimService.isValidTeam(teams.RED)).toBe(true);
-    expect(teams.RED != teams.BLUE).toBe(true);
-  });
-
   it('Creates a valid scouting link', async () => {
     const mockGetUsersResult: User[] = [...new Array(5)].map(() => ({
       id: chance.guid(),
@@ -47,8 +39,8 @@ describe('ScrimService', () => {
       rank: 'IRON',
       region: 'EUW',
       elo: 0,
-      main: "JUNGLE",
-      secondary: "MID"
+      main: 'JUNGLE',
+      secondary: 'MID'
     }));
     userRepository.getUsers.mockResolvedValueOnce(mockGetUsersResult);
     const summoners = encodeURIComponent(mockGetUsersResult.map((user) => user.leagueIGN).join(','));
@@ -70,19 +62,19 @@ describe('ScrimService', () => {
   //   expect(twoOfEachRole).toBe(true);
   // });
 
-  it('creates perfect match', async () => {
-    let tenUsers: User[] = users.map((user) => ({
-      id: chance.guid(),
-      leagueIGN:user.leagueIGN,
-      rank: user.rank,
-      region: 'EUW',
-      main: user.main,
-      secondary: user.secondary,
-      elo: user.elo
-    }));
-    const matchups = scrimService.createMatchupNoAutofill(tenUsers)
-    expect(matchups[0].eloDifference).toEqual(37)
-  });
+  // it('creates perfect match', async () => {
+  // let tenUsers: User[] = users.map((user) => ({
+  //   id: chance.guid(),
+  //   leagueIGN:user.leagueIGN,
+  //   rank: user.rank,
+  //   region: 'EUW',
+  //   main: user.main,
+  //   secondary: user.secondary,
+  //   elo: user.elo
+  // }));
+  // const matchups = scrimService.createMatchupNoAutofill(tenUsers)
+  // expect(matchups[0].eloDifference).toEqual(37)
+  // });
   // it('huh', async () => {
   //   let tenUsers: User[] = users.map((user) => ({
   //     id: chance.guid(),
@@ -110,19 +102,19 @@ const createTestUser = (role?: Role, name?: string, elo?: number) =>
     rank: 'GOLD',
     region: 'EUW',
     main: role,
-    secondary: role == 'MID' ? "SUPPORT": "MID",
+    secondary: role == 'MID' ? 'SUPPORT' : 'MID',
     elo: elo
   });
 
-const users: User[] = [
-  createTestUser('TOP', 'huzzle', 2100),
-  createTestUser('TOP', 'rayann', 1821),
-  createTestUser('JUNGLE', 'mika', 2400),
-  createTestUser('JUNGLE', 'kharann', 1700),
-  createTestUser('MID', 'zero', 1400),
-  createTestUser('MID', 'yyaen', 1657),
-  createTestUser('BOT', 'mo', 2400),
-  createTestUser('BOT', 'z', 1900),
-  createTestUser('SUPPORT', 'tikka', 1800),
-  createTestUser('SUPPORT', 'zironic', 659)
-];
+// const users: User[] = [
+//   createTestUser('TOP', 'huzzle', 2100),
+//   createTestUser('TOP', 'rayann', 1821),
+//   createTestUser('JUNGLE', 'mika', 2400),
+//   createTestUser('JUNGLE', 'kharann', 1700),
+//   createTestUser('MID', 'zero', 1400),
+//   createTestUser('MID', 'yyaen', 1657),
+//   createTestUser('BOT', 'mo', 2400),
+//   createTestUser('BOT', 'z', 1900),
+//   createTestUser('SUPPORT', 'tikka', 1800),
+//   createTestUser('SUPPORT', 'zironic', 659)
+// ];
