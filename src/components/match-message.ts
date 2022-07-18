@@ -5,7 +5,7 @@ import { chance } from '../lib/chance';
 import { scrimService } from '../services';
 import { POSITION_EMOJI_TRANSLATION } from '../utils/utils';
 // @ts-ignore
-import capitalize from 'capitalize';
+import { User } from '../entities/user';
 
 const ROLES_ORDER = {
   TOP: 1,
@@ -62,25 +62,12 @@ export const showQueueMessage = async (users: Queuer[]) => {
   });
 
   const embedfields: EmbedFieldData[] = [];
-  const ranksCount: {
-    IRON?: number;
-    BRONZE?: number;
-    SILVER?: number;
-    GOLD?: number;
-    PLATINUM?: number;
-    DIAMOND?: number;
-    MASTER?: number;
-    GRANDMASTER?: number;
-    CHALLENGER?: number;
-  } = {};
+  const rankCount = new Map<User['rank'], number>();
 
-  users.forEach(function (value) {
+  users.forEach((value) => {
     if (value.rank) {
-      if (ranksCount[value.rank]) {
-        ranksCount[value.rank] += 1;
-      } else {
-        ranksCount[value.rank] = 1;
-      }
+      const count = rankCount.get(value.rank) || 0;
+      rankCount.set(value.rank, count);
     }
 
     let roles_img = '';
@@ -90,17 +77,17 @@ export const showQueueMessage = async (users: Queuer[]) => {
       });
       roles_img = `${roles_to_image.join('')}`;
     }
-    embedfields.push({
-      name: `${roles_img}`,
-      value: `${capitalize(value.rank)}`,
-      inline: true
-    });
+    // embedfields.push({
+    //   name: `${roles_img}`,
+    //   value: `${capitalize(value.rank)}`,
+    //   inline: true
+    // });
   });
 
   let resultRanks = '';
-  Object.entries(ranksCount).forEach(([key, value]) => {
-    resultRanks += `**${capitalize(key)}**: ${value}\n`;
-  });
+  // Object.entries(ranksCount).forEach(([key, value]) => {
+  //   resultRanks += `**${capitalize(key)}**: ${value}\n`;
+  // });
 
   return new MessageEmbed()
     .setColor('#698371')

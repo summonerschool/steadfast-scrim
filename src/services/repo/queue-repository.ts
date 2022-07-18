@@ -1,48 +1,39 @@
 import { Prisma, PrismaClient } from '@prisma/client';
 import { mapToQueue, mapToQueuer, Queue, Queuer } from '../../entities/queue';
+import { Region } from '../../entities/user';
 
 export interface QueueRepository {
-  addUserToQueue: (userID: string, queueID: string) => Promise<Queuer>;
-  removeUserFromQueue: (userID: string, queueID: string) => Promise<Queuer>;
-  getUsersInQueue: (filter?: Prisma.QueuerWhereInput, include?: object | null) => Promise<Queuer[]>;
-  getQueueByGuildID: (guildID: string) => Promise<Queue | undefined>;
-  createQueue: (guildID: string) => Promise<Queue>;
+  addUserToQueue: (userID: string, guildID: string) => Promise<Queuer>;
+  removeUserFromQueue: (userID: string, guildID: string) => Promise<Queuer>;
   updateQueuers: (filter: Prisma.QueuerWhereInput, data: Prisma.QueuerUpdateManyArgs['data']) => Promise<number>;
+  getQueuers: (queueID: string, filter?: Prisma.QueuerWhereInput) => Promise<Queuer[]>;
 }
 
 export const initQueueRepository = (prisma: PrismaClient) => {
   const repo: QueueRepository = {
-    addUserToQueue: async (userID, queueID) => {
-      // dont add to queue if the user is already queued up.
+    addUserToQueue: async (userID, guildID) => {
+      // Adds a queuer. If the queue does not exist, create it.
       const queuer = await prisma.queuer.upsert({
-        where: {
-          user_id_queue_id: { user_id: userID, queue_id: queueID }
+        where: { user_id_queue_id: { user_id: userID, queue_id: guildID } },
+        create: {
+          queue: {
+            connectOrCreate: { where: { guild_id: guildID }, create: { region: 'EUW', guild_id: guildID } }
+          },
+          user: { connect: { id: userID } }
         },
-        create: { user_id: userID, queue_id: queueID },
         update: {}
       });
       return mapToQueuer(queuer);
     },
-    removeUserFromQueue: async (userID, queueID) => {
+    removeUserFromQueue: async (userID, guildID) => {
       const queuer = await prisma.queuer.delete({
-        where: { user_id_queue_id: { user_id: userID, queue_id: queueID } }
+        where: { user_id_queue_id: { user_id: userID, queue_id: guildID } }
       });
       return mapToQueuer(queuer);
     },
-    getUsersInQueue: async (filter, include = null) => {
-      const queuers = await prisma.queuer.findMany({
-        where: filter,
-        include: include
-      });
+    getQueuers: async (id, filter) => {
+      const queuers = await prisma.queuer.findMany({ where: { queue_id: id, ...filter } });
       return queuers.map(mapToQueuer);
-    },
-    getQueueByGuildID: async (guildID) => {
-      const gameQueue = await prisma.queue.findUnique({ where: { guild_id: guildID } });
-      return gameQueue ? mapToQueue(gameQueue, []) : undefined;
-    },
-    createQueue: async (guildID) => {
-      const gameQueue = await prisma.queue.create({ data: { guild_id: guildID } });
-      return mapToQueue(gameQueue, []);
     },
     updateQueuers: async (filter, data) => {
       const res = await prisma.queuer.updateMany({

@@ -1,5 +1,6 @@
 import { infer, z } from 'zod';
 import { Queue as PrismaQueue, Queuer as PrismaQueuer, Rank, Role } from '@prisma/client';
+import { regionEnum } from './user';
 
 export const queuerSchema = z.object({
   userID: z.string(),
@@ -10,8 +11,8 @@ export const queuerSchema = z.object({
 });
 
 export const queueSchema = z.object({
-  id: z.string().uuid(),
-  guild: z.string(),
+  guildID: z.string(),
+  region: regionEnum,
   inQueue: z.array(queuerSchema)
 });
 
@@ -19,20 +20,9 @@ export type Queuer = z.infer<typeof queuerSchema>;
 export type Queue = z.infer<typeof queueSchema>;
 
 // todo: fix any here
-export const mapToQueuer = (dbQueuer: any) =>
+export const mapToQueuer = (dbQueuer: PrismaQueuer) =>
   queuerSchema.parse({
     userID: dbQueuer.user_id,
     popped: dbQueuer.popped,
-    queuedAt: dbQueuer.queued_at,
-    roles: dbQueuer.user.roles,
-    rank: dbQueuer.user.rank
+    queuedAt: dbQueuer.queued_at
   });
-
-export const mapToQueue = (dbQueue: PrismaQueue, dbQueuers: PrismaQueuer[]) => {
-  const queuers = dbQueuers.map(mapToQueuer);
-  return queueSchema.parse({
-    id: dbQueue.id,
-    guild: dbQueue.guild_id,
-    inQueue: queuers
-  });
-};

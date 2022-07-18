@@ -14,6 +14,7 @@ enum Rank {
 }
 
 export const regionEnum = z.enum(['EUW', 'NA']);
+export type Region = z.infer<typeof regionEnum>;
 export const roleEnum = z.enum(['TOP', 'JUNGLE', 'MID', 'BOT', 'SUPPORT']);
 export const rankEnum = z.enum([
   'IRON',
@@ -49,7 +50,6 @@ export const userSchema = z.object({
   elo: z.number().int().min(0).default(0),
   external_elo: z.number().int().min(0).optional()
 });
-
 
 export type User = z.infer<typeof userSchema>;
 

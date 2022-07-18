@@ -45,19 +45,18 @@ export const initMatchmakingService = () => {
       return twoOfEach;
     },
     matchmakeUsers: (users) => {
-      let playerPool = calculatePlayerPool(users, service.canCreatePerfectMatchup(users))
+      let playerPool = calculatePlayerPool(users, service.canCreatePerfectMatchup(users));
       const combinations = generateAllPossibleTeams(playerPool);
       const matchups = combinationsToMatchups(combinations);
-      const sortedMatchups = matchups.sort((a,b) => a.eloDifference - b.eloDifference);
-      return sortedMatchups
-    },
-    
+      const sortedMatchups = matchups.sort((a, b) => a.eloDifference - b.eloDifference);
+      return sortedMatchups;
+    }
   };
   return service;
 };
 
 // Probably needs adjustments
-const OFFROLE_PENALTY : {[key in User["rank"]]: number}= {
+const OFFROLE_PENALTY: { [key in User['rank']]: number } = {
   IRON: 200,
   BRONZE: 200,
   SILVER: 200,
@@ -66,8 +65,8 @@ const OFFROLE_PENALTY : {[key in User["rank"]]: number}= {
   DIAMOND: 100,
   MASTER: 100,
   GRANDMASTER: 100,
-  CHALLENGER:100 
-}
+  CHALLENGER: 100
+};
 
 // Puts every user into a pool based on role.
 export const calculatePlayerPool = (users: User[], includeSecondary = false) => {
@@ -75,10 +74,13 @@ export const calculatePlayerPool = (users: User[], includeSecondary = false) => 
   for (const user of users) {
     talentPool[ROLE_ORDER[user.main]].push(user);
   }
-  // Adds top 5 players secondary role to the pool
   if (includeSecondary) {
+    const poolSizes = talentPool.map((rp) => rp.length);
     for (const user of users) {
-      talentPool[ROLE_ORDER[user.secondary]].push({...user, elo: OFFROLE_PENALTY[user.rank] });
+      const index = ROLE_ORDER[user.secondary];
+      if (poolSizes[index] < 2) {
+        talentPool[index].push({ ...user, elo: OFFROLE_PENALTY[user.rank] });
+      }
     }
   }
   return talentPool;
@@ -91,9 +93,9 @@ export const generateAllPossibleTeams = (pool: User[][]) => {
   const combine = (lists: User[][], acum: User[]) => {
     const last = lists.length === 1;
     for (let i in lists[0]) {
-      const next = lists[0][i]
+      const next = lists[0][i];
       if (acum.includes(next)) {
-          return;
+        return;
       }
       const item = [...acum, next];
       if (last) combinations.push(item as Team);
@@ -104,24 +106,19 @@ export const generateAllPossibleTeams = (pool: User[][]) => {
   return combinations;
 };
 
-
 export const combinationsToMatchups = (combinations: Team[]) => {
   const half = combinations.length / 2;
   const firstHalf = combinations.slice(0, half);
   const secondhalf = combinations.slice(half).reverse();
   const matchups: Matchup[] = [];
   for (let i = 0; i < half; i++) {
-    const team1 = firstHalf[i]
-    const team2 = secondhalf[i]
-    const eloDifference = calculateEloDifference(team1, team2)
-    matchups.push({eloDifference, team1, team2})
+    const team1 = firstHalf[i];
+    const team2 = secondhalf[i];
+    const eloDifference = calculateEloDifference(team1, team2);
+    matchups.push({ eloDifference, team1, team2 });
   }
   return matchups;
 };
-
-// export const noCommonPlayers = (t1: User[], t2: User[]) => {
-//   return !t1.some((player) => t2.includes(player));
-// };
 
 export const calculateEloDifference = (t1: Team, t2: Team) => {
   const elo1 = t1.reduce((prev, curr) => prev + (curr.elo || 0), 0);

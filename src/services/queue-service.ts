@@ -1,28 +1,32 @@
-import { Queue, Queuer } from '../entities/queue';
+import { prisma } from '@prisma/client';
+import { Queue, Queuer, queueSchema } from '../entities/queue';
+import { Region } from '../entities/user';
 import { NotFoundError } from '../errors/errors';
 import { QueueRepository } from './repo/queue-repository';
 import { UserRepository } from './repo/user-repository';
 
 interface QueueService {
-  joinQueue: (userID: string, queueID: string) => Promise<Queuer>;
-  leaveQueue: (userID: string, queueID: string) => Promise<Queuer>;
-  getOrCreateQueueToGuild: (guildID: string) => Promise<Queue>;
-  fetchQueuers: (queue: Queue) => Promise<Queue>;
+  joinQueue: (userID: string, guildID: string) => Promise<Queuer>;
+  leaveQueue: (userID: string, guildID: string) => Promise<Queuer>;
+  getUsersInQueue: (guildID: string) => Promise<Queue>;
   attemptMatchmaking: (queueID: string) => Promise<{ queuers: Queuer[]; valid: true } | { valid: false }>;
 }
 
 export const initQueueService = (queueRepo: QueueRepository, userRepo: UserRepository) => {
   const service: QueueService = {
-    joinQueue: async (userID, queueID) => {
+    joinQueue: async (userID, guildID) => {
       const user = await userRepo.getUserByID(userID);
       if (!user) {
         throw new NotFoundError("You can't join a queue without a profile. Please use /setup");
       }
-      return await queueRepo.addUserToQueue(user.id, queueID);
+      return await queueRepo.addUserToQueue(user.id, guildID);
+    },
+    leaveQueue: async (userID, guildID) => {
+      return await queueRepo.removeUserFromQueue(userID, guildID);
     },
     attemptMatchmaking: async (queueID) => {
       // might sort or filter or order more here
-      const queuers = await queueRepo.getUsersInQueue({ popped: false, queue_id: queueID });
+      const queuers = await queueRepo.getQueuers(queueID, { popped: false });
       if (queuers.length >= 10) {
         const users = queuers.map((queuer) => queuer.userID);
         // pop the queue to all these users
@@ -31,28 +35,13 @@ export const initQueueService = (queueRepo: QueueRepository, userRepo: UserRepos
       }
       return { valid: false };
     },
-    leaveQueue: async (userID, queueID) => {
-      return await queueRepo.removeUserFromQueue(userID, queueID);
-    },
-    getOrCreateQueueToGuild: async (guildID) => {
-      let queue = await queueRepo.getQueueByGuildID(guildID);
-      if (!queue) {
-        queue = await queueRepo.createQueue(guildID);
-      }
-      return queue;
-    },
-    fetchQueuers: async (queue: Queue) => {
-      queue.inQueue = await queueRepo.getUsersInQueue(
-        { queue_id: queue.id },
-        {
-          user: {
-            select: {
-              roles: true,
-              rank: true
-            }
-          }
-        }
-      );
+    getUsersInQueue: async (guildID) => {
+      const queuers = await queueRepo.getQueuers(guildID, { popped: false });
+      const queue = queueSchema.parse({
+        guildID: guildID,
+        region: 'EUW',
+        inQueue: queuers
+      });
       return queue;
     }
   };

@@ -46,22 +46,22 @@ model Scrim {
   status    Status
   voice_ids String[]
   players   Player[]
-  queue     Queue    @relation(fields: [queue_id], references: [id])
+  queue     Queue    @relation(fields: [queue_id], references: [guild_id])
   queue_id  String
   winner    Team?
 }
 
 model Queue {
-  id       String   @id @default(uuid())
-  guild_id String   @unique // Discord 
+  guild_id String   @id
+  region   Region
   queuer   Queuer[]
-  Scrims   Scrim[]
+  scrims   Scrim[]
 }
 
 model Queuer {
   user      User     @relation(fields: [user_id], references: [id])
   user_id   String
-  queue     Queue    @relation(fields: [queue_id], references: [id])
+  queue     Queue    @relation(fields: [queue_id], references: [guild_id])
   queue_id  String
   popped    Boolean  @default(false)
   queued_at DateTime @default(now())

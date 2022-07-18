@@ -3,7 +3,7 @@ import { NotFoundError } from '../errors/errors';
 import { queueService, scrimService } from '../services';
 import { matchMessage, showQueueMessage } from '../components/match-message';
 import { ScrimResultActionRow } from '../components/button';
-import { Team } from '../entities/scrim';
+import { GameSide } from '../entities/scrim';
 
 class QueueCommand extends SlashCommand {
   constructor(creator: SlashCreator) {
@@ -33,19 +33,19 @@ class QueueCommand extends SlashCommand {
   async run(ctx: CommandContext) {
     // returns the subcommand, option, and option value
     // TODO: Get queue by the user's server and guild in the future
-    const queue = await queueService.getOrCreateQueueToGuild(ctx.guildID!!);
 
+    const guildID = ctx.guildID!!;
     switch (ctx.subcommands[0]) {
       case 'join': {
         try {
-          const queuer = await queueService.joinQueue(ctx.user.id, queue.id);
-          const matchmaking = await queueService.attemptMatchmaking(queue.id);
+          const queuer = await queueService.joinQueue(ctx.user.id, guildID);
+          const matchmaking = await queueService.attemptMatchmaking(guildID);
           console.log(matchmaking);
           if (!matchmaking.valid) {
             return { content: `<@${queuer.userID}> has joined the queue`, allowedMentions: { everyone: false } };
           }
           const scrim = await scrimService.createBalancedScrim(
-            queue.id,
+            guildID,
             matchmaking.queuers.map((p) => p.userID)
           );
           const embed = await matchMessage(scrim);
@@ -54,15 +54,15 @@ class QueueCommand extends SlashCommand {
             embeds: [embed as any],
             components: [buttons as any]
           });
-          const reportWin = async (team: Team) => {
+          const reportWin = async (side: GameSide) => {
             if (typeof msg == 'boolean') {
               return;
             }
-            const hasReported = await scrimService.reportWinner(scrim, team);
+            const hasReported = await scrimService.reportWinner(scrim, side);
             if (hasReported) {
               await msg.edit({
                 embeds: [embed as any],
-                content: `${team} team has been registered as victors`,
+                content: `${side} team has been registered as victors`,
                 components: []
               });
             }
@@ -83,12 +83,11 @@ class QueueCommand extends SlashCommand {
         break;
       }
       case 'leave': {
-        const queuer = await queueService.leaveQueue(ctx.user.id, queue.id);
+        const queuer = await queueService.leaveQueue(ctx.user.id, guildID);
         return { content: `<@${queuer.userID}> has left the queue`, allowedMentions: { everyone: false } };
       }
       case 'show': {
-        await ctx.defer(true);
-        const queueWithUsers = await queueService.fetchQueuers(queue);
+        const queueWithUsers = await queueService.getUsersInQueue(guildID);
         const embed = await showQueueMessage(queueWithUsers.inQueue);
         return await ctx.send('', {
           embeds: [embed as any],
