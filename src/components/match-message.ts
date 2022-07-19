@@ -1,5 +1,5 @@
 import { EmbedFieldData, MessageEmbed } from 'discord.js';
-import { Player, Scrim } from '../entities/scrim';
+import { GameSide, Player, Scrim } from '../entities/scrim';
 import { Queuer } from '../entities/queue';
 import { chance } from '../lib/chance';
 import { scrimService } from '../services';
@@ -22,7 +22,13 @@ const teamToString = (player: Player) => `${player.role}: <@${player.userID}>`;
 
 export const matchMessage = async (scrim: Scrim) => {
   const lobbyCreator = chance.pickone(scrim.players);
-  const teams = scrimService.sortPlayerByTeam(scrim.players);
+  // Sort the teams by side
+  const teams: { [key in GameSide]: Player[] } = { RED: [], BLUE: [] };
+  scrim.players.forEach((player) => {
+    teams[player.side].push(player);
+  });
+
+  // Generates the scouting links from opgg
   const opggBlue = await scrimService.generateScoutingLink(scrim.id, 'BLUE');
   const opggRed = await scrimService.generateScoutingLink(scrim.id, 'RED');
 
@@ -42,7 +48,7 @@ export const matchMessage = async (scrim: Scrim) => {
     No autofilled players in this, feel free to swap roles among yourselves.\n
     **MATCH ID**: **${scrim.id}**\n
     **Lobby creator**: <@${lobbyCreator.userID}>\n
-    `
+      `
     )
     .addFields(
       { name: 'Team Blue', value: blueText.join('\n'), inline: true },

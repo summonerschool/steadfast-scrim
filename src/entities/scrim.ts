@@ -28,7 +28,7 @@ export const mapToPlayer = (p: PrismaPlayer) => {
   return playerSchema.parse({
     role: p.role,
     userID: p.user_id,
-    team: p.team
+    side: p.side
   });
 };
 

@@ -4,11 +4,36 @@ import { initMatchmakingService } from '../matchmaking-service';
 
 describe('MatchmakingService', () => {
   const matchmakingService = initMatchmakingService();
-  it('creates', async () => {
-    console.log(matchmakingService.startMatchmaking(users));
-    expect(true).toBe(true);
+  test('The players have two mains of each role', () => {
+    const hasTwoOfEach = matchmakingService.hasTwoMainsOfEachRole(twoOfEach);
+    expect(hasTwoOfEach).toBe(true);
+  });
+  test('The players does not have two mains of each role', () => {
+    const hasTwoOfEachInvalid = matchmakingService.hasTwoMainsOfEachRole(notTwoOfEach);
+    expect(hasTwoOfEachInvalid).toBe(false);
+  });
+  test('Matchmake a valid main-role only group of players', () => {
+    const matchup = matchmakingService.startMatchmaking(twoOfEach);
+    expect(matchup.eloDifference).toEqual(37);
+    const ids = matchup.players.map((p) => p.userID);
+    // No duplicate users
+    expect(ids.length).toEqual(new Set(ids).size);
+  });
+  test('Matchmake a matchup that requires secondary role', () => {
+    const matchup = matchmakingService.startMatchmaking(notTwoOfEach);
+    expect(matchup.eloDifference).toEqual(119);
+    const ids = matchup.players.map((p) => p.userID);
+    // No duplicate users
+    expect(ids.length).toEqual(new Set(ids).size);
+  });
+
+  test('No matchups possible', () => {
+    const matchup = matchmakingService.startMatchmaking(invalid);
+    expect(matchup.players).toEqual([]);
+    expect(matchup.eloDifference).toEqual(0);
   });
 });
+
 const createTestUser = (role?: Role, secondary?: Role, name?: string, elo?: number) =>
   userSchema.parse({
     id: chance.guid(),
@@ -20,28 +45,41 @@ const createTestUser = (role?: Role, secondary?: Role, name?: string, elo?: numb
     elo: elo
   });
 
-// const users: User[] = [
-//   createTestUser('TOP', 'MID', 'huzzle', 2100),
-//   createTestUser('JUNGLE', 'TOP', 'zero', 1400),
-//   createTestUser('MID', 'JUNGLE', 'rayann', 1821),
-//   createTestUser('MID', 'JUNGLE', 'mika', 2400),
-//   createTestUser('MID', 'JUNGLE', 'mo', 2400),
-//   createTestUser('MID', 'JUNGLE', 'zironic', 659),
-//   createTestUser('SUPPORT', 'BOT', 'kharann', 1700),
-//   createTestUser('SUPPORT', 'BOT', 'yyaen', 1657),
-//   createTestUser('SUPPORT', 'BOT', 'z', 1900),
-//   createTestUser('SUPPORT', 'BOT', 'tikka', 1800)
-// ];
+const notTwoOfEach: User[] = [
+  createTestUser('TOP', 'MID', 'huzzle', 2100),
+  createTestUser('JUNGLE', 'TOP', 'zero', 1400),
+  createTestUser('MID', 'JUNGLE', 'rayann', 1821),
+  createTestUser('MID', 'JUNGLE', 'mika', 2400),
+  createTestUser('MID', 'JUNGLE', 'mo', 2400),
+  createTestUser('MID', 'JUNGLE', 'zironic', 659),
+  createTestUser('BOT', 'SUPPORT', 'z', 1900),
+  createTestUser('BOT', 'SUPPORT', 'tikka', 1800),
+  createTestUser('SUPPORT', 'BOT', 'yyaen', 1657),
+  createTestUser('SUPPORT', 'BOT', 'kharann', 1700)
+];
 
-const users: User[] = [
+const twoOfEach: User[] = [
   createTestUser('TOP', 'MID', 'huzzle', 2100),
   createTestUser('MID', 'TOP', 'zero', 1400),
   createTestUser('TOP', 'JUNGLE', 'rayann', 1821),
   createTestUser('JUNGLE', 'JUNGLE', 'mika', 2400),
   createTestUser('BOT', 'JUNGLE', 'mo', 2400),
-  createTestUser('BOT', 'SUPPORT', 'zironic', 659),
+  createTestUser('SUPPORT', 'BOT', 'zironic', 659),
   createTestUser('JUNGLE', 'BOT', 'kharann', 1700),
   createTestUser('MID', 'BOT', 'yyaen', 1657),
   createTestUser('BOT', 'BOT', 'z', 1900),
   createTestUser('SUPPORT', 'BOT', 'tikka', 1800)
+];
+
+const invalid: User[] = [
+  createTestUser('TOP', 'MID', 'huzzle1', 2100),
+  createTestUser('TOP', 'MID', 'huzzle2', 2100),
+  createTestUser('TOP', 'MID', 'huzzle3', 2100),
+  createTestUser('TOP', 'MID', 'huzzle4', 2100),
+  createTestUser('TOP', 'MID', 'huzzle5', 2100),
+  createTestUser('MID', 'JUNGLE', 'rayann1', 1821),
+  createTestUser('MID', 'JUNGLE', 'rayann2', 1821),
+  createTestUser('MID', 'JUNGLE', 'rayann3', 1821),
+  createTestUser('MID', 'JUNGLE', 'rayann4', 1821),
+  createTestUser('MID', 'JUNGLE', 'rayann5', 1821)
 ];

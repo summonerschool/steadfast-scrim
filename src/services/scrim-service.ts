@@ -6,10 +6,8 @@ import { ScrimRepository } from './repo/scrim-repository';
 import { UserRepository } from './repo/user-repository';
 
 export interface ScrimService {
-  generateScoutingLink: (scrimID: number, team: GameSide) => Promise<string>;
+  generateScoutingLink: (scrimID: number, side: GameSide) => Promise<string>;
   createBalancedScrim: (queueID: string, users: string[]) => Promise<Scrim>;
-  sortPlayerByTeam: (players: Player[]) => { RED: Player[]; BLUE: Player[] };
-  isValidTeam: (players: Player[]) => boolean;
   getUserProfilesInScrim: (scrimID: number) => Promise<User[]>;
   reportWinner: (scrim: Scrim, side: GameSide) => Promise<boolean>;
 }
@@ -23,8 +21,8 @@ export const initScrimService = (
 
   const service: ScrimService = {
     // Generates an opgg link for scouting purposes
-    generateScoutingLink: async (scrimID, team) => {
-      const users = await userRepo.getUsers({ player: { some: { scrim_id: scrimID, team: team } } });
+    generateScoutingLink: async (scrimID, side) => {
+      const users = await userRepo.getUsers({ player: { some: { scrim_id: scrimID, side: side } } });
       const summoners = encodeURIComponent(users.map((user) => user.leagueIGN).join(','));
       const server = users[0].region.toLocaleLowerCase();
       const link = `https://op.gg/multisearch/${server}?summoners=${summoners}`;
@@ -40,19 +38,6 @@ export const initScrimService = (
       const matchup = matchmakingService.startMatchmaking(users);
       const scrim = await scrimRepo.createScrim(queueID, matchup.players);
       return scrim;
-    },
-    sortPlayerByTeam: (players) => {
-      const red = players.filter((p) => p.side === 'RED');
-      const blue = players.filter((p) => p.side === 'BLUE');
-      return { RED: red, BLUE: blue };
-    },
-    // Checks if the team size is correct and that the team has 5 unique different roles.
-    isValidTeam: (players: Player[]) => {
-      if (players.length != TEAM_SIZE) {
-        return false;
-      }
-      const roles = players.map((p) => p.role);
-      return new Set(roles).size === roles.length;
     },
     reportWinner: async (scrim, team) => {
       const updated = await scrimRepo.updateScrim({ ...scrim, winner: team });

@@ -20,17 +20,6 @@ describe('ScrimService', () => {
   const userRepository = mockDeep<UserRepository>();
   const matchmakingRepository = initMatchmakingService();
   const scrimService = initScrimService(scrimRepository, userRepository, matchmakingRepository);
-  const ELO_TRANSLATION: { [key: string]: number } = {
-    IRON: 400,
-    BRONZE: 800,
-    SILVER: 1200,
-    GOLD: 1600,
-    PLATINUM: 2000,
-    DIAMOND: 2400,
-    MASTER: 2800,
-    GRANDMASTER: 2800,
-    CHALLENGER: 3000
-  };
 
   it('Creates a valid scouting link', async () => {
     const mockGetUsersResult: User[] = [...new Array(5)].map(() => ({

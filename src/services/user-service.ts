@@ -3,7 +3,6 @@ import { NotFoundError } from '../errors/errors';
 import { UserRepository } from './repo/user-repository';
 import { RiotAPI, RiotAPITypes } from '@fightmegg/riot-api';
 import fetch from 'node-fetch';
-import { userService } from './index';
 import { ELO_TRANSLATION } from '../utils/utils';
 
 export interface UserService {
@@ -25,7 +24,6 @@ export interface UserService {
     summoner: RiotAPITypes.Summoner.SummonerDTO | string
   ) => Promise<{ elo: number; rank: string }>;
   fetchMyMMR: (server: string, leagueIGN: string) => Promise<{ elo: number; rank: string }>;
-  // getUsersByScrim: (scrimID: string) => Promise<User[]>;
 }
 
 export const initUserService = (userRepo: UserRepository, rAPI: RiotAPI): UserService => {

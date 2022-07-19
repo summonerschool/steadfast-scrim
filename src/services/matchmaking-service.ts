@@ -4,13 +4,13 @@ import { Role, ROLE_ORDER, User } from '../entities/user';
 import { chance } from '../lib/chance';
 
 export interface MatchmakingService {
-  canCreatePerfectMatchup: (users: User[]) => boolean;
+  hasTwoMainsOfEachRole: (users: User[]) => boolean;
   startMatchmaking: (users: User[]) => { players: Player[]; eloDifference: number };
 }
 
 export const initMatchmakingService = () => {
   const service: MatchmakingService = {
-    canCreatePerfectMatchup: (users) => {
+    hasTwoMainsOfEachRole: (users) => {
       // checks if we have a perfect match
       const mainRoles = new Map<string, number>();
       for (const user of users) {
@@ -25,19 +25,20 @@ export const initMatchmakingService = () => {
       return true;
     },
     startMatchmaking: (users) => {
-      let playerPool = calculatePlayerPool(users, !service.canCreatePerfectMatchup(users));
-      const combinations = generateAllPossibleTeams(playerPool);
+      const twoOfEach = !service.hasTwoMainsOfEachRole(users);
+      let playerPool = calculatePlayerPool(users, twoOfEach);
+      let combinations = generateAllPossibleTeams(playerPool);
       // team vs team with elo difference. The players are sorted by their ID within the team
-      const matchups = generateMatchups(combinations, users);
-      const sortedMatchups = matchups.sort((a, b) => a.eloDifference - b.eloDifference);
-      // MAYBE GIVE THEM OPTIONS?
-      const { team1, team2 } = sortedMatchups[0];
-
-      // Randomly assign ingame side to the teams
+      let res = generateMatchups(combinations);
+      if (!res.valid) {
+        return { players: [], eloDifference: 0 };
+      }
+      const { team1, team2, eloDifference } = res.matchup;
+      // // Randomly assign ingame side to the teams
       const teams = chance.shuffle([team1, team2]);
       const blueTeam = teamToPlayers(teams[0], 'BLUE', users);
       const redTeam = teamToPlayers(teams[1], 'RED', users);
-      return { players: [...blueTeam, ...redTeam], eloDifference: sortedMatchups[0].eloDifference };
+      return { players: [...blueTeam, ...redTeam], eloDifference };
     }
   };
   return service;
@@ -66,7 +67,7 @@ const OFFROLE_PENALTY: { [key in User['rank']]: number } = {
 };
 
 // Puts every user into a pool based on role.
-export const calculatePlayerPool = (users: User[], includeSecondary = false) => {
+export const calculatePlayerPool = (users: User[], includeSecondary = false, includeAll = false) => {
   const talentPool: Pool = [[], [], [], [], []];
   for (const user of users) {
     talentPool[ROLE_ORDER[user.main]].push(user);
@@ -76,7 +77,8 @@ export const calculatePlayerPool = (users: User[], includeSecondary = false) => 
     for (const user of users) {
       const index = ROLE_ORDER[user.secondary];
       if (poolSizes[index] < 2) {
-        talentPool[index].push({ ...user, elo: OFFROLE_PENALTY[user.rank] });
+        const elo = user.elo - OFFROLE_PENALTY[user.rank];
+        talentPool[index].push({ ...user, elo });
       }
     }
   }
@@ -102,24 +104,33 @@ export const generateAllPossibleTeams = (pool: User[][]) => {
   return combinations;
 };
 
-const generateMatchups = (combinations: Team[], users: User[]) => {
-  const uniques: Matchup[] = [];
-  for (let combo of combinations) {
-    const team = combo.sort((a, b) => a.id.localeCompare(b.id));
-    const enemy: Team = users
-      .sort((a, b) => a.id.localeCompare(b.id))
-      .filter((u) => !team.some((p) => p.leagueIGN == u.leagueIGN)) as Team;
-    // Checks if the opposition is in the unique lists to remove duplicates
-    if (!uniques.some((matchup) => teamIsEqual(matchup.team1, enemy) || teamIsEqual(matchup.team2, enemy))) {
-      uniques.push({ team1: team, team2: enemy, eloDifference: calculateEloDifference(team, enemy) });
+export const generateMatchups = (combinations: Team[]): { valid: true; matchup: Matchup } | { valid: false } => {
+  let best: number = Infinity;
+  let team1: Team | null = null;
+  let team2: Team | null = null;
+  for (let team of combinations) {
+    for (let enemy of combinations) {
+      // check if there exist a
+      const eloDifference = calculateEloDifference(team, enemy);
+      const noSharedPlayers = !team.some((player) => enemy.some((p) => player.id == p.id));
+      if (eloDifference < best && noSharedPlayers) {
+        best = eloDifference;
+        team1 = team;
+        team2 = enemy;
+      }
     }
   }
-  return uniques;
+  if (team1 == null || team2 == null) {
+    return { valid: false };
+  }
+  return { valid: true, matchup: { eloDifference: best, team1: team1, team2: team2 } };
 };
 
-const teamIsEqual = (t1: Team, t2: Team) => {
+const teamIsEqual = (t1: User[], t2: User[]) => {
+  const t1sorted = t1.sort((a, b) => a.id.localeCompare(b.id));
+  const t2sorted = t2.sort((a, b) => a.id.localeCompare(b.id));
   for (let i = 0; i < t1.length; i++) {
-    if (t1[i] != t2[i]) {
+    if (t1sorted[i] != t2sorted[i]) {
       return false;
     }
   }
@@ -127,9 +138,11 @@ const teamIsEqual = (t1: Team, t2: Team) => {
 };
 
 const matchupToString = (matchup: Matchup) => {
-  return `${matchup.team1.map((p) => p.leagueIGN)} vs ${matchup.team2.map((p) => p.leagueIGN)} \nelo diff: ${
-    matchup.eloDifference
-  }`;
+  return `
+  Elo Difference:${matchup.eloDifference}\n
+  ${matchup.team1.map((p) => p.leagueIGN)} vs ${matchup.team2.map((p) => p.leagueIGN)}\n
+  ${matchup.team1.map((p) => p.elo)} vs ${matchup.team2.map((p) => p.elo)}
+  `;
 };
 
 export const calculateEloDifference = (t1: Team, t2: Team) => {
