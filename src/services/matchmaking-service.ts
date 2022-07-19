@@ -1,6 +1,7 @@
 import { Matchup, Pool, Team } from '../entities/matchmaking';
 import { GameSide, Player, playerSchema } from '../entities/scrim';
 import { Role, ROLE_ORDER, User } from '../entities/user';
+import { NoMatchupPossibleError } from '../errors/errors';
 import { chance } from '../lib/chance';
 
 export interface MatchmakingService {
@@ -31,7 +32,7 @@ export const initMatchmakingService = () => {
       // team vs team with elo difference. The players are sorted by their ID within the team
       let res = generateMatchups(combinations);
       if (!res.valid) {
-        return { players: [], eloDifference: 0 };
+        throw new NoMatchupPossibleError('0 matchups possible');
       }
       const { team1, team2, eloDifference } = res.matchup;
       // // Randomly assign ingame side to the teams

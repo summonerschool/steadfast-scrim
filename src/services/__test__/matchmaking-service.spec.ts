@@ -1,4 +1,5 @@
 import { Role, User, userSchema } from '../../entities/user';
+import { NoMatchupPossibleError } from '../../errors/errors';
 import { chance } from '../../lib/chance';
 import { initMatchmakingService } from '../matchmaking-service';
 
@@ -28,9 +29,7 @@ describe('MatchmakingService', () => {
   });
 
   test('No matchups possible', () => {
-    const matchup = matchmakingService.startMatchmaking(invalid);
-    expect(matchup.players).toEqual([]);
-    expect(matchup.eloDifference).toEqual(0);
+    expect(() => matchmakingService.startMatchmaking(invalid)).toThrowError(NoMatchupPossibleError);
   });
 });
 
