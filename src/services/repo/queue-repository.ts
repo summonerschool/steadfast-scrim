@@ -1,6 +1,5 @@
 import { Prisma, PrismaClient } from '@prisma/client';
-import { mapToQueue, mapToQueuer, Queue, Queuer } from '../../entities/queue';
-import { Region } from '../../entities/user';
+import { mapToQueuer, Queuer } from '../../entities/queue';
 
 export interface QueueRepository {
   addUserToQueue: (userID: string, guildID: string) => Promise<Queuer>;
@@ -32,7 +31,7 @@ export const initQueueRepository = (prisma: PrismaClient) => {
       return mapToQueuer(queuer);
     },
     getQueuers: async (id, filter) => {
-      const queuers = await prisma.queuer.findMany({ where: { queue_id: id, ...filter } });
+      const queuers = await prisma.queuer.findMany({ where: { queue_id: id, ...filter }, include: { user: true } });
       return queuers.map(mapToQueuer);
     },
     updateQueuers: async (filter, data) => {

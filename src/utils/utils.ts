@@ -48,3 +48,5 @@ export const SERVER_TO_RIOT_PLATFORM: { [key: string]: RiotAPITypes.LoLRegion } 
   EUNE: PlatformId.EUNE1,
   NA: PlatformId.NA1
 };
+
+export const capitalize = (text: string) => `${text[0].toUpperCase()}${text.slice(1).toLowerCase()}`;

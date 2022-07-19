@@ -3,7 +3,7 @@ import { GameSide, Player, Scrim } from '../entities/scrim';
 import { Queuer } from '../entities/queue';
 import { chance } from '../lib/chance';
 import { scrimService } from '../services';
-import { POSITION_EMOJI_TRANSLATION } from '../utils/utils';
+import { capitalize } from '../utils/utils';
 // @ts-ignore
 import { User } from '../entities/user';
 
@@ -59,41 +59,28 @@ export const matchMessage = async (scrim: Scrim) => {
     .setFooter({ text: 'Anything wrong? spam the shit out of Tikka Masala' });
 };
 
-export const showQueueMessage = async (users: Queuer[]) => {
+export const showQueueMessage = async (users: User[]) => {
   const mentions = users.map((q) => {
-    if (!q.userID.includes('-')) {
-      // todo: remove later
-      return `<@${q.userID}>`;
-    }
+    // if (!q.userID.includes('-')) {
+    // todo: remove later
+    return `<@${q.id}>`;
+    // }
   });
 
-  const embedfields: EmbedFieldData[] = [];
   const rankCount = new Map<User['rank'], number>();
 
   users.forEach((value) => {
     if (value.rank) {
       const count = rankCount.get(value.rank) || 0;
-      rankCount.set(value.rank, count);
+      rankCount.set(value.rank, count + 1);
     }
-
-    let roles_img = '';
-    if (value.roles) {
-      const roles_to_image = value.roles.map((x) => {
-        return `${POSITION_EMOJI_TRANSLATION[x]}`;
-      });
-      roles_img = `${roles_to_image.join('')}`;
-    }
-    // embedfields.push({
-    //   name: `${roles_img}`,
-    //   value: `${capitalize(value.rank)}`,
-    //   inline: true
-    // });
   });
 
   let resultRanks = '';
-  // Object.entries(ranksCount).forEach(([key, value]) => {
-  //   resultRanks += `**${capitalize(key)}**: ${value}\n`;
-  // });
+  for (const [rank, count] of rankCount.entries()) {
+    // TODO: Add emoji rank translation
+    resultRanks += `${capitalize(rank)}: ${count}`;
+  }
 
   return new MessageEmbed()
     .setColor('#698371')
@@ -101,7 +88,6 @@ export const showQueueMessage = async (users: Queuer[]) => {
     .setDescription(
       `
     **Total Ranks:**\n ${resultRanks}
-    **Players:**\n ${mentions}`
-    )
-    .addFields(embedfields);
+    **Players:**\n ${mentions.join('\n')}`
+    );
 };

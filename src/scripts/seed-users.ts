@@ -1,5 +1,6 @@
 import { Prisma, PrismaClient } from '@prisma/client';
 import { Chance } from 'chance';
+import { roleEnum } from '../entities/user';
 
 const prisma = new PrismaClient();
 const chance = new Chance('best-seed');
@@ -8,11 +9,14 @@ const users: Prisma.UserCreateManyInput[] = [...new Array(9)].map(() => ({
   id: chance.guid(),
   league_ign: chance.name(),
   rank: 'SILVER',
-  server: 'EUW'
+  region: 'EUW',
+  main: chance.pickone(roleEnum.options),
+  secondary: chance.pickone(roleEnum.options),
+  elo: chance.integer({ min: 500, max: 2500 })
 }));
 
 const queued: Prisma.QueuerCreateManyInput[] = users.map(({ id }) => ({
-  queue_id: '6e39f3c5-e4cf-4966-b15f-a02340240a4e',
+  queue_id: '826232163082698794',
   user_id: id,
   popped: false
 }));

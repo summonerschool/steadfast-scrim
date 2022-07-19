@@ -1,6 +1,4 @@
-import { prisma } from '@prisma/client';
 import { Queue, Queuer, queueSchema } from '../entities/queue';
-import { Region } from '../entities/user';
 import { NotFoundError } from '../errors/errors';
 import { QueueRepository } from './repo/queue-repository';
 import { UserRepository } from './repo/user-repository';
@@ -36,11 +34,11 @@ export const initQueueService = (queueRepo: QueueRepository, userRepo: UserRepos
       return { valid: false };
     },
     getUsersInQueue: async (guildID) => {
-      const queuers = await queueRepo.getQueuers(guildID, { popped: false });
+      const users = await userRepo.getUsers({ queuer: { some: { queue_id: guildID } } });
       const queue = queueSchema.parse({
         guildID: guildID,
         region: 'EUW',
-        inQueue: queuers
+        inQueue: users
       });
       return queue;
     }

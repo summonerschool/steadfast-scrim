@@ -5,14 +5,6 @@ import { initMatchmakingService } from '../matchmaking-service';
 
 describe('MatchmakingService', () => {
   const matchmakingService = initMatchmakingService();
-  test('The players have two mains of each role', () => {
-    const hasTwoOfEach = matchmakingService.hasTwoMainsOfEachRole(twoOfEach);
-    expect(hasTwoOfEach).toBe(true);
-  });
-  test('The players does not have two mains of each role', () => {
-    const hasTwoOfEachInvalid = matchmakingService.hasTwoMainsOfEachRole(notTwoOfEach);
-    expect(hasTwoOfEachInvalid).toBe(false);
-  });
   test('Matchmake a valid main-role only group of players', () => {
     const matchup = matchmakingService.startMatchmaking(twoOfEach);
     expect(matchup.eloDifference).toEqual(37);

@@ -1,19 +1,17 @@
 import { infer, z } from 'zod';
 import { Queue as PrismaQueue, Queuer as PrismaQueuer, Rank, Role } from '@prisma/client';
-import { regionEnum } from './user';
+import { regionEnum, userSchema } from './user';
 
 export const queuerSchema = z.object({
   userID: z.string(),
   popped: z.boolean(),
-  queuedAt: z.date(),
-  roles: z.array(z.nativeEnum(Role)).optional(),
-  rank: z.nativeEnum(Rank).optional()
+  queuedAt: z.date()
 });
 
 export const queueSchema = z.object({
   guildID: z.string(),
   region: regionEnum,
-  inQueue: z.array(queuerSchema)
+  inQueue: z.array(userSchema)
 });
 
 export type Queuer = z.infer<typeof queuerSchema>;

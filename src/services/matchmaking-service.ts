@@ -5,32 +5,16 @@ import { NoMatchupPossibleError } from '../errors/errors';
 import { chance } from '../lib/chance';
 
 export interface MatchmakingService {
-  hasTwoMainsOfEachRole: (users: User[]) => boolean;
   startMatchmaking: (users: User[]) => { players: Player[]; eloDifference: number };
 }
 
 export const initMatchmakingService = () => {
   const service: MatchmakingService = {
-    hasTwoMainsOfEachRole: (users) => {
-      // checks if we have a perfect match
-      const mainRoles = new Map<string, number>();
-      for (const user of users) {
-        // Initialize role at 0 if its not there
-        mainRoles.set(user.main, (mainRoles.get(user.main) || 0) + 1);
-      }
-      for (let count of mainRoles.values()) {
-        if (count != 2) {
-          return false;
-        }
-      }
-      return true;
-    },
     startMatchmaking: (users) => {
-      const twoOfEach = !service.hasTwoMainsOfEachRole(users);
-      let playerPool = calculatePlayerPool(users, twoOfEach);
+      let playerPool = calculatePlayerPool(users);
       let combinations = generateAllPossibleTeams(playerPool);
       // team vs team with elo difference. The players are sorted by their ID within the team
-      let res = generateMatchups(combinations);
+      let res = generateMatchups(combinations, users);
       if (!res.valid) {
         throw new NoMatchupPossibleError('0 matchups possible');
       }
@@ -68,19 +52,16 @@ const OFFROLE_PENALTY: { [key in User['rank']]: number } = {
 };
 
 // Puts every user into a pool based on role.
-export const calculatePlayerPool = (users: User[], includeSecondary = false, includeAll = false) => {
+export const calculatePlayerPool = (users: User[], includeSecondary = false) => {
   const talentPool: Pool = [[], [], [], [], []];
   for (const user of users) {
     talentPool[ROLE_ORDER[user.main]].push(user);
   }
-  if (includeSecondary) {
-    const poolSizes = talentPool.map((rp) => rp.length);
+  if (talentPool.some((rp) => rp.length < 2)) {
     for (const user of users) {
       const index = ROLE_ORDER[user.secondary];
-      if (poolSizes[index] < 2) {
-        const elo = user.elo - OFFROLE_PENALTY[user.rank];
-        talentPool[index].push({ ...user, elo });
-      }
+      const elo = user.elo - OFFROLE_PENALTY[user.rank];
+      talentPool[index].push({ ...user, elo });
     }
   }
   return talentPool;
@@ -105,19 +86,32 @@ export const generateAllPossibleTeams = (pool: User[][]) => {
   return combinations;
 };
 
-export const generateMatchups = (combinations: Team[]): { valid: true; matchup: Matchup } | { valid: false } => {
+export const generateMatchups = (
+  combinations: Team[],
+  users: User[]
+): { valid: true; matchup: Matchup } | { valid: false } => {
   let best: number = Infinity;
   let team1: Team | null = null;
   let team2: Team | null = null;
+  let bestOffroleCount = Infinity;
+
+  const getOffroleCount = createCountOffroleHandler(users);
+  console.log(combinations.length);
   for (let team of combinations) {
     for (let enemy of combinations) {
       // check if there exist a
       const eloDifference = calculateEloDifference(team, enemy);
       const noSharedPlayers = !team.some((player) => enemy.some((p) => player.id == p.id));
-      if (eloDifference < best && noSharedPlayers) {
+      const currentCount = getOffroleCount(enemy) + getOffroleCount(team);
+
+      // If the current offrole count is lower, replace the current best matchup
+      // If the current offrole count is equal/lower and the elo difference is better, replace the matchup
+      // Both teams needs to not share any common enemies
+      if (bestOffroleCount >= currentCount && eloDifference < best && noSharedPlayers) {
         best = eloDifference;
         team1 = team;
         team2 = enemy;
+        bestOffroleCount = currentCount;
       }
     }
   }
@@ -127,15 +121,16 @@ export const generateMatchups = (combinations: Team[]): { valid: true; matchup: 
   return { valid: true, matchup: { eloDifference: best, team1: team1, team2: team2 } };
 };
 
-const teamIsEqual = (t1: User[], t2: User[]) => {
-  const t1sorted = t1.sort((a, b) => a.id.localeCompare(b.id));
-  const t2sorted = t2.sort((a, b) => a.id.localeCompare(b.id));
-  for (let i = 0; i < t1.length; i++) {
-    if (t1sorted[i] != t2sorted[i]) {
-      return false;
+const createCountOffroleHandler = (initialUsers: User[]) => (team: Team) => {
+  let counter = 0;
+  for (const u of team) {
+    const user = initialUsers.find((initial) => initial.id === u.id);
+    // The user is on offrole if they have less elo than the initial one
+    if (user && user.elo > u.elo) {
+      counter += 1;
     }
   }
-  return true;
+  return counter;
 };
 
 const matchupToString = (matchup: Matchup) => {
