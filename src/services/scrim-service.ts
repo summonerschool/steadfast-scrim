@@ -8,7 +8,7 @@ import { UserRepository } from './repo/user-repository';
 export interface ScrimService {
   generateScoutingLink: (scrimID: number, side: GameSide) => Promise<string>;
   createBalancedScrim: (queueID: string, users: string[]) => Promise<Scrim>;
-  getUserProfilesInScrim: (scrimID: number) => Promise<User[]>;
+  getUserProfilesInScrim: (scrimID: number, side: GameSide) => Promise<User[]>;
   reportWinner: (scrim: Scrim, side: GameSide) => Promise<boolean>;
 }
 
@@ -22,14 +22,14 @@ export const initScrimService = (
   const service: ScrimService = {
     // Generates an opgg link for scouting purposes
     generateScoutingLink: async (scrimID, side) => {
-      const users = await userRepo.getUsers({ player: { some: { scrim_id: scrimID, side: side } } });
+      const users = await service.getUserProfilesInScrim(scrimID, side)
       const summoners = encodeURIComponent(users.map((user) => user.leagueIGN).join(','));
       const server = users[0].region.toLocaleLowerCase();
       const link = `https://op.gg/multisearch/${server}?summoners=${summoners}`;
       return link;
     },
-    getUserProfilesInScrim: async (scrimID: number) => {
-      const users = await userRepo.getUsers({ player: { some: { scrim_id: scrimID } } });
+    getUserProfilesInScrim: async (scrimID: number, side: GameSide) => {
+      const users = await userRepo.getUsers({ player: { some: { scrim_id: scrimID, side: side } } });
       return users;
     },
     createBalancedScrim: async (queueID, usersIDs) => {

@@ -1,9 +1,8 @@
 import { SlashCommand, CommandOptionType, CommandContext, SlashCreator } from 'slash-create';
-import { NotFoundError } from '../errors/errors';
 import { queueService, scrimService } from '../services';
 import { matchMessage, showQueueMessage } from '../components/match-message';
-import { ScrimResultActionRow } from '../components/button';
-import { GameSide } from '../entities/scrim';
+import { client } from '..';
+import { lobbyDetails } from '../components/lobby-details';
 
 class QueueCommand extends SlashCommand {
   constructor(creator: SlashCreator) {
@@ -49,32 +48,22 @@ class QueueCommand extends SlashCommand {
             matchmaking.queuers.map((p) => p.userID)
           );
           const embed = await matchMessage(scrim);
-          const buttons = ScrimResultActionRow();
-          const msg = await ctx.send({
-            embeds: [embed as any],
-            components: [buttons as any]
+          await ctx.send({
+            embeds: [embed as any]
           });
-          const reportWin = async (side: GameSide) => {
-            if (typeof msg == 'boolean') {
-              return;
-            }
-            const hasReported = await scrimService.reportWinner(scrim, side);
-            if (hasReported) {
-              await msg.edit({
-                embeds: [embed as any],
-                content: `${side} team has been registered as victors`,
-                components: []
-              });
-            }
-          };
-          ctx.registerComponent('blue-win', async (btnCtx) => {
-            await reportWin('BLUE');
+
+          const userPromises = scrim.players
+            .filter((p) => !p.userID.includes('-'))
+            .map((p) => client.users.fetch(p.userID, { cache: false }));
+          const discordUsers = await Promise.all(userPromises);
+          const messagePromises = discordUsers.map(async (user) => {
+            const embed2 = await lobbyDetails(scrim, user.id);
+            return user.send({ embeds: [embed, embed2] });
           });
-          ctx.registerComponent('red-win', async (btnCtx) => {
-            await reportWin('RED');
-          });
+          const msgs = await Promise.all(messagePromises);
+          console.log(msgs)
         } catch (err) {
-          if (err instanceof NotFoundError) {
+          if (err instanceof Error) {
             return err.message;
           } else {
             console.error(err);
