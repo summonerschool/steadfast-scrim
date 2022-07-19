@@ -1,5 +1,5 @@
-import { infer, z } from 'zod';
-import { Queue as PrismaQueue, Queuer as PrismaQueuer, Rank, Role } from '@prisma/client';
+import { z } from 'zod';
+import { Queuer as PrismaQueuer } from '@prisma/client';
 import { regionEnum, userSchema } from './user';
 
 export const queuerSchema = z.object({

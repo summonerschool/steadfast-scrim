@@ -96,7 +96,6 @@ export const generateMatchups = (
   let bestOffroleCount = Infinity;
 
   const getOffroleCount = createCountOffroleHandler(users);
-  console.log(combinations.length);
   for (let team of combinations) {
     for (let enemy of combinations) {
       // check if there exist a
