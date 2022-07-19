@@ -5,7 +5,7 @@ import { initMatchmakingService } from '../matchmaking-service';
 describe('MatchmakingService', () => {
   const matchmakingService = initMatchmakingService();
   it('creates', async () => {
-    console.log(matchmakingService.matchmakeUsers(users));
+    console.log(matchmakingService.startMatchmaking(users));
     expect(true).toBe(true);
   });
 });

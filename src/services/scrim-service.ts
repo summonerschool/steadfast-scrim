@@ -5,17 +5,20 @@ import { MatchmakingService } from './matchmaking-service';
 import { ScrimRepository } from './repo/scrim-repository';
 import { UserRepository } from './repo/user-repository';
 
-
 export interface ScrimService {
   generateScoutingLink: (scrimID: number, team: GameSide) => Promise<string>;
   createBalancedScrim: (queueID: string, users: string[]) => Promise<Scrim>;
   sortPlayerByTeam: (players: Player[]) => { RED: Player[]; BLUE: Player[] };
   isValidTeam: (players: Player[]) => boolean;
   getUserProfilesInScrim: (scrimID: number) => Promise<User[]>;
-  reportWinner: (scrim: Scrim, side: GameSide ) => Promise<boolean>;
+  reportWinner: (scrim: Scrim, side: GameSide) => Promise<boolean>;
 }
 
-export const initScrimService = (scrimRepo: ScrimRepository, userRepo: UserRepository, matchmakingService: MatchmakingService) => {
+export const initScrimService = (
+  scrimRepo: ScrimRepository,
+  userRepo: UserRepository,
+  matchmakingService: MatchmakingService
+) => {
   const TEAM_SIZE = 5;
 
   const service: ScrimService = {
@@ -31,15 +34,16 @@ export const initScrimService = (scrimRepo: ScrimRepository, userRepo: UserRepos
       const users = await userRepo.getUsers({ player: { some: { scrim_id: scrimID } } });
       return users;
     },
-    createBalancedScrim: async (queueID, users) => {
+    createBalancedScrim: async (queueID, usersIDs) => {
       // Create scrim from queue id and a list of player ids
-      const players = await matchmakingService.randomTeambalance(users);
-      const scrim = await scrimRepo.createScrim(queueID, players);
+      const users = await userRepo.getUsers({ id: { in: usersIDs } });
+      const matchup = matchmakingService.startMatchmaking(users);
+      const scrim = await scrimRepo.createScrim(queueID, matchup.players);
       return scrim;
     },
     sortPlayerByTeam: (players) => {
-      const red = players.filter((p) => p.team === 'RED');
-      const blue = players.filter((p) => p.team === 'BLUE');
+      const red = players.filter((p) => p.side === 'RED');
+      const blue = players.filter((p) => p.side === 'BLUE');
       return { RED: red, BLUE: blue };
     },
     // Checks if the team size is correct and that the team has 5 unique different roles.

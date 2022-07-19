@@ -25,7 +25,7 @@ model User {
   player       Player[]
 }
 
-enum Team {
+enum Side {
   RED
   BLUE
 }
@@ -36,7 +36,7 @@ model Player {
   user_id  String
   scrim_id Int
   role     Role
-  team     Team
+  side     Side
 
   @@id([user_id, scrim_id])
 }
@@ -48,7 +48,7 @@ model Scrim {
   players   Player[]
   queue     Queue    @relation(fields: [queue_id], references: [guild_id])
   queue_id  String
-  winner    Team?
+  winner    Side?
 }
 
 model Queue {

@@ -4,30 +4,12 @@ import { Role, ROLE_ORDER, User } from '../entities/user';
 import { chance } from '../lib/chance';
 
 export interface MatchmakingService {
-  randomTeambalance: (userIDs: string[]) => Promise<Player[]>;
   canCreatePerfectMatchup: (users: User[]) => boolean;
-  matchmakeUsers: (users: User[]) => Player[];
+  startMatchmaking: (users: User[]) => { players: Player[]; eloDifference: number };
 }
 
 export const initMatchmakingService = () => {
   const service: MatchmakingService = {
-    randomTeambalance: async (userIDs) => {
-      const roles = {
-        BLUE: chance.shuffle(Object.values(playerSchema.shape.role.enum)),
-        RED: chance.shuffle(Object.values(playerSchema.shape.role.enum))
-      };
-      const users = chance.shuffle(Object.values(userIDs));
-
-      const players = users.map((id, i) => {
-        const team = i > 4 ? 'BLUE' : 'RED';
-        return playerSchema.parse({
-          userID: id,
-          role: roles[team].pop(),
-          team: team
-        });
-      });
-      return players;
-    },
     canCreatePerfectMatchup: (users) => {
       // checks if we have a perfect match
       const mainRoles = new Map<string, number>();
@@ -35,16 +17,14 @@ export const initMatchmakingService = () => {
         // Initialize role at 0 if its not there
         mainRoles.set(user.main, (mainRoles.get(user.main) || 0) + 1);
       }
-      let twoOfEach = true;
       for (let count of mainRoles.values()) {
         if (count != 2) {
-          twoOfEach = false;
-          break;
+          return false;
         }
       }
-      return twoOfEach;
+      return true;
     },
-    matchmakeUsers: (users) => {
+    startMatchmaking: (users) => {
       let playerPool = calculatePlayerPool(users, !service.canCreatePerfectMatchup(users));
       const combinations = generateAllPossibleTeams(playerPool);
       // team vs team with elo difference. The players are sorted by their ID within the team
@@ -52,10 +32,12 @@ export const initMatchmakingService = () => {
       const sortedMatchups = matchups.sort((a, b) => a.eloDifference - b.eloDifference);
       // MAYBE GIVE THEM OPTIONS?
       const { team1, team2 } = sortedMatchups[0];
-      const firstPick = chance.integer({min: 1, max: 2})
-      const blueTeam = teamToPlayers(firstPick == 1 ? team1 : team2, "BLUE", users) 
-      const redTeam = teamToPlayers(firstPick == 1 ? team2: team1, "RED", users) 
-      return [...blueTeam, ...redTeam];
+
+      // Randomly assign ingame side to the teams
+      const teams = chance.shuffle([team1, team2]);
+      const blueTeam = teamToPlayers(teams[0], 'BLUE', users);
+      const redTeam = teamToPlayers(teams[1], 'RED', users);
+      return { players: [...blueTeam, ...redTeam], eloDifference: sortedMatchups[0].eloDifference };
     }
   };
   return service;
@@ -67,7 +49,7 @@ const teamToPlayers = (team: Team, side: GameSide, users: User[]) => {
     const isOnOffrole = user.elo > player.elo;
     return { userID: user.id, role: isOnOffrole ? user.secondary : user.main, side: side };
   });
-  return players
+  return players;
 };
 
 // Probably needs adjustments
@@ -155,6 +137,3 @@ export const calculateEloDifference = (t1: Team, t2: Team) => {
   const elo2 = t2.reduce((prev, curr) => prev + (curr.elo || 0), 0);
   return Math.abs(elo1 - elo2);
 };
-
-// Assign an unsorted list of players (team) into their Main role (or secondary if on offrole)
-const assignUsersToRoles = (team: Team, users: User[]) => {};
