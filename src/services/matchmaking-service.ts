@@ -108,17 +108,21 @@ export const generateMatchups = (
       // If the current offrole count is lower, replace the current best matchup
       // If the current offrole count is equal/lower and the elo difference is better, replace the matchup
       // Both teams needs to not share any common enemies
-      if (bestOffroleCount >= currentCount && eloDifference < best && noSharedPlayers) {
-        best = eloDifference;
-        team1 = team;
-        team2 = enemy;
-        bestOffroleCount = currentCount;
+      if (noSharedPlayers) {
+        if (currentCount < bestOffroleCount || (currentCount === bestOffroleCount && eloDifference < best)) {
+          // replace matchup
+          best = eloDifference;
+          team1 = team;
+          team2 = enemy;
+          bestOffroleCount = currentCount;
+        }
       }
     }
   }
   if (team1 == null || team2 == null) {
     return { valid: false };
   }
+  console.info({ bestOffroleCount, eloDiff: calculateEloDifference(team1, team2) });
   return { valid: true, matchup: { eloDifference: best, team1: team1, team2: team2 } };
 };
 
