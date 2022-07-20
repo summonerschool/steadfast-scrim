@@ -79,6 +79,11 @@ class SetupCommand extends SlashCommand {
   async run(ctx: CommandContext) {
     const { ign, rank, region, main, secondary } = ctx.options;
 
+    if (main === secondary) {
+      console.log('someone tried to pick the same main and secondary role');
+      return 'Main and secondary role needs to be different';
+    }
+
     const rankInfo = await userService.fetchMyMMR(region, ign).catch(() => {
       return userService.fetchRiotMMR(regionEnum.parse(region), ign, rank);
     });
