@@ -79,19 +79,18 @@ class SetupCommand extends SlashCommand {
   async run(ctx: CommandContext) {
     const { ign, rank, region, main, secondary } = ctx.options;
 
-    console.info(rank);
     const rankInfo = await userService.fetchMyMMR(region, ign).catch(() => {
-      return userService.fetchExternalUserMMR(regionEnum.parse(region), ign);
+      return userService.fetchRiotMMR(regionEnum.parse(region), ign, rank);
     });
     console.info('external rank is ' + rankInfo.rank);
     const user = await userService.setUserProfile(
       ctx.user.id,
       ign,
-      rank,
+      rankInfo.rank,
       region,
       main,
       secondary,
-      ELO_TRANSLATION[rank],
+      rankInfo.elo,
       rankInfo.elo
     );
     return {
@@ -201,7 +200,7 @@ class SetupCommand extends SlashCommand {
 
     // Format text for the embed
     const rankInfo = await userService.fetchMyMMR(this.server, this.ign).catch(() => {
-      return userService.fetchExternalUserMMR(regionEnum.parse(this.server), this.ign);
+      return userService.fetchRiotMMR(regionEnum.parse(this.server), this.ign);
     });
 
     // const roles_to_image = this.roles.map((x) => {

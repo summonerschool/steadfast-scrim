@@ -21,7 +21,11 @@ export interface UserService {
   setUserElo: (id: string, elo: number, external_elo?: number | undefined) => Promise<User>;
   getUserProfile: (id: string) => Promise<User>;
   fetchMyMMR: (server: string, leagueIGN: string) => Promise<{ elo: number; rank: string }>;
-  fetchExternalUserMMR: (region: Region, leagueIGN: string) => Promise<{ elo: number; rank: string }>;
+  fetchRiotMMR: (
+    region: Region,
+    leagueIGN: string,
+    fallbackRank: User['rank']
+  ) => Promise<{ elo: number; rank: string }>;
 }
 
 export const initUserService = (userRepo: UserRepository): UserService => {
@@ -46,7 +50,7 @@ export const initUserService = (userRepo: UserRepository): UserService => {
       if (!user) throw new NotFoundError(`User(<@${id}>) does not have a profile. Please use /setup`);
       return user;
     },
-    fetchExternalUserMMR: async (region: Region, leagueIGN: string) => {
+    fetchRiotMMR: async (region, leagueIGN, fallbackRank) => {
       try {
         const SUMMONER_API_URL = `https://${
           RIOT_SERVERS[region]
@@ -65,15 +69,13 @@ export const initUserService = (userRepo: UserRepository): UserService => {
           }
         });
         const rankedSolo = leagues.data.find((entry) => entry.queueType === 'RANKED_SOLO_5x5');
-        console.log(rankedSolo);
         if (!rankedSolo) {
-          return { elo: ELO_TRANSLATION['GOLD'], rank: 'GOLD' };
+          return { elo: ELO_TRANSLATION[fallbackRank], rank: fallbackRank };
         }
         let elo = ELO_TRANSLATION[rankedSolo.tier];
         return { elo, rank: rankedSolo.rank };
       } catch (e) {
-        console.log(e);
-        return { elo: ELO_TRANSLATION['GOLD'], rank: 'GOLD' };
+        return { elo: ELO_TRANSLATION[fallbackRank], rank: fallbackRank };
       }
     },
     fetchMyMMR: async (server, leagueIGN) => {
