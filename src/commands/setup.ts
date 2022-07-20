@@ -198,10 +198,10 @@ class SetupCommand extends SlashCommand {
       return;
     }
 
-    // Format text for the embed
-    const rankInfo = await userService.fetchMyMMR(this.server, this.ign).catch(() => {
-      return userService.fetchRiotMMR(regionEnum.parse(this.server), this.ign);
-    });
+    // // Format text for the embed
+    // const rankInfo = await userService.fetchMyMMR(this.server, this.ign).catch(() => {
+    //   return userService.fetchRiotMMR(regionEnum.parse(this.server), this.ign);
+    // });
 
     // const roles_to_image = this.roles.map((x) => {
     //   // return `![${x}](${POSITION_IMAGE_TRANSLATION[x]})`;
