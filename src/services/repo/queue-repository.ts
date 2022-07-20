@@ -20,7 +20,9 @@ export const initQueueRepository = (prisma: PrismaClient) => {
           },
           user: { connect: { id: userID } }
         },
-        update: {}
+        update: {
+          popped: false
+        }
       });
       return mapToQueuer(queuer);
     },
