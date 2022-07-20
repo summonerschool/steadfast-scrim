@@ -76,7 +76,7 @@ export const showQueueMessage = async (users: User[]) => {
   let resultRanks = '';
   for (const [rank, count] of rankCount.entries()) {
     // TODO: Add emoji rank translation
-    resultRanks += `${capitalize(rank)}: ${count}`;
+    resultRanks += `${capitalize(rank)}: ${count}\n`;
   }
 
   return new EmbedBuilder()
