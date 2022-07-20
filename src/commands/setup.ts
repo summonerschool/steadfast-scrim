@@ -79,9 +79,11 @@ class SetupCommand extends SlashCommand {
   async run(ctx: CommandContext) {
     const { ign, rank, region, main, secondary } = ctx.options;
 
+    console.info(rank);
     const rankInfo = await userService.fetchMyMMR(region, ign).catch(() => {
       return userService.fetchExternalUserMMR(regionEnum.parse(region), ign);
     });
+    console.info('external rank is ' + rankInfo.rank);
     const user = await userService.setUserProfile(
       ctx.user.id,
       ign,
