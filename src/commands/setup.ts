@@ -11,8 +11,9 @@ import {
 } from 'slash-create';
 import { userService } from '../services';
 // @ts-ignore
-import { capitalize, POSITION_EMOJI_TRANSLATION, SERVER_TO_RIOT_PLATFORM } from '../utils/utils';
+import { capitalize, ELO_TRANSLATION, POSITION_EMOJI_TRANSLATION } from '../utils/utils';
 import { SetupFeedbackEmbed } from '../components/setup-feedback';
+import { regionEnum } from '../entities/user';
 
 const rank = Object.entries(Rank).map(([key, val]) => ({ name: capitalize(key), value: val }));
 const roles = Object.entries(Role).map(([key, val]) => ({
@@ -78,8 +79,8 @@ class SetupCommand extends SlashCommand {
   async run(ctx: CommandContext) {
     const { ign, rank, region, main, secondary } = ctx.options;
 
-    const rankInfo = await userService.fetchMyMMR(region, ign).catch(async () => {
-      return await userService.fetchRiotRank(SERVER_TO_RIOT_PLATFORM[region], ign);
+    const rankInfo = await userService.fetchMyMMR(region, ign).catch(() => {
+      return userService.fetchExternalUserMMR(regionEnum.parse(region), ign);
     });
     const user = await userService.setUserProfile(
       ctx.user.id,
@@ -197,14 +198,14 @@ class SetupCommand extends SlashCommand {
     }
 
     // Format text for the embed
-    const rankInfo = await userService.fetchMyMMR(this.server, this.ign).catch(async () => {
-      return await userService.fetchRiotRank(SERVER_TO_RIOT_PLATFORM[this.server || 'EUW'], this.ign);
+    const rankInfo = await userService.fetchMyMMR(this.server, this.ign).catch(() => {
+      return userService.fetchExternalUserMMR(regionEnum.parse(this.server), this.ign);
     });
 
-    const roles_to_image = this.roles.map((x) => {
-      // return `![${x}](${POSITION_IMAGE_TRANSLATION[x]})`;
-      return `${POSITION_EMOJI_TRANSLATION[x]}`;
-    });
+    // const roles_to_image = this.roles.map((x) => {
+    //   // return `![${x}](${POSITION_IMAGE_TRANSLATION[x]})`;
+    //   return `${POSITION_EMOJI_TRANSLATION[x]}`;
+    // });
 
     // setup is complete here, show them the info and confirm button
     await followup.edit('', {
@@ -243,8 +244,8 @@ class SetupCommand extends SlashCommand {
           this.server,
           this.roles[0],
           this.roles[1],
-          rankInfo.elo,
-          rankInfo.elo
+          ELO_TRANSLATION[this.rank],
+          ELO_TRANSLATION[this.rank]
         );
       } catch (e) {
         console.log(e);

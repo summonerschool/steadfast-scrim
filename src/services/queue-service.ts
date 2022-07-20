@@ -34,7 +34,7 @@ export const initQueueService = (queueRepo: QueueRepository, userRepo: UserRepos
       return { valid: false };
     },
     getUsersInQueue: async (guildID) => {
-      const users = await userRepo.getUsers({ queuer: { some: { queue_id: guildID } } });
+      const users = await userRepo.getUsers({ queuer: { some: { queue_id: guildID, popped: false } } });
       const queue = queueSchema.parse({
         guildID: guildID,
         region: 'EUW',

@@ -1,6 +1,3 @@
-import { PlatformId } from '@fightmegg/riot-api';
-import { RiotAPITypes } from '@fightmegg/riot-api/dist/esm/@types';
-
 export const ELO_TRANSLATION: { [key: string]: number } = {
   IRON: 400,
   BRONZE: 800,
@@ -43,10 +40,10 @@ export const POSITION_EMOJI_TRANSLATION: { [key: string]: string } = {
   SUPPORT: '<:SUPPORT:996381337139281971>'
 };
 
-export const SERVER_TO_RIOT_PLATFORM: { [key: string]: RiotAPITypes.LoLRegion } = {
-  EUW: PlatformId.EUW1,
-  EUNE: PlatformId.EUNE1,
-  NA: PlatformId.NA1
+export const RIOT_SERVERS = {
+  EUW: 'euw1',
+  EUNE: 'eune1',
+  NA: 'na1'
 };
 
 export const capitalize = (text: string) => `${text[0].toUpperCase()}${text.slice(1).toLowerCase()}`;

@@ -1,9 +1,11 @@
-import { User, userSchema } from '../entities/user';
+import { rankEnum, Region, User, userSchema } from '../entities/user';
 import { NotFoundError } from '../errors/errors';
 import { UserRepository } from './repo/user-repository';
-import { RiotAPI, RiotAPITypes } from '@fightmegg/riot-api';
 import fetch from 'node-fetch';
-import { ELO_TRANSLATION } from '../utils/utils';
+import dotenv from 'dotenv';
+import { LeagueEntry, SummonerResponse } from '../entities/riot';
+import { ELO_TRANSLATION, RIOT_SERVERS } from '../utils/utils';
+dotenv.config();
 
 export interface UserService {
   setUserProfile: (
@@ -18,15 +20,11 @@ export interface UserService {
   ) => Promise<User>;
   setUserElo: (id: string, elo: number, external_elo?: number | undefined) => Promise<User>;
   getUserProfile: (id: string) => Promise<User>;
-  fetchRiotUser: (server: RiotAPITypes.LoLRegion, league_ign: string) => Promise<RiotAPITypes.Summoner.SummonerDTO>;
-  fetchRiotRank: (
-    server: RiotAPITypes.LoLRegion,
-    summoner: RiotAPITypes.Summoner.SummonerDTO | string
-  ) => Promise<{ elo: number; rank: string }>;
   fetchMyMMR: (server: string, leagueIGN: string) => Promise<{ elo: number; rank: string }>;
+  fetchExternalUserMMR: (region: Region, leagueIGN: string) => Promise<{ elo: number; rank: string }>;
 }
 
-export const initUserService = (userRepo: UserRepository, rAPI: RiotAPI): UserService => {
+export const initUserService = (userRepo: UserRepository): UserService => {
   const service: UserService = {
     setUserProfile: async (id, leagueIGN, rank, region, main, secondary, elo?: number, external_elo?: number) => {
       const data = { id, leagueIGN, rank, region, main, secondary, elo, external_elo };
@@ -48,45 +46,41 @@ export const initUserService = (userRepo: UserRepository, rAPI: RiotAPI): UserSe
       if (!user) throw new NotFoundError(`User(<@${id}>) does not have a profile. Please use /setup`);
       return user;
     },
-    fetchRiotUser: async (server, league_ign) => {
-      const summoner: RiotAPITypes.Summoner.SummonerDTO = await rAPI.summoner
-        .getBySummonerName({
-          region: server,
-          summonerName: league_ign
-        })
-        .catch(() => {
-          throw new NotFoundError(`League user not found, please verify details and try again.`);
+    fetchExternalUserMMR: async (region: Region, leagueIGN: string) => {
+      try {
+        const SUMMONER_API_URL = new URL(
+          `https://${
+            RIOT_SERVERS[region]
+          }.api.riotgames.com/lol/summoner/v4/summoners/by-name/${leagueIGN.toLowerCase()}`
+        );
+        console.log(SUMMONER_API_URL);
+        const RIOT_KEY = process.env.RIOT_API_KEY!!;
+        const summonerResponse = await fetch(SUMMONER_API_URL, {
+          headers: {
+            'X-Riot-Token': RIOT_KEY
+          }
         });
-
-      return summoner;
-    },
-    fetchRiotRank: async (server, summoner) => {
-      let rank = 'GOLD';
-      let elo = ELO_TRANSLATION[rank];
-
-      if (typeof summoner === 'string') {
-        // summoner = await userService.fetchRiotUser(server, summoner);
+        const summoner: SummonerResponse = await summonerResponse.json();
+        const LEAGUE_API_URL = new URL(
+          `https://${RIOT_SERVERS[region]}.api.riotgames.com/lol/league/v4/entries/by-summoner/${summoner.id}`
+        );
+        const leagueResponse = await fetch(LEAGUE_API_URL, {
+          headers: {
+            'X-Riot-Token': RIOT_KEY
+          }
+        });
+        const rankedInfo: LeagueEntry[] = await leagueResponse.json();
+        const rankedSolo = rankedInfo.find((entry) => entry.queueType === 'RANKED_SOLO_5x5');
+        console.log(rankedSolo);
+        if (!rankedSolo) {
+          return { elo: ELO_TRANSLATION['GOLD'], rank: 'GOLD' };
+        }
+        let elo = ELO_TRANSLATION[rankedSolo.tier];
+        return { elo, rank: rankedSolo.rank };
+      } catch (e) {
+        console.log(e);
+        return { elo: ELO_TRANSLATION['GOLD'], rank: 'GOLD' };
       }
-
-      // const entries = await rAPI.league
-      //   .getEntriesBySummonerId({
-      //     region: server,
-      //     summonerId: summoner.id
-      //   })
-      //   .catch(() => {
-      //     throw new NotFoundError(`League user not found, please verify details and try again.`);
-      //   });
-
-      // if (entries.length) {
-      //   const entry = entries[0];
-      //   rank = entry.tier;
-      //   elo = ELO_TRANSLATION[rank];
-      // }
-
-      return {
-        rank: rank,
-        elo: elo
-      };
     },
     fetchMyMMR: async (server, leagueIGN) => {
       let rank: string;
@@ -111,10 +105,6 @@ export const initUserService = (userRepo: UserRepository, rAPI: RiotAPI): UserSe
         elo: elo
       };
     }
-    // getUsersByScrim: async (scrimID) => {
-    //   // get IDS from a game
-    //   return;
-    // }
   };
   return service;
 };
