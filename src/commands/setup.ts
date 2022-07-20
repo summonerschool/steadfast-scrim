@@ -11,13 +11,13 @@ import {
 } from 'slash-create';
 import { userService } from '../services';
 // @ts-ignore
-import { POSITION_EMOJI_TRANSLATION, SERVER_TO_RIOT_PLATFORM } from '../utils/utils';
+import { capitalize, POSITION_EMOJI_TRANSLATION, SERVER_TO_RIOT_PLATFORM } from '../utils/utils';
 import { SetupFeedbackEmbed } from '../components/setup-feedback';
 
-const rank = Object.entries(Rank).map(([key, val]) => ({ name: val, value: key }));
+const rank = Object.entries(Rank).map(([key, val]) => ({ name: capitalize(key), value: val }));
 const roles = Object.entries(Role).map(([key, val]) => ({
-  name: val,
-  value: key
+  name: capitalize(key),
+  value: val
 }));
 
 class SetupCommand extends SlashCommand {

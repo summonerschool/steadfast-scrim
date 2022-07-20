@@ -39,7 +39,7 @@ describe('Scrim entities', () => {
     const scrim: PrismaScrim = {
       id: 1,
       queue_id: '1',
-      status: 'LOBBY',
+      status: 'STARTED',
       voice_ids: [],
       winner: null
     };

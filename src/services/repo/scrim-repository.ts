@@ -1,9 +1,10 @@
-import { PrismaClient, Role, Side } from '@prisma/client';
+import { Prisma, PrismaClient, Role, Side, Status } from '@prisma/client';
 import { mapToScrim, Player, Scrim } from '../../entities/scrim';
 
 export interface ScrimRepository {
   createScrim: (queueID: string, players: Player[]) => Promise<Scrim>;
   updateScrim: (scrim: Scrim) => Promise<number>;
+  getScrims: (filter: Prisma.ScrimWhereInput) => Promise<Scrim[]>;
 }
 
 export const initScrimRepository = (prisma: PrismaClient) => {
@@ -23,7 +24,7 @@ export const initScrimRepository = (prisma: PrismaClient) => {
               skipDuplicates: true
             }
           },
-          status: 'LOBBY',
+          status: Status.STARTED,
           voice_ids: []
         },
         include: {
@@ -45,6 +46,13 @@ export const initScrimRepository = (prisma: PrismaClient) => {
         }
       });
       return res ? 1 : 0;
+    },
+    getScrims: async (filter) => {
+      const scrims = await prisma.scrim.findMany({
+        where: filter
+      });
+      console.log(scrims);
+      return scrims.map((scrim) => mapToScrim(scrim, []));
     }
   };
   return repo;

@@ -43,7 +43,7 @@ model Player {
 
 model Scrim {
   id        Int      @id @default(sequence())
-  status    Status
+  status    Status   @default(STARTED)
   voice_ids String[]
   players   Player[]
   queue     Queue    @relation(fields: [queue_id], references: [guild_id])
@@ -66,15 +66,13 @@ model Queuer {
   popped    Boolean  @default(false)
   queued_at DateTime @default(now())
 
-
   @@id([user_id, queue_id])
 }
 
 enum Status {
-  LOBBY
-  INGAME
+  STARTED
+  REMAKE
   COMPLETED
-  REMADE
 }
 
 enum Region {

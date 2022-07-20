@@ -1,4 +1,4 @@
-import { Status, Scrim as PrismaScrim, Player as PrismaPlayer } from '@prisma/client';
+import { Scrim as PrismaScrim, Player as PrismaPlayer } from '@prisma/client';
 import { z } from 'zod';
 import { roleEnum } from './user';
 
@@ -14,7 +14,7 @@ export const playerSchema = z.object({
 
 export const scrimSchema = z.object({
   id: z.number().int(),
-  status: z.nativeEnum(Status),
+  status: z.enum(['STARTED', 'REMAKE', 'COMPLETED']),
   voiceIDs: z.array(z.string()),
   players: z.array(playerSchema),
   queueID: z.string(),

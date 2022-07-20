@@ -5,6 +5,7 @@ import { MatchmakingService } from './matchmaking-service';
 import { ScrimRepository } from './repo/scrim-repository';
 import { UserRepository } from './repo/user-repository';
 import fetch from 'node-fetch';
+import { Status } from '@prisma/client';
 
 export interface ScrimService {
   generateScoutingLink: (scrimID: number, side: GameSide) => Promise<string>;
@@ -12,6 +13,7 @@ export interface ScrimService {
   getUserProfilesInScrim: (scrimID: number, side: GameSide) => Promise<User[]>;
   reportWinner: (scrim: Scrim, side: GameSide) => Promise<boolean>;
   createProdraftLobby: (scrimID: number) => Promise<ProdraftURLs>;
+  getIncompleteScrims: (userID: string) => Promise<Scrim[]>;
 }
 
 export const initScrimService = (
@@ -75,6 +77,9 @@ export const initScrimService = (
           url: `http://prodraft.leagueoflegends.com/?draft=${data.id}`
         }
       };
+    },
+    getIncompleteScrims: async (userID) => {
+      return scrimRepo.getScrims({ players: { some: { user_id: userID } }, status: Status.STARTED });
     }
   };
   return service;
