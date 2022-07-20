@@ -30,7 +30,7 @@ class SetupCommand extends SlashCommand {
   constructor(creator: SlashCreator) {
     super(creator, {
       name: 'setup',
-      description: 'First time setup',
+      description: 'Setup a player profile for in-house games',
       options: [
         {
           type: CommandOptionType.STRING,
@@ -42,7 +42,7 @@ class SetupCommand extends SlashCommand {
           type: CommandOptionType.STRING,
           name: 'region',
           required: true,
-          description: 'What is your league region',
+          description: 'What is your league region?',
           choices: [
             { name: 'Europe West', value: 'EUW' },
             { name: 'North America', value: 'NA' }
@@ -52,21 +52,21 @@ class SetupCommand extends SlashCommand {
           type: CommandOptionType.STRING,
           name: 'rank',
           required: true,
-          description: 'What is your league rank',
+          description: 'What is your current rank on your main?',
           choices: rank
         },
         {
           type: CommandOptionType.STRING,
           name: 'main',
           required: true,
-          description: 'What is your main role',
+          description: 'Choose the role you main',
           choices: roles
         },
         {
           type: CommandOptionType.STRING,
           name: 'secondary',
           required: true,
-          description: 'What is your secondary role',
+          description: 'Choose your secondary role',
           choices: roles
         }
       ]

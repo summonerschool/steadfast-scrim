@@ -8,22 +8,22 @@ class QueueCommand extends SlashCommand {
   constructor(creator: SlashCreator) {
     super(creator, {
       name: 'queue',
-      description: 'Queue',
+      description: 'A queue for joining in-house games',
       options: [
         {
           type: CommandOptionType.SUB_COMMAND,
           name: 'join',
-          description: 'Here is the first sub command'
+          description: 'Join a queue'
         },
         {
           type: CommandOptionType.SUB_COMMAND,
           name: 'leave',
-          description: 'Leave the thingie'
+          description: 'Leave the queue'
         },
         {
           type: CommandOptionType.SUB_COMMAND,
           name: 'show',
-          description: 'Show queue'
+          description: 'Show users currently in queue'
         }
       ]
     });
@@ -55,6 +55,8 @@ class QueueCommand extends SlashCommand {
           await ctx.send({
             embeds: [publicEmbed as any]
           });
+
+          // Send DMs
           const userPromises = scrim.players
             .filter((p) => !p.userID.includes('-'))
             .map((p) => client.users.fetch(p.userID, { cache: false }));
@@ -66,7 +68,6 @@ class QueueCommand extends SlashCommand {
             return user.send({ embeds: [matchEmbed, gameEmbed] });
           });
           const msgs = await Promise.all(messagePromises);
-          console.log(msgs);
         } catch (err) {
           if (err instanceof Error) {
             return err.message;

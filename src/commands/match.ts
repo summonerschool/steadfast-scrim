@@ -18,14 +18,14 @@ class MatchCommand extends SlashCommand {
         {
           type: CommandOptionType.INTEGER,
           name: 'match_id',
-          description: 'The number on your game',
+          description: 'The number on your match',
           required: true,
           autocomplete: true
         },
         {
           type: CommandOptionType.STRING,
           name: 'status',
-          description: 'w for win, l for loss and r for remake',
+          description: 'Report the status on the match from your side',
           required: true,
           choices: [
             { name: 'win', value: 'WIN' },
