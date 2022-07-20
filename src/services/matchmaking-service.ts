@@ -96,8 +96,10 @@ export const generateMatchups = (
   let bestOffroleCount = Infinity;
 
   const getOffroleCount = createCountOffroleHandler(users);
-  for (let team of combinations) {
-    for (let enemy of combinations) {
+  for (let i = 0; i < combinations.length; i++) {
+    const team = combinations[i];
+    for (let j = i; j < combinations.length; j++) {
+      const enemy = combinations[j];
       // check if there exist a
       const eloDifference = calculateEloDifference(team, enemy);
       const noSharedPlayers = !team.some((player) => enemy.some((p) => player.id == p.id));

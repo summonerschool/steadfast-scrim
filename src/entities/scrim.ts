@@ -42,3 +42,21 @@ export const mapToScrim = (dbScrim: PrismaScrim, dbPlayers: PrismaPlayer[]) => {
   });
   return scrim;
 };
+
+export interface ProdraftResponse {
+  auth: [string, string];
+  id: string;
+  champions: string[];
+  // dont care
+  game: object;
+}
+
+interface DraftEntry {
+  url: string;
+  name: string;
+}
+export interface ProdraftURLs {
+  RED: DraftEntry;
+  BLUE: DraftEntry;
+  SPECTATOR: DraftEntry;
+}

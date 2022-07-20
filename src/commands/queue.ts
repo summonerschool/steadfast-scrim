@@ -47,21 +47,26 @@ class QueueCommand extends SlashCommand {
             guildID,
             matchmaking.queuers.map((p) => p.userID)
           );
-          const embed = await matchMessage(scrim);
-          await ctx.send({
-            embeds: [embed as any]
-          });
+          const draftURLs = await scrimService.createProdraftLobby(scrim.id);
+          const opggBlue = await scrimService.generateScoutingLink(scrim.id, 'BLUE');
+          const opggRed = await scrimService.generateScoutingLink(scrim.id, 'RED');
 
+          const publicEmbed = matchMessage(scrim, opggBlue, opggRed, draftURLs.SPECTATOR.url);
+          await ctx.send({
+            embeds: [publicEmbed as any]
+          });
           const userPromises = scrim.players
             .filter((p) => !p.userID.includes('-'))
             .map((p) => client.users.fetch(p.userID, { cache: false }));
           const discordUsers = await Promise.all(userPromises);
           const messagePromises = discordUsers.map(async (user) => {
-            const embed2 = await lobbyDetails(scrim, user.id);
-            return user.send({ embeds: [embed, embed2] });
+            // remove the spectator url so people dont get confused
+            const matchEmbed = matchMessage(scrim, opggBlue, opggRed);
+            const gameEmbed = await lobbyDetails(scrim, user.id, draftURLs);
+            return user.send({ embeds: [matchEmbed, gameEmbed] });
           });
           const msgs = await Promise.all(messagePromises);
-          console.log(msgs)
+          console.log(msgs);
         } catch (err) {
           if (err instanceof Error) {
             return err.message;

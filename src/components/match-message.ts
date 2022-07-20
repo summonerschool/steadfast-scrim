@@ -20,27 +20,20 @@ const sortByRole = (p1: Player, p2: Player) => {
 };
 const teamToString = (player: Player) => `${player.role}: <@${player.userID}>`;
 
-export const matchMessage = async (scrim: Scrim) => {
+export const matchMessage = (scrim: Scrim, opggBlue: string, opggRed: string, draftURL?: string) => {
   const lobbyCreator = chance.pickone(scrim.players);
   // Sort the teams by side
   const teams: { [key in GameSide]: Player[] } = { RED: [], BLUE: [] };
   scrim.players.forEach((player) => {
     teams[player.side].push(player);
   });
-
-  // Generates the scouting links from opgg
-  const opggBlue = await scrimService.generateScoutingLink(scrim.id, 'BLUE');
-  const opggRed = await scrimService.generateScoutingLink(scrim.id, 'RED');
-
   const scoutingLinksMsg = `
     [**Blue OP.GG**](${opggBlue})
     [**Red OP.GG**](${opggRed})
   `;
-
   const redText = teams.RED.sort(sortByRole).map(teamToString);
   const blueText = teams.BLUE.sort(sortByRole).map(teamToString);
-
-  return new MessageEmbed()
+  const embed = new MessageEmbed()
     .setColor('#698371')
     .setTitle(`Queue Popped!`)
     .setDescription(
@@ -57,6 +50,12 @@ export const matchMessage = async (scrim: Scrim) => {
     )
     .setTimestamp()
     .setFooter({ text: 'Anything wrong? spam the shit out of Tikka Masala' });
+
+  if (draftURL) {
+    embed.addField('Prodraft Link', `[**Spectate Draft**](${draftURL})`);
+  }
+
+  return embed;
 };
 
 export const showQueueMessage = async (users: User[]) => {
