@@ -1,12 +1,13 @@
-import { Scrim, GameSide, ProdraftResponse, ProdraftURLs } from '../entities/scrim';
+import { Scrim, GameSide } from '../entities/scrim';
 import { User } from '../entities/user';
 import { chance } from '../lib/chance';
 import { MatchmakingService } from './matchmaking-service';
 import { ScrimRepository } from './repo/scrim-repository';
 import { UserRepository } from './repo/user-repository';
-import fetch from 'node-fetch';
 import { Status } from '@prisma/client';
+import axios from 'axios';
 import { NotFoundError } from '../errors/errors';
+import { ProdraftURLs, ProdraftResponse } from '../entities/external';
 
 export interface ScrimService {
   generateScoutingLink: (scrimID: number, side: GameSide) => Promise<string>;
@@ -56,14 +57,8 @@ export const initScrimService = (
         team2Name: `Red ${chance.animal()}`,
         matchName: `Summoner School Game #${scrimID}`
       };
-      const res = await fetch(PRODRAFT_URL, {
-        method: 'POST',
-        body: JSON.stringify(payload),
-        headers: {
-          'Content-Type': 'application/json'
-        }
-      });
-      const data: ProdraftResponse = await res.json();
+      const res = await axios.post<ProdraftResponse>(PRODRAFT_URL, payload);
+      const data = res.data;
 
       return {
         BLUE: {

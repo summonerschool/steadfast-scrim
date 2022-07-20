@@ -1,5 +1,6 @@
 import { EmbedBuilder } from '@discordjs/builders';
-import { ProdraftURLs, Scrim } from '../entities/scrim';
+import { ProdraftURLs } from '../entities/external';
+import { Scrim } from '../entities/scrim';
 import { chance } from '../lib/chance';
 import { scrimService } from '../services';
 

@@ -23,3 +23,32 @@ export interface LeagueEntry {
   freshBlood: boolean;
   inactive: boolean;
 }
+
+export interface ProdraftResponse {
+  auth: [string, string];
+  id: string;
+  champions: string[];
+  // dont care
+  game: object;
+}
+
+interface DraftEntry {
+  url: string;
+  name: string;
+}
+export interface ProdraftURLs {
+  RED: DraftEntry;
+  BLUE: DraftEntry;
+  SPECTATOR: DraftEntry;
+}
+
+interface MMREntry {
+  avg: number;
+  closestRank: string;
+}
+
+export interface WhatIsMyMMRResponse {
+  ranked: MMREntry;
+  normal: MMREntry;
+  ARAM: MMREntry;
+}

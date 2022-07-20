@@ -1,10 +1,10 @@
-import { rankEnum, Region, User, userSchema } from '../entities/user';
+import { Region, User, userSchema } from '../entities/user';
 import { NotFoundError } from '../errors/errors';
 import { UserRepository } from './repo/user-repository';
-import fetch from 'node-fetch';
 import dotenv from 'dotenv';
-import { LeagueEntry, SummonerResponse } from '../entities/riot';
+import { LeagueEntry, SummonerResponse, WhatIsMyMMRResponse } from '../entities/external';
 import { ELO_TRANSLATION, RIOT_SERVERS } from '../utils/utils';
+import axios from 'axios';
 dotenv.config();
 
 export interface UserService {
@@ -48,29 +48,23 @@ export const initUserService = (userRepo: UserRepository): UserService => {
     },
     fetchExternalUserMMR: async (region: Region, leagueIGN: string) => {
       try {
-        const SUMMONER_API_URL = new URL(
-          `https://${
-            RIOT_SERVERS[region]
-          }.api.riotgames.com/lol/summoner/v4/summoners/by-name/${leagueIGN.toLowerCase()}`
-        );
-        console.log(SUMMONER_API_URL);
+        const SUMMONER_API_URL = `https://${
+          RIOT_SERVERS[region]
+        }.api.riotgames.com/lol/summoner/v4/summoners/by-name/${leagueIGN.toLowerCase()}`;
         const RIOT_KEY = process.env.RIOT_API_KEY!!;
-        const summonerResponse = await fetch(SUMMONER_API_URL, {
+        const summoner = await axios.get<SummonerResponse>(SUMMONER_API_URL, {
           headers: {
             'X-Riot-Token': RIOT_KEY
           }
         });
-        const summoner: SummonerResponse = await summonerResponse.json();
-        const LEAGUE_API_URL = new URL(
-          `https://${RIOT_SERVERS[region]}.api.riotgames.com/lol/league/v4/entries/by-summoner/${summoner.id}`
-        );
-        const leagueResponse = await fetch(LEAGUE_API_URL, {
+
+        const LEAGUE_API_URL = `https://${RIOT_SERVERS[region]}.api.riotgames.com/lol/league/v4/entries/by-summoner/${summoner.data.id}`;
+        const leagues = await axios.get<LeagueEntry[]>(LEAGUE_API_URL, {
           headers: {
             'X-Riot-Token': RIOT_KEY
           }
         });
-        const rankedInfo: LeagueEntry[] = await leagueResponse.json();
-        const rankedSolo = rankedInfo.find((entry) => entry.queueType === 'RANKED_SOLO_5x5');
+        const rankedSolo = leagues.data.find((entry) => entry.queueType === 'RANKED_SOLO_5x5');
         console.log(rankedSolo);
         if (!rankedSolo) {
           return { elo: ELO_TRANSLATION['GOLD'], rank: 'GOLD' };
@@ -85,19 +79,18 @@ export const initUserService = (userRepo: UserRepository): UserService => {
     fetchMyMMR: async (server, leagueIGN) => {
       let rank: string;
 
-      const mymmr = await fetch(`https://${server}.whatismymmr.com/api/v1/summoner?name=${leagueIGN}`)
-        .then((response) => response.json())
-        .catch(() => {
-          throw new NotFoundError(`user rank not found, please verify details and try again.`);
-        });
+      const res = await axios.get<WhatIsMyMMRResponse | Error>(
+        `https://${server.toLowerCase()}.whatismymmr.com/api/v1/summoner?name=${leagueIGN}`
+      );
 
-      if (mymmr.error) {
-        throw new NotFoundError(mymmr.error.message);
+      if ('message' in res.data) {
+        throw new NotFoundError(res.data.message);
       }
+      const mymmr = res.data;
 
-      const elo = mymmr.ranked.avg || mymmr.normal.avg || mymmr.aram.avg || 0; // TODO: set some defaults ???
+      const elo = mymmr.ranked.avg || mymmr.normal.avg || mymmr.ARAM.avg || 0; // TODO: set some defaults ???
 
-      rank = mymmr.ranked.closestRank || mymmr.normal.closestRank || mymmr.aram.closestRank || '';
+      rank = mymmr.ranked.closestRank || mymmr.normal.closestRank || mymmr.ARAM.closestRank || '';
       rank = rank.split(' ')[0].toUpperCase();
 
       return {
