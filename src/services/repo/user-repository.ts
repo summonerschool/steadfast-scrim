@@ -17,16 +17,20 @@ export const initUserRepository = (prisma: PrismaClient) => {
           id,
           league_ign: leagueIGN,
           rank,
-          region, main ,secondary
-          
+          region,
+          main,
+          secondary,
+          elo: elo,
+          external_elo: external_elo
         },
         update: {
           league_ign: leagueIGN,
           elo: elo,
           external_elo: external_elo,
           rank,
-          region, main, secondary
-          
+          region,
+          main,
+          secondary
         }
       });
       return mapToUser(user);
