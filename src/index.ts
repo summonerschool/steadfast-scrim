@@ -3,7 +3,6 @@ import path from 'path';
 import { FastifyServer, SlashCreator } from 'slash-create';
 import Discord, { Intents } from 'discord.js';
 import CatLoggr from 'cat-loggr/ts';
-import { RiotAPI, RiotAPITypes } from '@fightmegg/riot-api';
 import './services';
 
 let dotenvPath = path.join(process.cwd(), '.env');

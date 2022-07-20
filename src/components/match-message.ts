@@ -1,8 +1,6 @@
-import { EmbedFieldData, MessageEmbed } from 'discord.js';
+import { MessageEmbed } from 'discord.js';
 import { GameSide, Player, Scrim } from '../entities/scrim';
-import { Queuer } from '../entities/queue';
 import { chance } from '../lib/chance';
-import { scrimService } from '../services';
 import { capitalize } from '../utils/utils';
 // @ts-ignore
 import { User } from '../entities/user';

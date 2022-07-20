@@ -1,4 +1,4 @@
-import { Role as PrismaRole, User as PrismaUser } from '@prisma/client';
+import { User as PrismaUser } from '@prisma/client';
 import { z } from 'zod';
 
 enum Rank {

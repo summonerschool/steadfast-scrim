@@ -1,5 +1,4 @@
 import { Player as PrismaPlayer, Scrim as PrismaScrim } from '@prisma/client';
-import { chance } from '../../lib/chance';
 import { mapToPlayer, mapToScrim } from '../scrim';
 
 describe('Scrim entities', () => {

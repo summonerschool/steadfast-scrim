@@ -1,4 +1,3 @@
-import { report } from 'process';
 import { SlashCommand, CommandOptionType, CommandContext, SlashCreator } from 'slash-create';
 
 class ReportCommand extends SlashCommand {
@@ -11,7 +10,7 @@ class ReportCommand extends SlashCommand {
           type: CommandOptionType.USER,
           name: 'username',
           description: 'Mention user who you would like to report.'
-        },
+        }
       ]
     });
 

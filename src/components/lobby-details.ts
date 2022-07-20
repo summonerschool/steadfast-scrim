@@ -2,7 +2,6 @@ import { MessageEmbed } from 'discord.js';
 import { ProdraftURLs, Scrim } from '../entities/scrim';
 import { chance } from '../lib/chance';
 import { scrimService } from '../services';
-import { capitalize } from '../utils/utils';
 
 export const lobbyDetails = async (scrim: Scrim, recipientID: string, draftURLs: ProdraftURLs) => {
   const side = scrim.players.find((p) => p.userID === recipientID)?.side || 'BLUE';

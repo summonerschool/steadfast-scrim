@@ -1,6 +1,6 @@
 import { Matchup, Pool, Team } from '../entities/matchmaking';
-import { GameSide, Player, playerSchema } from '../entities/scrim';
-import { Role, ROLE_ORDER, User } from '../entities/user';
+import { GameSide, Player } from '../entities/scrim';
+import { ROLE_ORDER, User } from '../entities/user';
 import { NoMatchupPossibleError } from '../errors/errors';
 import { chance } from '../lib/chance';
 

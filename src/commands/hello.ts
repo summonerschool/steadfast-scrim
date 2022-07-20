@@ -1,4 +1,3 @@
-import { SlashCommandBuilder } from '@discordjs/builders';
 import { SlashCommand, CommandOptionType, CommandContext, SlashCreator } from 'slash-create';
 
 class HelloCommand extends SlashCommand {
@@ -11,7 +10,7 @@ class HelloCommand extends SlashCommand {
           type: CommandOptionType.STRING,
           name: 'food',
           description: 'What food do you like?'
-        },
+        }
       ]
     });
 

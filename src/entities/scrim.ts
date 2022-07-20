@@ -1,4 +1,4 @@
-import { Role, Status, Scrim as PrismaScrim, Player as PrismaPlayer } from '@prisma/client';
+import { Status, Scrim as PrismaScrim, Player as PrismaPlayer } from '@prisma/client';
 import { z } from 'zod';
 import { roleEnum } from './user';
 
