@@ -89,7 +89,7 @@ class SetupCommand extends SlashCommand {
       region,
       main,
       secondary,
-      rankInfo.elo,
+      ELO_TRANSLATION[rank],
       rankInfo.elo
     );
     return {

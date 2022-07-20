@@ -1,8 +1,8 @@
-import { MessageActionRow, MessageButton } from 'discord.js';
+import { ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
 
 export const ScrimResultActionRow = () =>
-  new MessageActionRow().addComponents(
-    new MessageButton().setCustomId('red-win').setLabel('Win').setStyle('PRIMARY'),
-    new MessageButton().setCustomId('blue-win').setLabel('Win').setStyle('DANGER'),
-    new MessageButton().setCustomId('remake').setLabel('Remake').setStyle('SECONDARY')
+  new ActionRowBuilder().addComponents(
+    new ButtonBuilder().setCustomId('red-win').setLabel('Win').setStyle(ButtonStyle.Danger),
+    new ButtonBuilder().setCustomId('blue-win').setLabel('Win').setStyle(ButtonStyle.Primary),
+    new ButtonBuilder().setCustomId('remake').setLabel('Remake').setStyle(ButtonStyle.Secondary)
   );

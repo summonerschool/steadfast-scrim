@@ -1,9 +1,9 @@
-import { MessageEmbed } from 'discord.js';
 import { GameSide, Player, Scrim } from '../entities/scrim';
 import { chance } from '../lib/chance';
 import { capitalize } from '../utils/utils';
 // @ts-ignore
 import { User } from '../entities/user';
+import { EmbedBuilder } from '@discordjs/builders';
 
 const ROLES_ORDER = {
   TOP: 1,
@@ -31,8 +31,8 @@ export const matchMessage = (scrim: Scrim, opggBlue: string, opggRed: string, dr
   `;
   const redText = teams.RED.sort(sortByRole).map(teamToString);
   const blueText = teams.BLUE.sort(sortByRole).map(teamToString);
-  const embed = new MessageEmbed()
-    .setColor('#698371')
+  const embed = new EmbedBuilder()
+    .setColor(698371)
     .setTitle(`Queue Popped!`)
     .setDescription(
       `
@@ -50,7 +50,7 @@ export const matchMessage = (scrim: Scrim, opggBlue: string, opggRed: string, dr
     .setFooter({ text: 'Anything wrong? spam the shit out of Tikka Masala' });
 
   if (draftURL) {
-    embed.addField('Prodraft Link', `[**Spectate Draft**](${draftURL})`);
+    embed.addFields({ name: 'Prodraft Link', value: `[**Spectate Draft**](${draftURL})` });
   }
 
   return embed;
@@ -79,8 +79,8 @@ export const showQueueMessage = async (users: User[]) => {
     resultRanks += `${capitalize(rank)}: ${count}`;
   }
 
-  return new MessageEmbed()
-    .setColor('#698371')
+  return new EmbedBuilder()
+    .setColor(698371)
     .setTitle(`**${users.length} players in queue**\n`)
     .setDescription(
       `

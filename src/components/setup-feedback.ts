@@ -1,4 +1,4 @@
-import { MessageEmbed } from 'discord.js';
+import { EmbedBuilder } from '@discordjs/builders';
 import { User } from '../entities/user';
 import { POSITION_EMOJI_TRANSLATION, RANK_IMAGE_TRANSLATION } from '../utils/utils';
 
@@ -8,7 +8,7 @@ export const SetupFeedbackEmbed = (user: User) => {
     return `${POSITION_EMOJI_TRANSLATION[x]}`;
   });
 
-  return new MessageEmbed({
+  return new EmbedBuilder({
     title: `Scrim Player Setup`,
     description: `<@${user.id}>`,
     color: 0x000,

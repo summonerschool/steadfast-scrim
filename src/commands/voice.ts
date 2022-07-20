@@ -1,6 +1,5 @@
 import { SlashCommand, CommandOptionType, CommandContext, SlashCreator } from 'slash-create';
 import { client } from '../index';
-import { CategoryChannel } from 'discord.js';
 
 class VoiceCommand extends SlashCommand {
   constructor(creator: SlashCreator) {
@@ -29,9 +28,6 @@ class VoiceCommand extends SlashCommand {
       // TODO: MOVE THIS TO THE QUEUE POP ACTION -> STORE THE VOICE CHANNELS IDS IN THE SCRIM TABLE
       const guild = await client.guilds.fetch({ guild: '826232163082698794' });
       const category = await guild.channels.fetch('826232163082698796');
-      if (category instanceof CategoryChannel) {
-        console.log(category.createChannel('scrim ' + Math.random() + ' red team', { type: 'GUILD_VOICE' }));
-      }
     }
     return 'ok';
   }

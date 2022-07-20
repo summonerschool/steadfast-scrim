@@ -1,7 +1,7 @@
 import dotenv from 'dotenv';
 import path from 'path';
 import { FastifyServer, SlashCreator } from 'slash-create';
-import Discord, { Intents } from 'discord.js';
+import Discord, { GatewayIntentBits } from 'discord.js';
 import CatLoggr from 'cat-loggr/ts';
 import './services';
 
@@ -20,7 +20,7 @@ const creator = new SlashCreator({
 });
 
 export const client = new Discord.Client({
-  intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES, Intents.FLAGS.DIRECT_MESSAGES]
+  intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.DirectMessages]
 });
 
 creator.on('debug', (message) => logger.log(message));

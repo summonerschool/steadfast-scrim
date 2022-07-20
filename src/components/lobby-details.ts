@@ -1,4 +1,4 @@
-import { MessageEmbed } from 'discord.js';
+import { EmbedBuilder } from '@discordjs/builders';
 import { ProdraftURLs, Scrim } from '../entities/scrim';
 import { chance } from '../lib/chance';
 import { scrimService } from '../services';
@@ -12,8 +12,8 @@ export const lobbyDetails = async (scrim: Scrim, recipientID: string, draftURLs:
       Password: \`${chance.integer({ min: 1000, max: 9999 })}\`
       [**Join draft**](${draftURLs[side].url})
       `;
-  return new MessageEmbed()
-    .setColor('#698371')
+  return new EmbedBuilder()
+    .setColor(698371)
     .setTitle(`Summoner School Game #${scrim.id}`)
     .setDescription(`**Team ${draftURLs[side].name}**`)
     .addFields({ name: 'Lobby details', value: detailsText, inline: true })
