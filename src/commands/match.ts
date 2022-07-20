@@ -7,6 +7,7 @@ import {
   AutocompleteChoice
 } from 'slash-create';
 import { scrimService } from '../services';
+import { capitalize } from '../utils/utils';
 
 class MatchCommand extends SlashCommand {
   constructor(creator: SlashCreator) {
@@ -39,8 +40,20 @@ class MatchCommand extends SlashCommand {
   }
 
   async run(ctx: CommandContext) {
-    console.info(ctx.user.id);
-    return ctx.options.food ? `You like ${ctx.options.food}? Nice!` : `Hello, ${ctx.user.id}(${ctx.user.username})!`;
+    const { match_id, status } = ctx.options;
+    const scrim = await scrimService.findScrim(match_id);
+    const player = scrim.players.find((p) => p.userID === ctx.user.id)!;
+    if (status == 'REMAKE') {
+      // TODO REMAKE LOGIC
+      return 'Remake';
+    }
+    const enemy = player.side == 'BLUE' ? 'RED' : 'BLUE';
+    const winner = status == 'WIN' ? player.side : enemy;
+    const success = await scrimService.reportWinner(scrim, winner);
+    if (!success) {
+      return 'Oops! Could not set winner of match';
+    }
+    return `${capitalize(winner)} has been registered as the winner ✅`;
   }
 
   async autocomplete(ctx: AutocompleteContext): Promise<AutocompleteChoice[]> {

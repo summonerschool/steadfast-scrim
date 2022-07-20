@@ -39,7 +39,7 @@ class QueueCommand extends SlashCommand {
         try {
           const queuer = await queueService.joinQueue(ctx.user.id, guildID);
           const matchmaking = await queueService.attemptMatchmaking(guildID);
-          console.log(matchmaking);
+          console.log(matchmaking.valid);
           if (!matchmaking.valid) {
             return { content: `<@${queuer.userID}> has joined the queue`, allowedMentions: { everyone: false } };
           }

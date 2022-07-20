@@ -6,6 +6,7 @@ import { ScrimRepository } from './repo/scrim-repository';
 import { UserRepository } from './repo/user-repository';
 import fetch from 'node-fetch';
 import { Status } from '@prisma/client';
+import { NotFoundError } from '../errors/errors';
 
 export interface ScrimService {
   generateScoutingLink: (scrimID: number, side: GameSide) => Promise<string>;
@@ -14,6 +15,7 @@ export interface ScrimService {
   reportWinner: (scrim: Scrim, side: GameSide) => Promise<boolean>;
   createProdraftLobby: (scrimID: number) => Promise<ProdraftURLs>;
   getIncompleteScrims: (userID: string) => Promise<Scrim[]>;
+  findScrim: (scrimID: number) => Promise<Scrim>;
 }
 
 export const initScrimService = (
@@ -80,6 +82,13 @@ export const initScrimService = (
     },
     getIncompleteScrims: async (userID) => {
       return scrimRepo.getScrims({ players: { some: { user_id: userID } }, status: Status.STARTED });
+    },
+    findScrim: async (scrimID) => {
+      const scrim = await scrimRepo.getScrimByID(scrimID);
+      if (!scrim) {
+        throw new NotFoundError('No scrims found with that ID');
+      }
+      return scrim;
     }
   };
   return service;

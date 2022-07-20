@@ -5,6 +5,7 @@ export interface ScrimRepository {
   createScrim: (queueID: string, players: Player[]) => Promise<Scrim>;
   updateScrim: (scrim: Scrim) => Promise<number>;
   getScrims: (filter: Prisma.ScrimWhereInput) => Promise<Scrim[]>;
+  getScrimByID: (scrimID: number) => Promise<Scrim | undefined>;
 }
 
 export const initScrimRepository = (prisma: PrismaClient) => {
@@ -53,6 +54,10 @@ export const initScrimRepository = (prisma: PrismaClient) => {
       });
       console.log(scrims);
       return scrims.map((scrim) => mapToScrim(scrim, []));
+    },
+    getScrimByID: async (scrimID) => {
+      const scrim = await prisma.scrim.findUnique({ where: { id: scrimID }, include: { players: true } });
+      return scrim ? mapToScrim(scrim, scrim.players) : undefined;
     }
   };
   return repo;
