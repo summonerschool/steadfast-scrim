@@ -90,10 +90,8 @@ export const generateMatchups = (
   combinations: Team[],
   users: User[]
 ): { valid: true; matchup: Matchup } | { valid: false } => {
-  let best: number = Infinity;
-  let team1: Team | null = null;
-  let team2: Team | null = null;
-  let bestOffroleCount = Infinity;
+  let bestLeastOffroleMatchup: Matchup | undefined = undefined;
+  let bestEloFairMatchup: Matchup | undefined = undefined;
 
   const getOffroleCount = createCountOffroleHandler(users);
   for (let i = 0; i < combinations.length; i++) {
@@ -103,27 +101,46 @@ export const generateMatchups = (
       // check if there exist a
       const eloDifference = calculateEloDifference(team, enemy);
       const noSharedPlayers = !team.some((player) => enemy.some((p) => player.id == p.id));
-      const currentCount = getOffroleCount(enemy) + getOffroleCount(team);
+      const offroleCount = getOffroleCount(enemy) + getOffroleCount(team);
 
       // If the current offrole count is lower, replace the current best matchup
       // If the current offrole count is equal/lower and the elo difference is better, replace the matchup
       // Both teams needs to not share any common enemies
       if (noSharedPlayers) {
-        if (currentCount < bestOffroleCount || (currentCount === bestOffroleCount && eloDifference < best)) {
-          // replace matchup
-          best = eloDifference;
-          team1 = team;
-          team2 = enemy;
-          bestOffroleCount = currentCount;
+        const matchup = { team1: team, team2: enemy, eloDifference, offroleCount };
+        // if no best matchups have been set yet, set it right away
+        if (!bestEloFairMatchup || !bestLeastOffroleMatchup) {
+          bestEloFairMatchup = matchup;
+          bestLeastOffroleMatchup = matchup;
+          break;
+        }
+        // TODO: holyshit clean this up
+        if (offroleCount < bestLeastOffroleMatchup.offroleCount) {
+          bestLeastOffroleMatchup = matchup;
+        } else if (offroleCount == bestLeastOffroleMatchup.offroleCount) {
+          if (eloDifference < bestLeastOffroleMatchup.eloDifference) {
+            bestLeastOffroleMatchup = matchup;
+          } else if (eloDifference == bestLeastOffroleMatchup.eloDifference) {
+            if (hasFairerLaneMatchups(matchup, bestLeastOffroleMatchup)) bestLeastOffroleMatchup = matchup;
+          }
+        }
+
+        if (eloDifference <= bestEloFairMatchup.eloDifference) {
+          if (eloDifference == bestEloFairMatchup.eloDifference) {
+            if (hasFairerLaneMatchups(matchup, bestEloFairMatchup)) bestEloFairMatchup = matchup;
+          } else {
+            bestEloFairMatchup = matchup;
+          }
         }
       }
     }
   }
-  if (team1 == null || team2 == null) {
+  if (!bestLeastOffroleMatchup) {
     return { valid: false };
   }
-  console.info({ bestOffroleCount, eloDiff: calculateEloDifference(team1, team2) });
-  return { valid: true, matchup: { eloDifference: best, team1: team1, team2: team2 } };
+  console.info(matchupToString(bestLeastOffroleMatchup));
+  console.info(matchupToString(bestEloFairMatchup!!));
+  return { valid: true, matchup: bestLeastOffroleMatchup };
 };
 
 const createCountOffroleHandler = (initialUsers: User[]) => (team: Team) => {
@@ -138,10 +155,26 @@ const createCountOffroleHandler = (initialUsers: User[]) => (team: Team) => {
   return counter;
 };
 
+const gethighestLaneDiff = (m: Matchup) => {
+  let highestDiff = 0;
+  for (let i = 0; i < 5; i++) {
+    const diff = Math.abs(m.team1[i].elo - m.team2[i].elo);
+    if (diff > highestDiff) highestDiff = diff;
+  }
+  return highestDiff;
+};
+
+const hasFairerLaneMatchups = (m1: Matchup, m2: Matchup) => {
+  const m1diff = gethighestLaneDiff(m1);
+  const m2diff = gethighestLaneDiff(m2);
+  return m1diff < m2diff;
+};
+
 const matchupToString = (matchup: Matchup) => {
   return `
-  Elo Difference:${matchup.eloDifference}\n
-  ${matchup.team1.map((p) => p.leagueIGN)} vs ${matchup.team2.map((p) => p.leagueIGN)}\n
+  Elo Difference: ${matchup.eloDifference}\n
+  Lane fair lane: ${gethighestLaneDiff(matchup)}\n
+  ${matchup.team1.map((p) => p.leagueIGN).join(', ')} vs ${matchup.team2.map((p) => p.leagueIGN).join(', ')}\n
   ${matchup.team1.map((p) => p.elo)} vs ${matchup.team2.map((p) => p.elo)}
   `;
 };
