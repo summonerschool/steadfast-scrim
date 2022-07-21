@@ -90,57 +90,81 @@ export const generateMatchups = (
   combinations: Team[],
   users: User[]
 ): { valid: true; matchup: Matchup } | { valid: false } => {
-  let bestLeastOffroleMatchup: Matchup | undefined = undefined;
-  let bestEloFairMatchup: Matchup | undefined = undefined;
+  let bestMatchupByOffroleCount: Matchup | undefined = undefined;
+  let bestMatchupByEloDiff: Matchup | undefined = undefined;
 
   const getOffroleCount = createCountOffroleHandler(users);
+
   for (let i = 0; i < combinations.length; i++) {
     const team = combinations[i];
     for (let j = i; j < combinations.length; j++) {
       const enemy = combinations[j];
-      // check if there exist a
-      const eloDifference = calculateEloDifference(team, enemy);
+      // check if the teams share players
       const noSharedPlayers = !team.some((player) => enemy.some((p) => player.id == p.id));
-      const offroleCount = getOffroleCount(enemy) + getOffroleCount(team);
 
-      // If the current offrole count is lower, replace the current best matchup
-      // If the current offrole count is equal/lower and the elo difference is better, replace the matchup
-      // Both teams needs to not share any common enemies
       if (noSharedPlayers) {
-        const matchup = { team1: team, team2: enemy, eloDifference, offroleCount };
+        const eloDifference = calculateEloDifference(team, enemy);
+        const offroleCount = getOffroleCount(enemy) + getOffroleCount(team);
+        const leastFairLaneDiff = getHighestLaneDiff(team, enemy);
+
+        const matchup = { team1: team, team2: enemy, eloDifference, offroleCount, leastFairLaneDiff };
         // if no best matchups have been set yet, set it right away
-        if (!bestEloFairMatchup || !bestLeastOffroleMatchup) {
-          bestEloFairMatchup = matchup;
-          bestLeastOffroleMatchup = matchup;
+        if (!bestMatchupByEloDiff || !bestMatchupByOffroleCount) {
+          bestMatchupByEloDiff = matchup;
+          bestMatchupByOffroleCount = matchup;
           break;
         }
-        // TODO: holyshit clean this up
-        if (offroleCount < bestLeastOffroleMatchup.offroleCount) {
-          bestLeastOffroleMatchup = matchup;
-        } else if (offroleCount == bestLeastOffroleMatchup.offroleCount) {
-          if (eloDifference < bestLeastOffroleMatchup.eloDifference) {
-            bestLeastOffroleMatchup = matchup;
-          } else if (eloDifference == bestLeastOffroleMatchup.eloDifference) {
-            if (hasFairerLaneMatchups(matchup, bestLeastOffroleMatchup)) bestLeastOffroleMatchup = matchup;
-          }
-        }
-
-        if (eloDifference <= bestEloFairMatchup.eloDifference) {
-          if (eloDifference == bestEloFairMatchup.eloDifference) {
-            if (hasFairerLaneMatchups(matchup, bestEloFairMatchup)) bestEloFairMatchup = matchup;
-          } else {
-            bestEloFairMatchup = matchup;
-          }
-        }
+        // offrole > elo diff > lanediff
+        bestMatchupByOffroleCount = [bestMatchupByOffroleCount, matchup]
+          .sort(compareLaneDiff)
+          .sort(compareElodifference)
+          .sort(compareOffrole)[0];
+        // Elo diff > offrole > lanediff
+        bestMatchupByEloDiff = [bestMatchupByEloDiff, matchup]
+          .sort(compareLaneDiff)
+          .sort(compareOffrole)
+          .sort(compareElodifference)[0];
       }
     }
   }
-  if (!bestLeastOffroleMatchup) {
+
+  if (!bestMatchupByOffroleCount || !bestMatchupByEloDiff) {
     return { valid: false };
   }
-  console.info(matchupToString(bestLeastOffroleMatchup));
-  console.info(matchupToString(bestEloFairMatchup!!));
-  return { valid: true, matchup: bestLeastOffroleMatchup };
+  console.info(matchupToString(bestMatchupByOffroleCount));
+  console.info(matchupToString(bestMatchupByEloDiff));
+
+  return { valid: true, matchup: bestMatchupByOffroleCount };
+};
+
+const compareOffrole = (m1: Matchup, m2: Matchup) => {
+  if (m1.offroleCount < m2.offroleCount) {
+    return -1;
+  } else if (m1.offroleCount === m2.offroleCount) {
+    return 0;
+  } else {
+    return 1;
+  }
+};
+
+const compareElodifference = (m1: Matchup, m2: Matchup) => {
+  if (m1.eloDifference < m2.eloDifference) {
+    return -1;
+  } else if (m1.eloDifference === m2.eloDifference) {
+    return 0;
+  } else {
+    return 1;
+  }
+};
+
+const compareLaneDiff = (m1: Matchup, m2: Matchup) => {
+  if (m1.leastFairLaneDiff < m2.leastFairLaneDiff) {
+    return -1;
+  } else if (m1.leastFairLaneDiff === m2.leastFairLaneDiff) {
+    return 0;
+  } else {
+    return 1;
+  }
 };
 
 const createCountOffroleHandler = (initialUsers: User[]) => (team: Team) => {
@@ -155,32 +179,26 @@ const createCountOffroleHandler = (initialUsers: User[]) => (team: Team) => {
   return counter;
 };
 
-const gethighestLaneDiff = (m: Matchup) => {
+const getHighestLaneDiff = (t1: Team, t2: Team) => {
   let highestDiff = 0;
   for (let i = 0; i < 5; i++) {
-    const diff = Math.abs(m.team1[i].elo - m.team2[i].elo);
+    const diff = Math.abs(t1[i].elo - t2[i].elo);
     if (diff > highestDiff) highestDiff = diff;
   }
   return highestDiff;
-};
-
-const hasFairerLaneMatchups = (m1: Matchup, m2: Matchup) => {
-  const m1diff = gethighestLaneDiff(m1);
-  const m2diff = gethighestLaneDiff(m2);
-  return m1diff < m2diff;
-};
-
-const matchupToString = (matchup: Matchup) => {
-  return `
-  Elo Difference: ${matchup.eloDifference}\n
-  Lane fair lane: ${gethighestLaneDiff(matchup)}\n
-  ${matchup.team1.map((p) => p.leagueIGN).join(', ')} vs ${matchup.team2.map((p) => p.leagueIGN).join(', ')}\n
-  ${matchup.team1.map((p) => p.elo)} vs ${matchup.team2.map((p) => p.elo)}
-  `;
 };
 
 export const calculateEloDifference = (t1: Team, t2: Team) => {
   const elo1 = t1.reduce((prev, curr) => prev + (curr.elo || 0), 0);
   const elo2 = t2.reduce((prev, curr) => prev + (curr.elo || 0), 0);
   return Math.abs(elo1 - elo2);
+};
+
+const matchupToString = (matchup: Matchup) => {
+  return `
+  Elo Difference: ${matchup.eloDifference}\n
+  Lane fair lane: ${matchup.leastFairLaneDiff}\n
+  ${matchup.team1.map((p) => p.leagueIGN).join(', ')} vs ${matchup.team2.map((p) => p.leagueIGN).join(', ')}\n
+  ${matchup.team1.map((p) => p.elo)} vs ${matchup.team2.map((p) => p.elo)}
+  `;
 };

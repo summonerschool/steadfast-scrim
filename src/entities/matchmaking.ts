@@ -6,7 +6,8 @@ export const matchupSchema = z.object({
   eloDifference: z.number().int(),
   team1: teamSchema,
   team2: teamSchema,
-  offroleCount: z.number().int().default(0)
+  offroleCount: z.number().int().default(0),
+  leastFairLaneDiff: z.number().int().default(0)
 });
 
 export type RolePool = User[];
