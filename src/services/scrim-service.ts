@@ -49,7 +49,7 @@ export const initScrimService = (
     },
     reportWinner: async (scrim, team) => {
       const updated = await scrimRepo.updateScrim({ ...scrim, winner: team });
-      return updated === 1;
+      return !!updated;
     },
     createProdraftLobby: async (scrimID) => {
       const PRODRAFT_URL = 'http://prodraft.leagueoflegends.com/draft';
