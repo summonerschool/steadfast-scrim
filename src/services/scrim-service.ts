@@ -43,7 +43,8 @@ export const initScrimService = (
       // Create scrim from queue id and a list of player ids
       const users = await userRepo.getUsers({ id: { in: usersIDs } });
       const matchup = matchmakingService.startMatchmaking(users);
-      const scrim = await scrimRepo.createScrim(queueID, matchup.players);
+      const players = matchmakingService.matchupToPlayers(matchup[0], users);
+      const scrim = await scrimRepo.createScrim(queueID, players);
       return scrim;
     },
     reportWinner: async (scrim, team) => {

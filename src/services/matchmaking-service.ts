@@ -5,7 +5,8 @@ import { NoMatchupPossibleError } from '../errors/errors';
 import { chance } from '../lib/chance';
 
 export interface MatchmakingService {
-  startMatchmaking: (users: User[]) => { players: Player[]; eloDifference: number };
+  startMatchmaking: (users: User[]) => [Matchup, Matchup];
+  matchupToPlayers: (matchup: Matchup, users: User[], randomSide?: boolean) => Player[];
 }
 
 export const initMatchmakingService = () => {
@@ -14,16 +15,19 @@ export const initMatchmakingService = () => {
       let playerPool = calculatePlayerPool(users);
       let combinations = generateAllPossibleTeams(playerPool);
       // team vs team with elo difference. The players are sorted by their ID within the team
-      let res = generateMatchups(combinations, users);
+      let res = findBestMatchup(combinations, users);
       if (!res.valid) {
         throw new NoMatchupPossibleError('0 matchups possible');
       }
-      const { team1, team2, eloDifference } = res.matchup;
+      return [res.matchupByOffrole, res.matchupByElo];
+    },
+    matchupToPlayers: (matchup, users, randomSide = true) => {
+      const { team1, team2 } = matchup;
       // // Randomly assign ingame side to the teams
-      const teams = chance.shuffle([team1, team2]);
+      const teams = randomSide ? chance.shuffle([team1, team2]) : [team1, team2];
       const blueTeam = teamToPlayers(teams[0], 'BLUE', users);
       const redTeam = teamToPlayers(teams[1], 'RED', users);
-      return { players: [...blueTeam, ...redTeam], eloDifference };
+      return [...blueTeam, ...redTeam];
     }
   };
   return service;
@@ -86,10 +90,10 @@ export const generateAllPossibleTeams = (pool: User[][]) => {
   return combinations;
 };
 
-export const generateMatchups = (
+export const findBestMatchup = (
   combinations: Team[],
   users: User[]
-): { valid: true; matchup: Matchup } | { valid: false } => {
+): { valid: true; matchupByElo: Matchup; matchupByOffrole: Matchup } | { valid: false } => {
   let bestMatchupByOffroleCount: Matchup | undefined = undefined;
   let bestMatchupByEloDiff: Matchup | undefined = undefined;
 
@@ -134,7 +138,7 @@ export const generateMatchups = (
   console.info(matchupToString(bestMatchupByOffroleCount));
   console.info(matchupToString(bestMatchupByEloDiff));
 
-  return { valid: true, matchup: bestMatchupByOffroleCount };
+  return { valid: true, matchupByOffrole: bestMatchupByOffroleCount, matchupByElo: bestMatchupByEloDiff };
 };
 
 const compareOffrole = (m1: Matchup, m2: Matchup) => {
