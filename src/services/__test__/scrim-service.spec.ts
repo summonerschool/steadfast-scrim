@@ -23,15 +23,16 @@ describe('ScrimService', () => {
   const scrimService = initScrimService(scrimRepository, userRepository, matchmakingService);
 
   it('Creates a valid scouting link', async () => {
-    const mockGetUsersResult: User[] = [...new Array(5)].map(() => ({
-      id: chance.guid(),
-      leagueIGN: chance.name(),
-      rank: 'IRON',
-      region: 'EUW',
-      elo: 0,
-      main: 'JUNGLE',
-      secondary: 'MID'
-    }));
+    const mockGetUsersResult: User[] = [...new Array(5)].map(() =>
+      userSchema.parse({
+        id: chance.guid(),
+        leagueIGN: chance.first(),
+        rank: 'IRON',
+        region: 'EUW',
+        main: 'JUNGLE',
+        secondary: 'MID'
+      })
+    );
     userRepository.getUsers.mockResolvedValueOnce(mockGetUsersResult);
     const summoners = encodeURIComponent(mockGetUsersResult.map((user) => user.leagueIGN).join(','));
     const expected = `https://op.gg/multisearch/euw?summoners=${summoners}`;
@@ -39,18 +40,30 @@ describe('ScrimService', () => {
   });
 
   it('Gives the correct elo to winners/losers', async () => {
-    const matchup  = matchmakingService.startMatchmaking(twoOfEach)[0]
-    const players = matchmakingService.matchupToPlayers(matchup, twoOfEach)
-    const scrim : Scrim = {
+    const matchup = matchmakingService.startMatchmaking(twoOfEach)[0];
+    const players = matchmakingService.matchupToPlayers(matchup, twoOfEach);
+    const scrim: Scrim = {
       id: chance.integer(),
       queueID: chance.guid(),
-      winner: "BLUE",
-      status:"STARTED",
+      winner: 'BLUE',
+      status: 'STARTED',
       voiceIDs: [],
       players: players
-    }
-    userRepository.getUsers.mockResolvedValueOnce(twoOfEach)
-    scrimService.addResultsToPlayerStats(scrim)
+    };
+
+    userRepository.getUsers.mockResolvedValueOnce(twoOfEach);
+    scrimService.addResultsToPlayerStats(scrim);
+
+    const scrim2: Scrim = {
+      id: chance.integer(),
+      queueID: chance.guid(),
+      winner: 'RED',
+      status: 'STARTED',
+      voiceIDs: [],
+      players: players
+    };
+    userRepository.getUsers.mockResolvedValueOnce(twoOfEach);
+    scrimService.addResultsToPlayerStats(scrim2);
   });
 });
 const createTestUser = (role?: Role, secondary?: Role, name?: string, elo?: number) =>
@@ -61,7 +74,9 @@ const createTestUser = (role?: Role, secondary?: Role, name?: string, elo?: numb
     region: 'EUW',
     main: role,
     secondary: secondary ? secondary : secondary == 'MID' ? 'SUPPORT' : 'MID',
-    elo: elo
+    elo: elo,
+    wins: 1,
+    losses: 0
   });
 
 const twoOfEach: User[] = [
@@ -76,4 +91,3 @@ const twoOfEach: User[] = [
   createTestUser('BOT', 'BOT', 'z', 1900),
   createTestUser('SUPPORT', 'BOT', 'tikka', 1800)
 ];
-

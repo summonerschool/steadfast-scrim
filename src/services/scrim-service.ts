@@ -17,7 +17,7 @@ export interface ScrimService {
   createProdraftLobby: (scrimID: number) => Promise<ProdraftURLs>;
   getIncompleteScrims: (userID: string) => Promise<Scrim[]>;
   findScrim: (scrimID: number) => Promise<Scrim>;
-  addResultsToPlayerStats: (scrim: Scrim) => void;
+  addResultsToPlayerStats: (scrim: Scrim) => Promise<number>;
 }
 
 export const initScrimService = (
@@ -95,23 +95,36 @@ export const initScrimService = (
       const blue: User[] = [];
 
       // Sort the users into side
-      console.log({scrim, users})
+      console.log(`${scrim.winner} WIN`);
       for (const user of users) {
         const side = scrim.players.find((p) => p.userID == user.id)!!.side;
         if (side === 'BLUE') blue.push(user);
         if (side === 'RED') red.push(user);
       }
       // Get the average elo for the teams
-      console.log(users)
-      if (!(red.length > 0 && blue.length > 0)) {
-        return
-      }
-      let totalBlueElo = blue.reduce((prev, curr) => prev + curr.elo, 0);
-      let totalRedElo = red.reduce((prev, curr) => prev + curr.elo, 0);
+      const totalBlueElo = blue.reduce((prev, curr) => prev + curr.elo, 0);
+      const totalRedElo = red.reduce((prev, curr) => prev + curr.elo, 0);
 
-      const eloBlue = 1 / (1 + 10 ** (totalRedElo - totalBlueElo) / 650);
-      const eloRed = 1 / (1 + 10 ** (totalBlueElo - totalRedElo) / 650);
-      console.log({ eloBlue, eloRed });
+      const blueWinChances = 1 / (1 + 10 ** ((totalRedElo - totalBlueElo) / 650));
+      const redWinChances = 1 - blueWinChances;
+      const updatedUsers: User[] = [];
+
+      const change: number[] = [];
+      users.forEach((user) => {
+        const totalGames = user.wins + user.losses;
+        const K = totalGames <= 14 ? 60 - 2 * totalGames : 32;
+        const eloChange = Math.round(K * (scrim.winner === 'BLUE' ? redWinChances : blueWinChances));
+        const hasWon = scrim.players.find((p) => p.userID === user.id)!!.side === scrim.winner;
+        change.push(eloChange);
+        user.elo = hasWon ? user.elo + eloChange : user.elo - eloChange;
+        if (hasWon) {
+          user.wins += 1;
+        } else {
+          user.losses += 1;
+        }
+        updatedUsers.push(user);
+      });
+      return userRepo.updateUserWithResult(users);
     }
   };
   return service;
