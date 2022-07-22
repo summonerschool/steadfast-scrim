@@ -5,17 +5,17 @@ import { NoMatchupPossibleError } from '../errors/errors';
 import { chance } from '../lib/chance';
 
 export interface MatchmakingService {
-  startMatchmaking: (users: User[]) => [Matchup, Matchup];
+  startMatchmaking: (users: User[], prioritizeElo?: boolean) => [Matchup, Matchup];
   matchupToPlayers: (matchup: Matchup, users: User[], randomSide?: boolean) => Player[];
 }
 
 export const initMatchmakingService = () => {
   const service: MatchmakingService = {
-    startMatchmaking: (users) => {
+    startMatchmaking: (users, prioritizeElo = false) => {
       let playerPool = calculatePlayerPool(users);
       let combinations = generateAllPossibleTeams(playerPool);
       // team vs team with elo difference. The players are sorted by their ID within the team
-      let res = findBestMatchup(combinations, users);
+      let res = findBestMatchup(combinations, users, prioritizeElo);
       if (!res.valid) {
         throw new NoMatchupPossibleError('0 matchups possible');
       }
@@ -56,7 +56,7 @@ const OFFROLE_PENALTY: { [key in User['rank']]: number } = {
 };
 
 // Puts every user into a pool based on role.
-export const calculatePlayerPool = (users: User[], includeSecondary = false) => {
+export const calculatePlayerPool = (users: User[]) => {
   const talentPool: Pool = [[], [], [], [], []];
   for (const user of users) {
     talentPool[ROLE_ORDER[user.main]].push(user);
@@ -92,7 +92,8 @@ export const generateAllPossibleTeams = (pool: User[][]) => {
 
 export const findBestMatchup = (
   combinations: Team[],
-  users: User[]
+  users: User[],
+  prioritizeElo?: boolean
 ): { valid: true; matchupByElo: Matchup; matchupByOffrole: Matchup } | { valid: false } => {
   let bestMatchupByOffroleCount: Matchup | undefined = undefined;
   let bestMatchupByEloDiff: Matchup | undefined = undefined;
