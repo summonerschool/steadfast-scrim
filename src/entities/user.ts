@@ -45,8 +45,8 @@ export const userSchema = z.object({
   region: regionEnum,
   main: roleEnum,
   secondary: roleEnum,
-  wins: z.number().int().positive().default(0), // profile stuff
-  losses: z.number().int().positive().default(0),
+  wins: z.number().int().nonnegative().default(0), // profile stuff
+  losses: z.number().int().nonnegative().default(0),
   elo: z.number().int().min(0).default(0),
   external_elo: z.number().int().min(0).optional()
 });
