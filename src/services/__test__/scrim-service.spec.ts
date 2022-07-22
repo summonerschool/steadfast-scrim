@@ -5,6 +5,7 @@ import { chance } from '../../lib/chance';
 import { Role, User, userSchema } from '../../entities/user';
 import { ScrimRepository } from '../repo/scrim-repository';
 import { initMatchmakingService } from '../matchmaking-service';
+import { Player, Scrim } from '../../entities/scrim';
 
 const roleToPlayer = (role: Role): User =>
   userSchema.parse({
@@ -18,8 +19,8 @@ const roleToPlayer = (role: Role): User =>
 describe('ScrimService', () => {
   const scrimRepository = mockDeep<ScrimRepository>();
   const userRepository = mockDeep<UserRepository>();
-  const matchmakingRepository = initMatchmakingService();
-  const scrimService = initScrimService(scrimRepository, userRepository, matchmakingRepository);
+  const matchmakingService = initMatchmakingService();
+  const scrimService = initScrimService(scrimRepository, userRepository, matchmakingService);
 
   it('Creates a valid scouting link', async () => {
     const mockGetUsersResult: User[] = [...new Array(5)].map(() => ({
@@ -37,73 +38,42 @@ describe('ScrimService', () => {
     await expect(scrimService.generateScoutingLink(1, 'RED')).resolves.toEqual(expected);
   });
 
-  // it('perfect match', async () => {
-  //   // makes of 2 of each role (10 in total)
-  //   const roles = [...roleEnum.options, ...roleEnum.options];
-  //   let users: User[] = roles.map((role) => ({
-  //     id: chance.guid(),
-  //     leagueIGN: chance.name(),
-  //     rank: 'GOLD',
-  //     server: 'EUW',
-  //     roles: [role]
-  //   }));
-  //   const twoOfEachRole = scrimService.canCreatePerfectMatchup(users);
-  //   expect(twoOfEachRole).toBe(true);
-  // });
-
-  // it('creates perfect match', async () => {
-  // let tenUsers: User[] = users.map((user) => ({
-  //   id: chance.guid(),
-  //   leagueIGN:user.leagueIGN,
-  //   rank: user.rank,
-  //   region: 'EUW',
-  //   main: user.main,
-  //   secondary: user.secondary,
-  //   elo: user.elo
-  // }));
-  // const matchups = scrimService.createMatchupNoAutofill(tenUsers)
-  // expect(matchups[0].eloDifference).toEqual(37)
-  // });
-  // it('huh', async () => {
-  //   let tenUsers: User[] = users.map((user) => ({
-  //     id: chance.guid(),
-  //     leagueIGN:user.leagueIGN,
-  //     rank: user.rank,
-  //     region: 'EUW',
-  //     main: user.main,
-  //     secondary: user.secondary,
-  //     elo: user.elo
-  //   }));
-  //   const pools = calculatePlayerPool(tenUsers)
-  //   pools[0].push(users[3])
-  //   console.log(generateAllPossibleTeams(pools))
-  // });
-
-  // it('hmm', async () => {
-  //   scrimService.createMatchupNoAutofill(users);
-  // });
+  it('Gives the correct elo to winners/losers', async () => {
+    const matchup  = matchmakingService.startMatchmaking(twoOfEach)[0]
+    const players = matchmakingService.matchupToPlayers(matchup, twoOfEach)
+    const scrim : Scrim = {
+      id: chance.integer(),
+      queueID: chance.guid(),
+      winner: "BLUE",
+      status:"STARTED",
+      voiceIDs: [],
+      players: players
+    }
+    userRepository.getUsers.mockResolvedValueOnce(twoOfEach)
+    scrimService.addResultsToPlayerStats(scrim)
+  });
 });
-
-const createTestUser = (role?: Role, name?: string, elo?: number) =>
+const createTestUser = (role?: Role, secondary?: Role, name?: string, elo?: number) =>
   userSchema.parse({
     id: chance.guid(),
     leagueIGN: name || chance.name(),
     rank: 'GOLD',
     region: 'EUW',
     main: role,
-    secondary: role == 'MID' ? 'SUPPORT' : 'MID',
+    secondary: secondary ? secondary : secondary == 'MID' ? 'SUPPORT' : 'MID',
     elo: elo
   });
 
-// const users: User[] = [
-//   createTestUser('TOP', 'huzzle', 2100),
-//   createTestUser('TOP', 'rayann', 1821),
-//   createTestUser('JUNGLE', 'mika', 2400),
-//   createTestUser('JUNGLE', 'kharann', 1700),
-//   createTestUser('MID', 'zero', 1400),
-//   createTestUser('MID', 'yyaen', 1657),
-//   createTestUser('BOT', 'mo', 2400),
-//   createTestUser('BOT', 'z', 1900),
-//   createTestUser('SUPPORT', 'tikka', 1800),
-//   createTestUser('SUPPORT', 'zironic', 659)
-// ];
+const twoOfEach: User[] = [
+  createTestUser('TOP', 'MID', 'huzzle', 2100),
+  createTestUser('MID', 'TOP', 'zero', 1400),
+  createTestUser('TOP', 'JUNGLE', 'rayann', 1821),
+  createTestUser('JUNGLE', 'JUNGLE', 'mika', 2400),
+  createTestUser('BOT', 'JUNGLE', 'mo', 2400),
+  createTestUser('SUPPORT', 'BOT', 'zironic', 659),
+  createTestUser('JUNGLE', 'BOT', 'kharann', 1700),
+  createTestUser('MID', 'BOT', 'yyaen', 1657),
+  createTestUser('BOT', 'BOT', 'z', 1900),
+  createTestUser('SUPPORT', 'BOT', 'tikka', 1800)
+];
+

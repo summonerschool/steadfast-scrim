@@ -17,6 +17,7 @@ export interface ScrimService {
   createProdraftLobby: (scrimID: number) => Promise<ProdraftURLs>;
   getIncompleteScrims: (userID: string) => Promise<Scrim[]>;
   findScrim: (scrimID: number) => Promise<Scrim>;
+  addResultsToPlayerStats: (scrim: Scrim) => void;
 }
 
 export const initScrimService = (
@@ -85,6 +86,32 @@ export const initScrimService = (
         throw new NotFoundError('No scrims found with that ID');
       }
       return scrim;
+    },
+    addResultsToPlayerStats: async (scrim) => {
+      const userIDs = scrim.players.map((p) => p.userID);
+      const users = await userRepo.getUsers({ id: { in: userIDs } });
+
+      const red: User[] = [];
+      const blue: User[] = [];
+
+      // Sort the users into side
+      console.log({scrim, users})
+      for (const user of users) {
+        const side = scrim.players.find((p) => p.userID == user.id)!!.side;
+        if (side === 'BLUE') blue.push(user);
+        if (side === 'RED') red.push(user);
+      }
+      // Get the average elo for the teams
+      console.log(users)
+      if (!(red.length > 0 && blue.length > 0)) {
+        return
+      }
+      let totalBlueElo = blue.reduce((prev, curr) => prev + curr.elo, 0);
+      let totalRedElo = red.reduce((prev, curr) => prev + curr.elo, 0);
+
+      const eloBlue = 1 / (1 + 10 ** (totalRedElo - totalBlueElo) / 650);
+      const eloRed = 1 / (1 + 10 ** (totalBlueElo - totalRedElo) / 650);
+      console.log({ eloBlue, eloRed });
     }
   };
   return service;
