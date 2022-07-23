@@ -51,7 +51,7 @@ describe('ScrimService', () => {
       players: players
     };
 
-    userRepository.getUsers.mockResolvedValueOnce(twoOfEach);
+    userRepository.getUsers.mockResolvedValueOnce([...twoOfEach]);
     scrimService.addResultsToPlayerStats(scrim);
 
     const scrim2: Scrim = {
@@ -62,7 +62,7 @@ describe('ScrimService', () => {
       voiceIDs: [],
       players: players
     };
-    userRepository.getUsers.mockResolvedValueOnce(twoOfEach);
+    userRepository.getUsers.mockResolvedValueOnce([...twoOfEach]);
     scrimService.addResultsToPlayerStats(scrim2);
   });
 });
@@ -75,7 +75,7 @@ const createTestUser = (role?: Role, secondary?: Role, name?: string, elo?: numb
     main: role,
     secondary: secondary ? secondary : secondary == 'MID' ? 'SUPPORT' : 'MID',
     elo: elo,
-    wins: 1,
+    wins: 0,
     losses: 0
   });
 

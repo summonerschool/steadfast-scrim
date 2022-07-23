@@ -90,7 +90,6 @@ export const initScrimService = (
     addResultsToPlayerStats: async (scrim) => {
       const userIDs = scrim.players.map((p) => p.userID);
       const users = await userRepo.getUsers({ id: { in: userIDs } });
-
       const red: User[] = [];
       const blue: User[] = [];
 
@@ -107,24 +106,19 @@ export const initScrimService = (
 
       const blueWinChances = 1 / (1 + 10 ** ((totalRedElo - totalBlueElo) / 650));
       const redWinChances = 1 - blueWinChances;
-      const updatedUsers: User[] = [];
-
-      const change: number[] = [];
-      users.forEach((user) => {
+      const updatedUsers: User[] = users.map((user) => {
         const totalGames = user.wins + user.losses;
         const K = totalGames <= 14 ? 60 - 2 * totalGames : 32;
-        const eloChange = Math.round(K * (scrim.winner === 'BLUE' ? redWinChances : blueWinChances));
+        const eloChange = Math.round(K * (scrim.winner === 'BLUE' ? 1 - blueWinChances : 1 - redWinChances));
         const hasWon = scrim.players.find((p) => p.userID === user.id)!!.side === scrim.winner;
-        change.push(eloChange);
-        user.elo = hasWon ? user.elo + eloChange : user.elo - eloChange;
+        const elo = hasWon ? user.elo + eloChange : user.elo - eloChange;
         if (hasWon) {
-          user.wins += 1;
+          return { ...user, elo, wins: user.wins + 1 };
         } else {
-          user.losses += 1;
+          return { ...user, elo, wins: user.losses + 1 };
         }
-        updatedUsers.push(user);
       });
-      return userRepo.updateUserWithResult(users);
+      return userRepo.updateUserWithResult(updatedUsers);
     }
   };
   return service;
