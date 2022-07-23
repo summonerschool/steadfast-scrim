@@ -45,7 +45,8 @@ class MatchCommand extends SlashCommand {
     const player = scrim.players.find((p) => p.userID === ctx.user.id)!;
     if (status == 'REMAKE') {
       // TODO REMAKE LOGIC
-      return 'Remake';
+      const res = await scrimService.remakeScrim(scrim)
+      return res ? `${match_id} has been reported as a remake` : "Could not remake match. Please contact a moderator";
     }
     const enemy = player.side == 'BLUE' ? 'RED' : 'BLUE';
     const winner = status == 'WIN' ? player.side : enemy;

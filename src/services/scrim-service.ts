@@ -17,6 +17,7 @@ export interface ScrimService {
   createProdraftLobby: (scrimID: number) => Promise<ProdraftURLs>;
   getIncompleteScrims: (userID: string) => Promise<Scrim[]>;
   findScrim: (scrimID: number) => Promise<Scrim>;
+  remakeScrim: (scrim: Scrim) => Promise<boolean> 
 }
 
 export const initScrimService = (
@@ -85,6 +86,11 @@ export const initScrimService = (
         throw new NotFoundError('No scrims found with that ID');
       }
       return scrim;
+    },
+    remakeScrim: async (scrim) => {
+      const remakeScrim: Scrim = {...scrim,  status: "REMAKE"}
+      const success = await scrimRepo.updateScrim(remakeScrim)
+      return success.status === "REMAKE"
     }
   };
   return service;
