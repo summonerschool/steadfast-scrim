@@ -45,6 +45,7 @@ export const initQueueService = (userRepo: UserRepository) => {
       // await Promise.all(promises);
       const inQueue = [...currentQueue, user];
       queues.set(guildID, inQueue);
+      console.info(queues.get(guildID))
       return inQueue;
     },
     leaveQueue: (userID, guildID) => {
@@ -53,8 +54,8 @@ export const initQueueService = (userRepo: UserRepository) => {
         throw new Error('You have not joined any queues');
       }
       const filteredQueue = currentQueue.filter((u) => u.id === userID);
-      const queue = queues.set(guildID, filteredQueue);
-      return queue.get(guildID) || [];
+      queues.set(guildID, filteredQueue);
+      return filteredQueue || [];
     },
     canCreateMatch: (guildID) => {
       // might sort or filter or order more here
