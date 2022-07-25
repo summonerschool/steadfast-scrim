@@ -5,6 +5,7 @@ export interface UserRepository {
   upsertUser: (payload: User) => Promise<User>;
   getUserByID: (id: User['id']) => Promise<User | undefined>;
   getUsers: (filter?: Prisma.UserWhereInput) => Promise<User[]>;
+  updateUserWithResult: (users: User[]) => Promise<number>;
 }
 
 export const initUserRepository = (prisma: PrismaClient) => {
@@ -41,6 +42,17 @@ export const initUserRepository = (prisma: PrismaClient) => {
     getUsers: async (filter) => {
       const users = await prisma.user.findMany({ where: filter });
       return users.map(mapToUser);
+    },
+    updateUserWithResult: async (users: User[]) => {
+      const promises = await prisma.$transaction(
+        users.map((user) =>
+          prisma.user.update({
+            where: { id: user.id },
+            data: { elo: user.elo, loss: user.losses, win: user.elo }
+          })
+        )
+      );
+      return promises.length;
     }
   };
   return repo;
