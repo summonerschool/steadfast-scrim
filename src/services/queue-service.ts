@@ -1,9 +1,6 @@
-import { userService } from '.';
-import { Queue, Queuer, queueSchema } from '../entities/queue';
-import { rankEnum, roleEnum, User, userSchema } from '../entities/user';
+import { User } from '../entities/user';
+// import { rankEnum, roleEnum, User, userSchema } from '../entities/user';
 import { NotFoundError } from '../errors/errors';
-import { chance } from '../lib/chance';
-import { ELO_TRANSLATION } from '../utils/utils';
 import { UserRepository } from './repo/user-repository';
 
 interface QueueService {

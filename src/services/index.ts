@@ -9,7 +9,7 @@ import { initUserService } from './user-service';
 // Clients
 const prisma = new PrismaClient();
 // Repositories
-export const userRepo = initUserRepository(prisma);
+const userRepo = initUserRepository(prisma);
 const scrimRepo = initScrimRepository(prisma);
 // Services
 export const userService = initUserService(userRepo);
