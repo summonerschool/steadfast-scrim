@@ -53,7 +53,7 @@ export const initQueueService = (userRepo: UserRepository) => {
       if (!currentQueue.some((u) => u.id === userID)) {
         throw new Error('You have not joined any queues');
       }
-      const filteredQueue = currentQueue.filter((u) => u.id === userID);
+      const filteredQueue = currentQueue.filter((u) => u.id !== userID);
       queues.set(guildID, filteredQueue);
       return filteredQueue || [];
     },
