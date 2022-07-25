@@ -44,7 +44,6 @@ describe('ScrimService', () => {
     const players = matchmakingService.matchupToPlayers(matchup, twoOfEach);
     const scrim: Scrim = {
       id: chance.integer(),
-      queueID: chance.guid(),
       winner: 'BLUE',
       status: 'STARTED',
       voiceIDs: [],
@@ -56,7 +55,6 @@ describe('ScrimService', () => {
 
     const scrim2: Scrim = {
       id: chance.integer(),
-      queueID: chance.guid(),
       winner: 'RED',
       status: 'STARTED',
       voiceIDs: [],

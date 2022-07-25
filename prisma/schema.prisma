@@ -21,7 +21,6 @@ model User {
   loss         Int      @default(0)
   elo          Int      @default(0)
   external_elo Int      @default(0)
-  queuer       Queuer[]
   player       Player[]
 }
 
@@ -46,27 +45,9 @@ model Scrim {
   status    Status   @default(STARTED)
   voice_ids String[]
   players   Player[]
-  queue     Queue    @relation(fields: [queue_id], references: [guild_id])
-  queue_id  String
+  guildID   String
+  region    Region
   winner    Side?
-}
-
-model Queue {
-  guild_id String   @id
-  region   Region
-  queuer   Queuer[]
-  scrims   Scrim[]
-}
-
-model Queuer {
-  user      User     @relation(fields: [user_id], references: [id])
-  user_id   String
-  queue     Queue    @relation(fields: [queue_id], references: [guild_id])
-  queue_id  String
-  popped    Boolean  @default(false)
-  queued_at DateTime @default(now())
-
-  @@id([user_id, queue_id])
 }
 
 enum Status {

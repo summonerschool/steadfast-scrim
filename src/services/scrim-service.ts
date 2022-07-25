@@ -1,5 +1,5 @@
 import { Scrim, GameSide } from '../entities/scrim';
-import { User } from '../entities/user';
+import { Region, User } from '../entities/user';
 import { chance } from '../lib/chance';
 import { MatchmakingService } from './matchmaking-service';
 import { ScrimRepository } from './repo/scrim-repository';
@@ -11,7 +11,7 @@ import { ProdraftURLs, ProdraftResponse } from '../entities/external';
 
 export interface ScrimService {
   generateScoutingLink: (scrimID: number, side: GameSide) => Promise<string>;
-  createBalancedScrim: (queueID: string, users: string[]) => Promise<Scrim>;
+  createBalancedScrim: (guildID: string, region: Region, users: User[]) => Promise<Scrim>;
   getUserProfilesInScrim: (scrimID: number, side: GameSide) => Promise<User[]>;
   reportWinner: (scrim: Scrim, side: GameSide) => Promise<boolean>;
   createProdraftLobby: (scrimID: number) => Promise<ProdraftURLs>;
@@ -41,12 +41,10 @@ export const initScrimService = (
       const users = await userRepo.getUsers({ player: { some: { scrim_id: scrimID, side: side } } });
       return users;
     },
-    createBalancedScrim: async (queueID, usersIDs) => {
-      // Create scrim from queue id and a list of player ids
-      const users = await userRepo.getUsers({ id: { in: usersIDs } });
+    createBalancedScrim: async (guildID, region, users) => {
       const matchup = matchmakingService.startMatchmaking(users);
       const players = matchmakingService.matchupToPlayers(matchup[0], users);
-      const scrim = await scrimRepo.createScrim(queueID, players);
+      const scrim = await scrimRepo.createScrim(guildID, region, players);
       return scrim;
     },
     reportWinner: async (scrim, team) => {
