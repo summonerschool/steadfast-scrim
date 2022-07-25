@@ -4,18 +4,6 @@ import { capitalize } from '../utils/utils';
 
 type QueueCommand = 'show' | 'leave' | 'join';
 
-const RANK_EMOJI: { [key in User['rank']]: string } = {
-  IRON: '',
-  BRONZE: '',
-  SILVER: '',
-  GOLD: '',
-  PLATINUM: '<:platinum:1001133279761670235>',
-  DIAMOND: '<:diamond:1001133450629218344>',
-  MASTER: '',
-  GRANDMASTER: '',
-  CHALLENGER: ''
-};
-
 export const queueEmbed = (users: User[], command: QueueCommand, callerID: string) => {
   const plural = users.length === 1 ? '1 player is' : `${users.length} players are`;
   const embed = new EmbedBuilder().setTitle(`${plural} currently in the queue`).setTimestamp(new Date());
@@ -41,7 +29,7 @@ export const queueEmbed = (users: User[], command: QueueCommand, callerID: strin
       let resultRanks = '';
       for (const [rank, count] of rankCount.entries()) {
         // TODO: Add emoji rank translation
-        resultRanks += `${RANK_EMOJI[rank]} ${count}\n`;
+        resultRanks += `${capitalize(rank)}: ${count}\n`;
       }
 
       return embed.addFields({ name: 'Ranks', value: resultRanks }, { name: 'Players', value: mentions.join('\n') });
