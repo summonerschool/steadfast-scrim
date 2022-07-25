@@ -17,7 +17,7 @@ export const initMatchmakingService = () => {
       // team vs team with elo difference. The players are sorted by their ID within the team
       let res = findBestMatchup(combinations, users, prioritizeElo);
       if (!res.valid) {
-        throw new NoMatchupPossibleError('0 matchups possible');
+        throw new NoMatchupPossibleError('No matchups possible with the chosen roles. Please re-queue with more roles.');
       }
       return [res.matchupByOffrole, res.matchupByElo];
     },

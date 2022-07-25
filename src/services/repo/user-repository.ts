@@ -26,7 +26,6 @@ export const initUserRepository = (prisma: PrismaClient) => {
         },
         update: {
           league_ign: leagueIGN,
-          elo: elo,
           external_elo: external_elo,
           rank,
           region,
