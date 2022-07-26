@@ -19,10 +19,6 @@ const creator = new SlashCreator({
   serverHost: '0.0.0.0'
 });
 
-export const client = new Discord.Client({
-  intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.DirectMessages]
-});
-
 creator.on('debug', (message) => logger.log(message));
 creator.on('warn', (message) => logger.warn(message));
 creator.on('error', (error) => logger.error(error));
@@ -41,5 +37,3 @@ const server = creator
 server.startServer().then(() => {});
 
 console.log(`Starting server at "localhost:${creator.options.serverPort}/interactions"`);
-
-client.login(process.env.DISCORD_BOT_TOKEN).then(() => {});
