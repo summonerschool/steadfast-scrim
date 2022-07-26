@@ -40,3 +40,8 @@ export const mapToScrim = (dbScrim: PrismaScrim, dbPlayers: PrismaPlayer[]) => {
   });
   return scrim;
 };
+
+export type LobbyDetails = {
+  teamNames: [string, string];
+  voiceInvite: [string, string];
+};

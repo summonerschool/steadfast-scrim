@@ -1,4 +1,4 @@
-import { Scrim, GameSide } from '../entities/scrim';
+import { Scrim, GameSide, Player, LobbyDetails } from '../entities/scrim';
 import { Region, User } from '../entities/user';
 import { chance } from '../lib/chance';
 import { MatchmakingService } from './matchmaking-service';
@@ -8,30 +8,48 @@ import { Status } from '@prisma/client';
 import axios from 'axios';
 import { NotFoundError } from '../errors/errors';
 import { ProdraftURLs, ProdraftResponse } from '../entities/external';
+import { ChannelType, EmbedBuilder, Invite } from 'discord.js';
+import { Client as DiscordClient } from 'discord.js';
+import { lobbyDetailsEmbed, matchDetailsEmbed } from '../components/match-message';
+import { DiscordService } from './discord-service';
 
 export interface ScrimService {
-  generateScoutingLink: (scrimID: number, side: GameSide) => Promise<string>;
-  createBalancedScrim: (guildID: string, region: Region, users: User[]) => Promise<Scrim>;
+  generateScoutingLink: (users: User[]) => string;
+  createBalancedScrim: (
+    guildID: string,
+    region: Region,
+    users: User[]
+  ) => Promise<{ scrim: Scrim; lobbyDetails: LobbyDetails }>;
   getUserProfilesInScrim: (scrimID: number, side: GameSide) => Promise<User[]>;
   reportWinner: (scrim: Scrim, side: GameSide) => Promise<boolean>;
-  createProdraftLobby: (scrimID: number) => Promise<ProdraftURLs>;
+  createProdraftLobby: (scrimID: number, teamNames: [string, string]) => Promise<ProdraftURLs>;
   getIncompleteScrims: (userID: string) => Promise<Scrim[]>;
   findScrim: (scrimID: number) => Promise<Scrim>;
   remakeScrim: (scrim: Scrim) => Promise<boolean>;
   addResultsToPlayerStats: (scrim: Scrim) => Promise<number>;
+  retrieveMatchDetails: (
+    scrim: Scrim,
+    users: User[],
+    teamNames: [string, string]
+  ) => Promise<{
+    RED: EmbedBuilder;
+    BLUE: EmbedBuilder;
+    MATCH: EmbedBuilder;
+    spectateLink: string;
+  }>;
 }
 
 export const initScrimService = (
   scrimRepo: ScrimRepository,
   userRepo: UserRepository,
-  matchmakingService: MatchmakingService
+  matchmakingService: MatchmakingService,
+  discordService: DiscordService
 ) => {
   const TEAM_SIZE = 5;
 
   const service: ScrimService = {
     // Generates an opgg link for scouting purposes
-    generateScoutingLink: async (scrimID, side) => {
-      const users = await service.getUserProfilesInScrim(scrimID, side);
+    generateScoutingLink: (users) => {
       const summoners = encodeURIComponent(users.map((user) => user.leagueIGN).join(','));
       const server = users[0].region.toLocaleLowerCase();
       const link = `https://op.gg/multisearch/${server}?summoners=${summoners}`;
@@ -42,38 +60,41 @@ export const initScrimService = (
       return users;
     },
     createBalancedScrim: async (guildID, region, users) => {
+      const teamNames: [string, string] = [`Blue ${chance.animal()}`, `Red ${chance.animal()}`];
       const matchup = matchmakingService.startMatchmaking(users);
       const players = matchmakingService.matchupToPlayers(matchup[0], users);
-      const scrim = await scrimRepo.createScrim(guildID, region, players);
-      return scrim;
+      const voiceChannels = await discordService.createVoiceChannels(guildID, teamNames);
+      console.log(voiceChannels);
+      const [scrim, inviteBlue, inviteRed] = await Promise.all([
+        scrimRepo.createScrim(
+          guildID,
+          region,
+          players,
+          voiceChannels.map((vc) => vc.id)
+        ),
+        voiceChannels[0].createInvite(),
+        voiceChannels[1].createInvite()
+      ]);
+      return { scrim, lobbyDetails: { teamNames, voiceInvite: [inviteBlue.url, inviteRed.url] } };
     },
     reportWinner: async (scrim, team) => {
       const updated = await scrimRepo.updateScrim({ ...scrim, winner: team });
       return !!updated;
     },
-    createProdraftLobby: async (scrimID) => {
+    createProdraftLobby: async (scrimID, teamNames) => {
       const PRODRAFT_URL = 'http://prodraft.leagueoflegends.com/draft';
       const payload = {
-        team1Name: `Blue ${chance.animal()}`,
-        team2Name: `Red ${chance.animal()}`,
+        team1Name: teamNames[0],
+        team2Name: teamNames[1],
         matchName: `Summoner School Game #${scrimID}`
       };
       const res = await axios.post<ProdraftResponse>(PRODRAFT_URL, payload);
       const data = res.data;
 
       return {
-        BLUE: {
-          name: payload.team1Name,
-          url: `http://prodraft.leagueoflegends.com/?draft=${data.id}&auth=${data.auth[0]}`
-        },
-        RED: {
-          name: payload.team2Name,
-          url: `http://prodraft.leagueoflegends.com/?draft=${data.id}&auth=${data.auth[1]}`
-        },
-        SPECTATOR: {
-          name: 'spectator',
-          url: `http://prodraft.leagueoflegends.com/?draft=${data.id}`
-        }
+        BLUE: `http://prodraft.leagueoflegends.com/?draft=${data.id}&auth=${data.auth[0]}`,
+        RED: `http://prodraft.leagueoflegends.com/?draft=${data.id}&auth=${data.auth[1]}`,
+        SPECTATOR: `http://prodraft.leagueoflegends.com/?draft=${data.id}`
       };
     },
     getIncompleteScrims: async (userID) => {
@@ -123,7 +144,39 @@ export const initScrimService = (
         }
       });
       return userRepo.updateUserWithResult(updatedUsers);
+    },
+
+    retrieveMatchDetails: async (scrim, users, teamNames) => {
+      const teams = sortUsersByTeam(users, scrim.players);
+      const promises = await Promise.all([
+        service.createProdraftLobby(scrim.id, teamNames),
+        service.generateScoutingLink(teams.BLUE),
+        service.generateScoutingLink(teams.RED)
+      ]);
+
+      const [draftURLs, opggBlue, opggRed] = promises;
+      const lobbyName = `${chance.word({ length: 5 })}${chance.integer({ min: 10, max: 20 })}`;
+      const password = chance.integer({ min: 1000, max: 9999 });
+
+      const matchEmbed = matchDetailsEmbed(scrim, opggBlue, opggRed, teamNames);
+      const blueEmbed = lobbyDetailsEmbed(teamNames[0], scrim.id, teams.BLUE, draftURLs.BLUE, lobbyName, password);
+      const redEmbed = lobbyDetailsEmbed(teamNames[1], scrim.id, teams.RED, draftURLs.RED, lobbyName, password);
+
+      return { BLUE: blueEmbed, RED: redEmbed, MATCH: matchEmbed, spectateLink: draftURLs.SPECTATOR };
     }
   };
   return service;
+};
+
+const sortUsersByTeam = (users: User[], players: Player[]) => {
+  const sideMap = new Map<string, GameSide>();
+  const teams = { RED: [], BLUE: [] } as { [key in GameSide]: User[] };
+  for (const player of players) {
+    const user = users.find((u) => u.id === player.userID);
+    if (!user) continue;
+    sideMap.set(user.id, player.side);
+    if (player.side === 'BLUE') teams.BLUE.push(user);
+    if (player.side === 'RED') teams.RED.push(user);
+  }
+  return teams;
 };

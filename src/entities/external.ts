@@ -32,14 +32,10 @@ export interface ProdraftResponse {
   game: object;
 }
 
-interface DraftEntry {
-  url: string;
-  name: string;
-}
 export interface ProdraftURLs {
-  RED: DraftEntry;
-  BLUE: DraftEntry;
-  SPECTATOR: DraftEntry;
+  RED: string;
+  BLUE: string;
+  SPECTATOR: string;
 }
 
 interface MMREntry {

@@ -3,7 +3,7 @@ import { mapToScrim, Player, Scrim } from '../../entities/scrim';
 import { Region } from '../../entities/user';
 
 export interface ScrimRepository {
-  createScrim: (guildID: string, region: Region, players: Player[]) => Promise<Scrim>;
+  createScrim: (guildID: string, region: Region, players: Player[], voiceIDs: string[]) => Promise<Scrim>;
   updateScrim: (scrim: Scrim) => Promise<Scrim>;
   getScrims: (filter: Prisma.ScrimWhereInput) => Promise<Scrim[]>;
   getScrimByID: (scrimID: number) => Promise<Scrim | undefined>;
@@ -11,7 +11,7 @@ export interface ScrimRepository {
 
 export const initScrimRepository = (prisma: PrismaClient) => {
   const repo: ScrimRepository = {
-    createScrim: async (guildID, region, players) => {
+    createScrim: async (guildID, region, players, voiceIDs) => {
       const playerData = players.map((player) => ({
         user_id: player.userID,
         role: Role[player.role],
@@ -28,7 +28,7 @@ export const initScrimRepository = (prisma: PrismaClient) => {
             }
           },
           status: Status.STARTED,
-          voice_ids: []
+          voice_ids: voiceIDs
         },
         include: {
           players: true

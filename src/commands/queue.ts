@@ -1,7 +1,7 @@
 import { SlashCommand, CommandOptionType, CommandContext, SlashCreator } from 'slash-create';
-import { queueService, scrimService } from '../services';
-import { createAndSendMatchMessage } from '../components/match-message';
+import { discordService, queueService, scrimService } from '../services';
 import { queueEmbed } from '../components/queue';
+import { chance } from '../lib/chance';
 
 class QueueCommand extends SlashCommand {
   constructor(creator: SlashCreator) {
@@ -42,9 +42,30 @@ class QueueCommand extends SlashCommand {
             const embed = queueEmbed(users, 'join', ctx.user.id);
             return { embeds: [embed as any], allowedMentions: { everyone: false } };
           }
-          const scrim = await scrimService.createBalancedScrim(guildID, users[0].region, matchmaking.users);
-          const msg = await createAndSendMatchMessage(scrim);
-          return msg;
+
+          const { scrim, lobbyDetails } = await scrimService.createBalancedScrim(
+            guildID,
+            users[0].region,
+            matchmaking.users
+          );
+          const details = await scrimService.retrieveMatchDetails(scrim, users, lobbyDetails.teamNames);
+          const players = scrim.players.filter((p) => !p.userID.includes('-'));
+
+          const blueIDs = players.filter((p) => p.side === 'BLUE').map((p) => p.userID);
+          const redIDs = players.filter((p) => p.side === 'RED').map((p) => p.userID);
+
+          const directMsg = await Promise.all([
+            discordService.sendMatchDirectMessage(blueIDs, {
+              embeds: [details.MATCH, details.BLUE],
+              content: lobbyDetails.voiceInvite[0]
+            }),
+            discordService.sendMatchDirectMessage(redIDs, {
+              embeds: [details.MATCH, details.RED],
+              content: lobbyDetails.voiceInvite[1]
+            })
+          ]);
+          console.log(`${directMsg[0] + directMsg[1]} DMs have been sent`);
+          return { embeds: [details.MATCH.addFields({ name: 'Draft', value: 'Spectate Draft' })] };
         }
         case 'leave': {
           const users = queueService.leaveQueue(ctx.user.id, guildID);

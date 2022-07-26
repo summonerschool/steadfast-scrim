@@ -6,7 +6,7 @@ import {
   AutocompleteContext,
   AutocompleteChoice
 } from 'slash-create';
-import { scrimService } from '../services';
+import { discordService, scrimService } from '../services';
 import { capitalize } from '../utils/utils';
 
 class MatchCommand extends SlashCommand {
@@ -43,10 +43,12 @@ class MatchCommand extends SlashCommand {
     const { match_id, status } = ctx.options;
     const scrim = await scrimService.findScrim(match_id);
     const player = scrim.players.find((p) => p.userID === ctx.user.id)!;
+    const deleted = await discordService.deleteVoiceChannels(ctx.guildID!!, scrim.voiceIDs);
+    console.log(deleted)
     if (status == 'REMAKE') {
       // TODO REMAKE LOGIC
-      const res = await scrimService.remakeScrim(scrim)
-      return res ? `${match_id} has been reported as a remake` : "Could not remake match. Please contact a moderator";
+      const res = await scrimService.remakeScrim(scrim);
+      return res ? `${match_id} has been reported as a remake` : 'Could not remake match. Please contact a moderator';
     }
     const enemy = player.side == 'BLUE' ? 'RED' : 'BLUE';
     const winner = status == 'WIN' ? player.side : enemy;

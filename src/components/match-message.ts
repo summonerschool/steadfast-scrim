@@ -1,13 +1,8 @@
-import { GameSide, Player, Scrim } from '../entities/scrim';
+import { GameSide, Player, Scrim, ScrimDetail } from '../entities/scrim';
 import { chance } from '../lib/chance';
-import { capitalize } from '../utils/utils';
 // @ts-ignore
-import { User } from '../entities/user';
 import { EmbedBuilder } from '@discordjs/builders';
-import { CommandContext } from 'slash-create';
-import { scrimService } from '../services';
-import { client } from '..';
-import { ProdraftURLs } from '../entities/external';
+import { User } from '../entities/user';
 
 const ROLES_ORDER = {
   TOP: 1,
@@ -22,40 +17,19 @@ const sortByRole = (p1: Player, p2: Player) => {
 };
 const teamToString = (player: Player) => `${player.role}: <@${player.userID}>`;
 
-export const createAndSendMatchMessage = async (scrim: Scrim) => {
-  const draftURLs = await scrimService.createProdraftLobby(scrim.id);
-  const opggBlue = await scrimService.generateScoutingLink(scrim.id, 'BLUE');
-  const opggRed = await scrimService.generateScoutingLink(scrim.id, 'RED');
-  // Send DMs
-  const userPromises = scrim.players
-    .filter((p) => !p.userID.includes('-'))
-    .map((p) => client.users.fetch(p.userID, { cache: false }));
-  const discordUsers = await Promise.all(userPromises);
-  const messagePromises = discordUsers.map(async (user) => {
-    // remove the spectator url so people dont get confused
-    const matchEmbed = matchDetailsEmbed(scrim, opggBlue, opggRed);
-    const gameEmbed = await lobbyDetailsEmbed(scrim, user.id, draftURLs);
-    return user.send({ embeds: [matchEmbed, gameEmbed] });
-  });
-  const msgs = await Promise.all(messagePromises);
-  console.info(`Sent ${msgs.length} DMs`);
-  const publicEmbed = matchDetailsEmbed(scrim, opggBlue, opggRed, draftURLs.SPECTATOR.url);
-  return {
-    embeds: [publicEmbed as any]
-  };
-};
-
-const matchDetailsEmbed = (scrim: Scrim, opggBlue: string, opggRed: string, draftURL?: string) => {
+export const matchDetailsEmbed = (scrim: Scrim, opggBlue: string, opggRed: string, teamNames: [string, string]) => {
   const lobbyCreator = chance.pickone(scrim.players);
   // Sort the teams by side
   const teams: { [key in GameSide]: Player[] } = { RED: [], BLUE: [] };
   scrim.players.forEach((player) => {
     teams[player.side].push(player);
   });
+
   const scoutingLinksMsg = `
     [**Blue OP.GG**](${opggBlue})
     [**Red OP.GG**](${opggRed})
   `;
+
   const redText = teams.RED.sort(sortByRole).map(teamToString);
   const blueText = teams.BLUE.sort(sortByRole).map(teamToString);
   const embed = new EmbedBuilder()
@@ -69,32 +43,33 @@ const matchDetailsEmbed = (scrim: Scrim, opggBlue: string, opggRed: string, draf
       `
     )
     .addFields(
-      { name: 'Team Blue', value: blueText.join('\n'), inline: true },
-      { name: 'Team Red', value: redText.join('\n'), inline: true },
+      { name: teamNames[0], value: blueText.join('\n'), inline: true },
+      { name: teamNames[1], value: redText.join('\n'), inline: true },
       { name: 'Scouting links:', value: scoutingLinksMsg }
     )
     .setTimestamp();
-
-  if (draftURL) {
-    embed.addFields({ name: 'Prodraft Link', value: `[**Spectate Draft**](${draftURL})` });
-  }
-
   return embed;
 };
 
-const lobbyDetailsEmbed = async (scrim: Scrim, recipientID: string, draftURLs: ProdraftURLs) => {
-  const side = scrim.players.find((p) => p.userID === recipientID)?.side || 'BLUE';
-  const teammates = await scrimService.getUserProfilesInScrim(scrim.id, side);
-
+export const lobbyDetailsEmbed = (
+  teamName: string,
+  scrimID: number,
+  teammates: User[],
+  draftURL: string,
+  lobbyName: string,
+  password: number
+) => {
   const detailsText = `
-      Lobby name: \`${chance.word({ length: 5 })}${chance.integer({ min: 10, max: 20 })}\`
-      Password: \`${chance.integer({ min: 1000, max: 9999 })}\`
-      [**Join draft**](${draftURLs[side].url})
+      Lobby name: ${lobbyName}
+      Password: ${password}
+      [**Join draft**](${draftURL})
       `;
-  return new EmbedBuilder()
+  const embed = new EmbedBuilder()
     .setColor(698371)
-    .setTitle(`Summoner School Game #${scrim.id}`)
-    .setDescription(`**Team ${draftURLs[side].name}**`)
+    .setTitle(`Summoner School Game #${scrimID}`)
+    .setDescription(`**${teamName}**`)
     .addFields({ name: 'Lobby details', value: detailsText, inline: true })
-    .addFields({ name: 'Teammates IGNs', value: teammates.map((p) => p.leagueIGN).join('\n'), inline: true });
+    .addFields({ name: 'Teammates IGNs', value: teammates.map((p) => p.leagueIGN).join('\n'), inline: true })
+    .setTimestamp();
+  return embed;
 };
