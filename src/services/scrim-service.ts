@@ -8,8 +8,7 @@ import { Status } from '@prisma/client';
 import axios from 'axios';
 import { NotFoundError } from '../errors/errors';
 import { ProdraftURLs, ProdraftResponse } from '../entities/external';
-import { ChannelType, EmbedBuilder, Invite } from 'discord.js';
-import { Client as DiscordClient } from 'discord.js';
+import { EmbedBuilder } from 'discord.js';
 import { lobbyDetailsEmbed, matchDetailsEmbed } from '../components/match-message';
 import { DiscordService } from './discord-service';
 

@@ -12,23 +12,23 @@ interface QueueService {
   canCreateMatch: (queueID: string) => { users: User[]; valid: true } | { valid: false };
 }
 
-const randos = [...new Array(9)].map(() => {
-  const main = chance.pickone(roleEnum.options);
-  const secondary = chance.pickone(roleEnum.options.filter((r) => r != main));
-  const rank = chance.pickone(rankEnum.options);
-  return userSchema.parse({
-    id: chance.guid(),
-    leagueIGN: `${chance.word({ length: 15 })}`,
-    region: 'EUW',
-    rank,
-    main,
-    secondary,
-    wins: chance.integer({ min: 0, max: 10 }),
-    losses: chance.integer({ min: 0, max: 10 }),
-    elo: ELO_TRANSLATION[rank],
-    external_elo: ELO_TRANSLATION[rank]
-  });
-});
+// const randos = [...new Array(9)].map(() => {
+//   const main = chance.pickone(roleEnum.options);
+//   const secondary = chance.pickone(roleEnum.options.filter((r) => r != main));
+//   const rank = chance.pickone(rankEnum.options);
+//   return userSchema.parse({
+//     id: chance.guid(),
+//     leagueIGN: `${chance.word({ length: 15 })}`,
+//     region: 'EUW',
+//     rank,
+//     main,
+//     secondary,
+//     wins: chance.integer({ min: 0, max: 10 }),
+//     losses: chance.integer({ min: 0, max: 10 }),
+//     elo: ELO_TRANSLATION[rank],
+//     external_elo: ELO_TRANSLATION[rank]
+//   });
+// });
 
 export const initQueueService = (userRepo: UserRepository) => {
   const queues = new Map<string, User[]>();
@@ -43,9 +43,10 @@ export const initQueueService = (userRepo: UserRepository) => {
       if (currentQueue.some((u) => u.id == user.id)) {
         throw new Error("You're already in queue");
       }
-      const promises = randos.map((u) => userRepo.upsertUser(u));
-      const asdf = await Promise.all(promises);
-      const inQueue = [...currentQueue, user, ...asdf];
+      // const promises = randos.map((u) => userRepo.upsertUser(u));
+      // const asdf = await Promise.all(promises);
+      // const inQueue = [...currentQueue, user, ...asdf];
+      const inQueue = [...currentQueue, user];
       queues.set(guildID, inQueue);
       return inQueue;
     },

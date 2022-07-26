@@ -11,18 +11,20 @@ export const initDiscordService = (discordClient: Discord.Client) => {
   const service: DiscordService = {
     createVoiceChannels: async (guildID, teamNames) => {
       const guild = await discordClient.guilds.fetch({ guild: guildID });
+      const voiceCategoryID = process.env.VOICE_CATEGORY_ID 
+
       const channels = await Promise.all([
         guild.channels.create({
           type: ChannelType.GuildVoice,
           name: teamNames[0],
           userLimit: 5,
-          parent: '826232163082698796'
+          parent: voiceCategoryID
         }),
         guild.channels.create({
           type: ChannelType.GuildVoice,
           name: teamNames[1],
           userLimit: 5,
-          parent: '826232163082698796'
+          parent: voiceCategoryID
         })
       ]);
 
@@ -36,7 +38,7 @@ export const initDiscordService = (discordClient: Discord.Client) => {
     deleteVoiceChannels: async (guildID, ids) => {
       const guild = await discordClient.guilds.fetch({ guild: guildID });
       const channels = await Promise.all([
-        guild.channels.fetch('826232163082698798'),
+        guild.channels.fetch(process.env.VOICE_LOBBY_ID || ""),
         guild.channels.fetch(ids[0]),
         guild.channels.fetch(ids[1])
       ]);
