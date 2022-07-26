@@ -1,6 +1,8 @@
-import { User } from '../entities/user';
+import { rankEnum, roleEnum, User, userSchema } from '../entities/user';
 // import { rankEnum, roleEnum, User, userSchema } from '../entities/user';
 import { NotFoundError } from '../errors/errors';
+import { chance } from '../lib/chance';
+import { ELO_TRANSLATION } from '../utils/utils';
 import { UserRepository } from './repo/user-repository';
 
 interface QueueService {
@@ -10,23 +12,23 @@ interface QueueService {
   canCreateMatch: (queueID: string) => { users: User[]; valid: true } | { valid: false };
 }
 
-// const randos = [...new Array(8)].map(() => {
-//   const main = chance.pickone(roleEnum.options);
-//   const secondary = chance.pickone(roleEnum.options.filter((r) => r != main));
-//   const rank = chance.pickone(rankEnum.options);
-//   return userSchema.parse({
-//     id: chance.guid(),
-//     leagueIGN: chance.first(),
-//     region: 'EUW',
-//     rank,
-//     main,
-//     secondary,
-//     wins: chance.integer({ min: 0, max: 10 }),
-//     losses: chance.integer({ min: 0, max: 10 }),
-//     elo: ELO_TRANSLATION[rank],
-//     external_elo: ELO_TRANSLATION[rank]
-//   });
-// });
+const randos = [...new Array(9)].map(() => {
+  const main = chance.pickone(roleEnum.options);
+  const secondary = chance.pickone(roleEnum.options.filter((r) => r != main));
+  const rank = chance.pickone(rankEnum.options);
+  return userSchema.parse({
+    id: chance.guid(),
+    leagueIGN: `${chance.word({ length: 15 })}`,
+    region: 'EUW',
+    rank,
+    main,
+    secondary,
+    wins: chance.integer({ min: 0, max: 10 }),
+    losses: chance.integer({ min: 0, max: 10 }),
+    elo: ELO_TRANSLATION[rank],
+    external_elo: ELO_TRANSLATION[rank]
+  });
+});
 
 export const initQueueService = (userRepo: UserRepository) => {
   const queues = new Map<string, User[]>();
@@ -41,11 +43,10 @@ export const initQueueService = (userRepo: UserRepository) => {
       if (currentQueue.some((u) => u.id == user.id)) {
         throw new Error("You're already in queue");
       }
-      // const promises = randos.map((u) => userRepo.upsertUser(u));
-      // await Promise.all(promises);
-      const inQueue = [...currentQueue, user];
+      const promises = randos.map((u) => userRepo.upsertUser(u));
+      const asdf = await Promise.all(promises);
+      const inQueue = [...currentQueue, user, ...asdf];
       queues.set(guildID, inQueue);
-      console.info(queues.get(guildID))
       return inQueue;
     },
     leaveQueue: (userID, guildID) => {

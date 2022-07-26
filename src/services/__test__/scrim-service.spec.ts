@@ -6,6 +6,7 @@ import { Role, User, userSchema } from '../../entities/user';
 import { ScrimRepository } from '../repo/scrim-repository';
 import { initMatchmakingService } from '../matchmaking-service';
 import { Player, Scrim } from '../../entities/scrim';
+import { DiscordService } from '../discord-service';
 
 const roleToPlayer = (role: Role): User =>
   userSchema.parse({
@@ -19,8 +20,9 @@ const roleToPlayer = (role: Role): User =>
 describe('ScrimService', () => {
   const scrimRepository = mockDeep<ScrimRepository>();
   const userRepository = mockDeep<UserRepository>();
+  const discord = mockDeep<DiscordService>()
   const matchmakingService = initMatchmakingService();
-  const scrimService = initScrimService(scrimRepository, userRepository, matchmakingService);
+  const scrimService = initScrimService(scrimRepository, userRepository, matchmakingService, discord);
 
   it('Creates a valid scouting link', async () => {
     const mockGetUsersResult: User[] = [...new Array(5)].map(() =>
@@ -33,10 +35,9 @@ describe('ScrimService', () => {
         secondary: 'MID'
       })
     );
-    userRepository.getUsers.mockResolvedValueOnce(mockGetUsersResult);
     const summoners = encodeURIComponent(mockGetUsersResult.map((user) => user.leagueIGN).join(','));
     const expected = `https://op.gg/multisearch/euw?summoners=${summoners}`;
-    await expect(scrimService.generateScoutingLink(1, 'RED')).resolves.toEqual(expected);
+    await expect(scrimService.generateScoutingLink(mockGetUsersResult)).resolves.toEqual(expected);
   });
 
   it('Gives the correct elo to winners/losers', async () => {

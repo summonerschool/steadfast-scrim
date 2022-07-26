@@ -1,4 +1,4 @@
-import { GameSide, Player, Scrim, ScrimDetail } from '../entities/scrim';
+import { GameSide, Player, Scrim } from '../entities/scrim';
 import { chance } from '../lib/chance';
 // @ts-ignore
 import { EmbedBuilder } from '@discordjs/builders';
