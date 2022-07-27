@@ -2,6 +2,7 @@ import { SlashCommand, CommandOptionType, CommandContext, SlashCreator } from 's
 import { discordService, queueService, scrimService } from '../services';
 import { queueEmbed } from '../components/queue';
 import { chance } from '../lib/chance';
+import { NoMatchupPossibleError } from '../errors/errors';
 
 class QueueCommand extends SlashCommand {
   constructor(creator: SlashCreator) {
@@ -84,7 +85,9 @@ class QueueCommand extends SlashCommand {
           return 'no such command exists';
       }
     } catch (err) {
-      if (err instanceof Error) {
+      if (err instanceof NoMatchupPossibleError) {
+        return { content: err.message };
+      } else if (err instanceof Error) {
         return { content: err.message, ephemeral: true };
       } else {
         console.error(err);
