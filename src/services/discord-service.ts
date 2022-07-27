@@ -1,5 +1,5 @@
-import Discord, { ChannelType, Invite, Message, VoiceChannel } from 'discord.js';
-import { User } from '../entities/user';
+import Discord, { ChannelType, VoiceChannel } from 'discord.js';
+import { discordService } from '.';
 
 export interface DiscordService {
   sendMatchDirectMessage: (userIDs: string[], message: Discord.MessageOptions) => Promise<number>;
@@ -7,11 +7,23 @@ export interface DiscordService {
   deleteVoiceChannels: (guildID: string, ids: string[]) => Promise<boolean>;
 }
 
+export const activeVoiceIDs = new Map<string, string[]>();
+
+process.on('exit', async () => {
+  const promises: Promise<boolean>[] = [];
+  for (const [guildID, voiceIDs] of activeVoiceIDs) {
+    promises.push(discordService.deleteVoiceChannels(guildID, voiceIDs));
+  }
+  await Promise.all(promises);
+});
+
 export const initDiscordService = (discordClient: Discord.Client) => {
+  const voiceCategoryID = process.env.VOICE_CATEGORY_ID || '';
+  const voiceLobbyID = process.env.VOICE_LOBBY_ID || '';
+
   const service: DiscordService = {
     createVoiceChannels: async (guildID, teamNames) => {
       const guild = await discordClient.guilds.fetch({ guild: guildID });
-      const voiceCategoryID = process.env.VOICE_CATEGORY_ID 
 
       const channels = await Promise.all([
         guild.channels.create({
@@ -27,7 +39,8 @@ export const initDiscordService = (discordClient: Discord.Client) => {
           parent: voiceCategoryID
         })
       ]);
-
+      const curr = activeVoiceIDs.get(guildID) || [];
+      activeVoiceIDs.set(guildID, [...curr, channels[0].id, channels[1].id]);
       return [channels[0], channels[1]];
     },
     sendMatchDirectMessage: async (userIDs: string[], message) => {
@@ -38,17 +51,26 @@ export const initDiscordService = (discordClient: Discord.Client) => {
     deleteVoiceChannels: async (guildID, ids) => {
       const guild = await discordClient.guilds.fetch({ guild: guildID });
       const channels = await Promise.all([
-        guild.channels.fetch(process.env.VOICE_LOBBY_ID || ""),
-        guild.channels.fetch(ids[0]),
-        guild.channels.fetch(ids[1])
+        guild.channels.fetch(voiceLobbyID),
+        ...ids.map((id) => guild.channels.fetch(id))
       ]);
 
-      const [lobby, blue, red] = channels.filter((vc): vc is VoiceChannel => vc != null);
+      const [lobby, ...teamVCs] = channels.filter(
+        (vc): vc is VoiceChannel => vc != null && vc.parent?.id === voiceCategoryID
+      );
 
       // Move users to lobby
-      const movePromises = [...blue.members.values(), ...red.members.values()].map((m) => m.voice.setChannel(lobby));
+      const members = teamVCs.reduce((prev, curr) => [...prev, ...curr.members.values()], [] as Discord.GuildMember[]);
+      const movePromises = members.map((m) => m.voice.setChannel(lobby));
       await Promise.all(movePromises);
-      await Promise.all([blue.delete(), red.delete()]);
+      // Delete voice channels and remove them from active voice ids list
+      const deleted = await Promise.all(teamVCs.map((vc) => vc.delete()));
+      const current = activeVoiceIDs.get(guildID) || [];
+      activeVoiceIDs.set(
+        guildID,
+        current.filter((id) => deleted.some((vc) => vc.id !== id))
+      );
+
       return true;
     }
   };

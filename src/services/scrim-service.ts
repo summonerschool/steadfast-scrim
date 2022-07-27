@@ -77,7 +77,7 @@ export const initScrimService = (
       return { scrim, lobbyDetails: { teamNames, voiceInvite: [inviteBlue.url, inviteRed.url] } };
     },
     reportWinner: async (scrim, team) => {
-      const updated = await scrimRepo.updateScrim({ ...scrim, status: "COMPLETED", winner: team });
+      const updated = await scrimRepo.updateScrim({ ...scrim, status: 'COMPLETED', winner: team });
       return !!updated;
     },
     createProdraftLobby: async (scrimID, teamNames) => {
