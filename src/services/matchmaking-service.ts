@@ -1,6 +1,6 @@
 import { Matchup, Pool, Team } from '../entities/matchmaking';
 import { GameSide, Player } from '../entities/scrim';
-import { ROLE_ORDER, User } from '../entities/user';
+import { Role, ROLE_ORDER, User } from '../entities/user';
 import { NoMatchupPossibleError } from '../errors/errors';
 import { chance } from '../lib/chance';
 
@@ -17,8 +17,7 @@ export const initMatchmakingService = () => {
       // team vs team with elo difference. The players are sorted by their ID within the team
       let res = findBestMatchup(combinations, users, prioritizeElo);
       if (!res.valid) {
-        console.info(playerPool)
-        throw new NoMatchupPossibleError('No matchups possible with the chosen roles. Please re-queue with more roles.');
+        throw new NoMatchupPossibleError('No matchups possible with the chosen roles.');
       }
       return [res.matchupByOffrole, res.matchupByElo];
     },
@@ -35,10 +34,9 @@ export const initMatchmakingService = () => {
 };
 
 const teamToPlayers = (team: Team, side: GameSide, users: User[]) => {
-  const players: Player[] = team.map((player) => {
+  const players: Player[] = team.map((player, i) => {
     const user = users.find((u) => u.id == player.id)!!;
-    const isOnOffrole = user.elo > player.elo;
-    return { userID: user.id, role: isOnOffrole ? user.secondary : user.main, side: side };
+    return { userID: user.id, role: ROLE_ORDER[i] as Role, side: side };
   });
   return players;
 };
@@ -67,6 +65,13 @@ export const calculatePlayerPool = (users: User[]) => {
       const index = ROLE_ORDER[user.secondary];
       const elo = user.elo - OFFROLE_PENALTY[user.rank];
       talentPool[index].push({ ...user, elo });
+      if (user.isFill) {
+        for (let i = 0; i < talentPool.length; i++) {
+          if (i != index && i != ROLE_ORDER[user.main]) {
+            talentPool[i].push({ ...user, elo });
+          }
+        }
+      }
     }
   }
   return talentPool;

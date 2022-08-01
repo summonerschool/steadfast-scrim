@@ -24,7 +24,12 @@ describe('MatchmakingService', () => {
     expect(ids.length).toEqual(new Set(ids).size);
   });
 
-  test('No matchups possible', () => {
+  // test('No matchups possible', () => {
+  //   const users = [...invalid];
+  //   expect(matchmakingService.startMatchmaking(users).length).toEqual(2);
+  // });
+
+  test('User can fill', () => {
     expect(() => matchmakingService.startMatchmaking(invalid)).toThrowError(NoMatchupPossibleError);
   });
 });
@@ -68,8 +73,8 @@ const twoOfEach: User[] = [
 
 const invalid: User[] = [
   createTestUser('TOP', 'MID', 'huzzle1', 2100),
-  createTestUser('TOP', 'MID', 'huzzle2', 2100),
-  createTestUser('TOP', 'MID', 'huzzle3', 2100),
+  createTestUser('JUNGLE', 'MID', 'huzzle2', 2100),
+  createTestUser('SUPPORT', 'MID', 'huzzle3', 2100),
   createTestUser('TOP', 'MID', 'huzzle4', 2100),
   createTestUser('TOP', 'MID', 'huzzle5', 2100),
   createTestUser('MID', 'JUNGLE', 'rayann1', 1821),

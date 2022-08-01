@@ -20,7 +20,7 @@ const roleToPlayer = (role: Role): User =>
 describe('ScrimService', () => {
   const scrimRepository = mockDeep<ScrimRepository>();
   const userRepository = mockDeep<UserRepository>();
-  const discord = mockDeep<DiscordService>()
+  const discord = mockDeep<DiscordService>();
   const matchmakingService = initMatchmakingService();
   const scrimService = initScrimService(scrimRepository, userRepository, matchmakingService, discord);
 
@@ -37,7 +37,7 @@ describe('ScrimService', () => {
     );
     const summoners = encodeURIComponent(mockGetUsersResult.map((user) => user.leagueIGN).join(','));
     const expected = `https://op.gg/multisearch/euw?summoners=${summoners}`;
-    await expect(scrimService.generateScoutingLink(mockGetUsersResult)).resolves.toEqual(expected);
+    await expect(scrimService.generateScoutingLink(mockGetUsersResult)).toEqual(expected);
   });
 
   it('Gives the correct elo to winners/losers', async () => {

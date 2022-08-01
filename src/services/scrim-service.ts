@@ -26,16 +26,7 @@ export interface ScrimService {
   findScrim: (scrimID: number) => Promise<Scrim>;
   remakeScrim: (scrim: Scrim) => Promise<boolean>;
   addResultsToPlayerStats: (scrim: Scrim) => Promise<number>;
-  retrieveMatchDetails: (
-    scrim: Scrim,
-    users: User[],
-    teamNames: [string, string]
-  ) => Promise<{
-    RED: EmbedBuilder;
-    BLUE: EmbedBuilder;
-    MATCH: EmbedBuilder;
-    spectateLink: string;
-  }>;
+  sendMatchDetails: (scrim: Scrim, users: User[], lobbyDetails: LobbyDetails) => Promise<EmbedBuilder>;
 }
 
 export const initScrimService = (
@@ -44,8 +35,6 @@ export const initScrimService = (
   matchmakingService: MatchmakingService,
   discordService: DiscordService
 ) => {
-  const TEAM_SIZE = 5;
-
   const service: ScrimService = {
     // Generates an opgg link for scouting purposes
     generateScoutingLink: (users) => {
@@ -63,7 +52,6 @@ export const initScrimService = (
       const matchup = matchmakingService.startMatchmaking(users);
       const players = matchmakingService.matchupToPlayers(matchup[0], users);
       const voiceChannels = await discordService.createVoiceChannels(guildID, teamNames);
-      console.log(voiceChannels);
       const [scrim, inviteBlue, inviteRed] = await Promise.all([
         scrimRepo.createScrim(
           guildID,
@@ -144,8 +132,8 @@ export const initScrimService = (
       });
       return userRepo.updateUserWithResult(updatedUsers);
     },
-
-    retrieveMatchDetails: async (scrim, users, teamNames) => {
+    sendMatchDetails: async (scrim, users, lobbyDetails) => {
+      const { teamNames, voiceInvite } = lobbyDetails;
       const teams = sortUsersByTeam(users, scrim.players);
       const promises = await Promise.all([
         service.createProdraftLobby(scrim.id, teamNames),
@@ -161,7 +149,23 @@ export const initScrimService = (
       const blueEmbed = lobbyDetailsEmbed(teamNames[0], scrim.id, teams.BLUE, draftURLs.BLUE, lobbyName, password);
       const redEmbed = lobbyDetailsEmbed(teamNames[1], scrim.id, teams.RED, draftURLs.RED, lobbyName, password);
 
-      return { BLUE: blueEmbed, RED: redEmbed, MATCH: matchEmbed, spectateLink: draftURLs.SPECTATOR };
+      const players = scrim.players.filter((p) => !p.userID.includes('-'));
+      const blueIDs = players.filter((p) => p.side === 'BLUE').map((p) => p.userID);
+      const redIDs = players.filter((p) => p.side === 'RED').map((p) => p.userID);
+
+      const directMsg = await Promise.all([
+        discordService.sendMatchDirectMessage(blueIDs, {
+          embeds: [matchEmbed, blueEmbed],
+          content: voiceInvite[0]
+        }),
+        discordService.sendMatchDirectMessage(redIDs, {
+          embeds: [matchEmbed, redEmbed],
+          content: voiceInvite[1]
+        })
+      ]);
+      `${directMsg[0] + directMsg[1]} DMs have been sent`;
+      const publicEmbed = matchEmbed.addFields({ name: 'Draft', value: `[Spectate Draft](${draftURLs.SPECTATOR})` });
+      return publicEmbed;
     }
   };
   return service;

@@ -6,3 +6,8 @@ export const ScrimResultActionRow = () =>
     new ButtonBuilder().setCustomId('blue-win').setLabel('Win').setStyle(ButtonStyle.Primary),
     new ButtonBuilder().setCustomId('remake').setLabel('Remake').setStyle(ButtonStyle.Secondary)
   );
+
+export const FillButton = () =>
+  new ActionRowBuilder().addComponents(
+    new ButtonBuilder().setCustomId('fill').setLabel('Fill').setStyle(ButtonStyle.Primary)
+  );

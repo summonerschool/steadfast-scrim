@@ -1,8 +1,23 @@
-import { SlashCommand, CommandOptionType, CommandContext, SlashCreator } from 'slash-create';
-import { discordService, queueService, scrimService } from '../services';
+import {
+  SlashCommand,
+  CommandOptionType,
+  CommandContext,
+  SlashCreator,
+  Message,
+  ComponentType,
+  ButtonStyle,
+  MessageOptions
+} from 'slash-create';
+import { queueService, scrimService } from '../services';
 import { queueEmbed } from '../components/queue';
-import { chance } from '../lib/chance';
 import { NoMatchupPossibleError } from '../errors/errors';
+import { User } from '../entities/user';
+
+const startMatchmaking = async (users: User[], guildID: string) => {
+  const { scrim, lobbyDetails } = await scrimService.createBalancedScrim(guildID, users[0].region, users);
+  const matchEmbed = await scrimService.sendMatchDetails(scrim, users, lobbyDetails);
+  return { embeds: [matchEmbed] };
+};
 
 class QueueCommand extends SlashCommand {
   constructor(creator: SlashCreator) {
@@ -38,35 +53,65 @@ class QueueCommand extends SlashCommand {
       switch (ctx.subcommands[0]) {
         case 'join': {
           const users = await queueService.joinQueue(ctx.user.id, guildID);
-          const matchmaking = queueService.canCreateMatch(guildID);
+          const matchmaking = queueService.canCreateMatch(users);
+          // TODO: Move this logic to service
           if (!matchmaking.valid) {
-            const embed = queueEmbed(users, 'join', ctx.user.id);
-            return { embeds: [embed as any], allowedMentions: { everyone: false } };
+            if (matchmaking.roleCount != null) {
+              const roles = matchmaking.roleCount;
+              await ctx.defer();
+              const btn = (await ctx.send({
+                content: 'Role selection was not diverse enough. Would anyone like to fill?',
+                components: [
+                  {
+                    type: ComponentType.ACTION_ROW,
+                    components: [
+                      {
+                        type: ComponentType.BUTTON,
+                        style: ButtonStyle.PRIMARY,
+                        label: 'Fill',
+                        custom_id: 'fill'
+                      }
+                    ]
+                  }
+                ]
+              })) as Message;
+              ctx.registerComponent('fill', async (btnCtx) => {
+                const user = users.find((u) => u.id === btnCtx.user.id);
+                let response: MessageOptions | null = null;
+                if (!user) {
+                  response = {
+                    content: "You cannot fill in a match you're not queued up for",
+                    ephemeral: true
+                  };
+                } else if (roles.get(user.main)!! - 1 < 2 || roles.get(user.secondary)!! - 1 < 2) {
+                  response = {
+                    content: 'You cannot queue up as fill due to the lack of players in one of your roles',
+                    ephemeral: true
+                  };
+                } else {
+                  (btn as Message).edit({ components: [] });
+                  queueService.resetQueue(guildID);
+                  const { embeds } = await startMatchmaking(
+                    users.map((u) => (u.id === ctx.user.id ? { ...u, isFill: true } : u)),
+                    guildID
+                  );
+                  response = {
+                    embeds: [embeds as any]
+                  };
+                }
+                btn.edit({ content: 'A user has chosen fill' });
+                await ctx.send(response);
+              });
+            } else {
+              console.log('RIP');
+              const embed = queueEmbed(users, 'join', ctx.user.id);
+              return { embeds: [embed as any], allowedMentions: { everyone: false } };
+            }
+          } else {
+            queueService.resetQueue(guildID);
+            return await startMatchmaking(users, guildID);
           }
-
-          const { scrim, lobbyDetails } = await scrimService.createBalancedScrim(
-            guildID,
-            users[0].region,
-            matchmaking.users
-          );
-          const details = await scrimService.retrieveMatchDetails(scrim, users, lobbyDetails.teamNames);
-          const players = scrim.players.filter((p) => !p.userID.includes('-'));
-
-          const blueIDs = players.filter((p) => p.side === 'BLUE').map((p) => p.userID);
-          const redIDs = players.filter((p) => p.side === 'RED').map((p) => p.userID);
-
-          const directMsg = await Promise.all([
-            discordService.sendMatchDirectMessage(blueIDs, {
-              embeds: [details.MATCH, details.BLUE],
-              content: lobbyDetails.voiceInvite[0]
-            }),
-            discordService.sendMatchDirectMessage(redIDs, {
-              embeds: [details.MATCH, details.RED],
-              content: lobbyDetails.voiceInvite[1]
-            })
-          ]);
-          console.log(`${directMsg[0] + directMsg[1]} DMs have been sent`);
-          return { embeds: [details.MATCH.addFields({ name: 'Draft', value: 'Spectate Draft' })] };
+          break;
         }
         case 'leave': {
           const users = queueService.leaveQueue(ctx.user.id, guildID);
