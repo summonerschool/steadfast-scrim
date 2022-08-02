@@ -12,6 +12,7 @@ import { queueService, scrimService } from '../services';
 import { queueEmbed } from '../components/queue';
 import { NoMatchupPossibleError } from '../errors/errors';
 import { User } from '../entities/user';
+import { MatchmakingStatus } from '../services/queue-service';
 
 const startMatchmaking = async (users: User[], guildID: string) => {
   const { scrim, lobbyDetails } = await scrimService.createBalancedScrim(guildID, users[0].region, users);
@@ -53,65 +54,26 @@ class QueueCommand extends SlashCommand {
       switch (ctx.subcommands[0]) {
         case 'join': {
           const users = await queueService.joinQueue(ctx.user.id, guildID);
-          const matchmaking = queueService.canCreateMatch(users);
           // TODO: Move this logic to service
-          if (!matchmaking.valid) {
-            if (matchmaking.roleCount != null) {
-              const roles = matchmaking.roleCount;
-              await ctx.defer();
-              const btn = (await ctx.send({
-                content: 'Role selection was not diverse enough. Would anyone like to fill?',
-                components: [
-                  {
-                    type: ComponentType.ACTION_ROW,
-                    components: [
-                      {
-                        type: ComponentType.BUTTON,
-                        style: ButtonStyle.PRIMARY,
-                        label: 'Fill',
-                        custom_id: 'fill'
-                      }
-                    ]
-                  }
-                ]
-              })) as Message;
-              ctx.registerComponent('fill', async (btnCtx) => {
-                const user = users.find((u) => u.id === btnCtx.user.id);
-                let response: MessageOptions | null = null;
-                if (!user) {
-                  response = {
-                    content: "You cannot fill in a match you're not queued up for",
-                    ephemeral: true
-                  };
-                } else if (roles.get(user.main)!! - 1 < 2 || roles.get(user.secondary)!! - 1 < 2) {
-                  response = {
-                    content: 'You cannot queue up as fill due to the lack of players in one of your roles',
-                    ephemeral: true
-                  };
-                } else {
-                  (btn as Message).edit({ components: [] });
-                  queueService.resetQueue(guildID);
-                  const { embeds } = await startMatchmaking(
-                    users.map((u) => (u.id === ctx.user.id ? { ...u, isFill: true } : u)),
-                    guildID
-                  );
-                  response = {
-                    embeds: [embeds as any]
-                  };
-                }
-                btn.edit({ content: 'A user has chosen fill' });
-                await ctx.send(response);
-              });
-            } else {
-              console.log('RIP');
+          const status = queueService.attemptMatchCreation(guildID);
+          switch (status) {
+            case MatchmakingStatus.NOT_ENOUGH_PLAYERS: {
               const embed = queueEmbed(users, 'join', ctx.user.id);
               return { embeds: [embed as any], allowedMentions: { everyone: false } };
             }
-          } else {
-            queueService.resetQueue(guildID);
-            return await startMatchmaking(users, guildID);
+            case MatchmakingStatus.INSUFICCENT_ROLE_DIVERSITY: {
+              const usersWithFill = queueService.autoFillUsers(guildID)
+              queueService.resetQueue(guildID)
+              const msg = startMatchmaking(usersWithFill, guildID);
+              return msg;
+            }
+            case MatchmakingStatus.VALID_MATCH: {
+              const users = queueService.getUsersInQueue(guildID);
+              queueService.resetQueue(guildID)
+              const msg = startMatchmaking(users, guildID);
+              return msg;
+            }
           }
-          break;
         }
         case 'leave': {
           const users = queueService.leaveQueue(ctx.user.id, guildID);

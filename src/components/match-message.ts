@@ -1,4 +1,4 @@
-import { GameSide, Player, Scrim } from '../entities/scrim';
+import { GameSide, LobbyDetails, Player, Scrim } from '../entities/scrim';
 import { chance } from '../lib/chance';
 // @ts-ignore
 import { EmbedBuilder } from '@discordjs/builders';
@@ -17,7 +17,8 @@ const sortByRole = (p1: Player, p2: Player) => {
 };
 const teamToString = (player: Player) => `${player.role}: <@${player.userID}>`;
 
-export const matchDetailsEmbed = (scrim: Scrim, opggBlue: string, opggRed: string, teamNames: [string, string]) => {
+export const matchDetailsEmbed = (scrim: Scrim, opggBlue: string, opggRed: string, lobbyDetails: LobbyDetails) => {
+  const { teamNames, eloDifference, offroleCount, autoFilledCount } = lobbyDetails;
   const lobbyCreator = chance.pickone(scrim.players);
   // Sort the teams by side
   const teams: { [key in GameSide]: Player[] } = { RED: [], BLUE: [] };
@@ -37,8 +38,14 @@ export const matchDetailsEmbed = (scrim: Scrim, opggBlue: string, opggRed: strin
     .setTitle(`Queue Popped!`)
     .setDescription(
       `
-    No autofilled players in this, feel free to swap roles among yourselves.\n
     **MATCH ID**: **${scrim.id}**\n
+    ${
+      autoFilledCount === 0
+        ? 'No autofilled players in this, feel free to swap roles among yourselves.'
+        : `${autoFilledCount} players have been autofilled`
+    }\n
+    Elo difference: ${eloDifference}\n
+    Players on offrole: ${offroleCount}\n\n
     **Lobby creator**: <@${lobbyCreator.userID}>\n
       `
     )

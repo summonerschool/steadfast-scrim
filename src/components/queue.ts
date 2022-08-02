@@ -6,7 +6,10 @@ type QueueCommand = 'show' | 'leave' | 'join';
 
 export const queueEmbed = (users: User[], command: QueueCommand, callerID: string) => {
   const plural = users.length === 1 ? '1 player is' : `${users.length} players are`;
-  const embed = new EmbedBuilder().setTitle(`${plural} currently in the queue`).setTimestamp(new Date());
+  const embed = new EmbedBuilder()
+  .setTitle(`${plural} currently in the queue`)
+  .setTimestamp(new Date());
+
   switch (command) {
     case 'join':
       return embed.setDescription(`<@${callerID}> has joined the queue.`);
@@ -41,8 +44,8 @@ export const queueEmbed = (users: User[], command: QueueCommand, callerID: strin
       return embed.addFields(
         { name: 'Ranks', value: resultRanks },
         { name: 'Players', value: mentions.join('\n') },
-        { name: 'Main roles', value: roleCountToText(mainCount), inline: true },
-        { name: 'Secondary roles', value: roleCountToText(secondaryCount), inline: true }
+        // { name: 'Main roles', value: roleCountToText(mainCount), inline: true },
+        // { name: 'Secondary roles', value: roleCountToText(secondaryCount), inline: true }
       );
   }
 };

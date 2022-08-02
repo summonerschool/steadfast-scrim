@@ -49,8 +49,10 @@ export const initScrimService = (
     },
     createBalancedScrim: async (guildID, region, users) => {
       const teamNames: [string, string] = [`Blue ${chance.animal()}`, `Red ${chance.animal()}`];
-      const matchup = matchmakingService.startMatchmaking(users);
-      const players = matchmakingService.matchupToPlayers(matchup[0], users);
+      const [rolePrio, eloPrio] = matchmakingService.startMatchmaking(users);
+      // random number
+      const matchup = rolePrio.eloDifference < 500 ? rolePrio : eloPrio;
+      const players = matchmakingService.matchupToPlayers(matchup, users);
       const voiceChannels = await discordService.createVoiceChannels(guildID, teamNames);
       const [scrim, inviteBlue, inviteRed] = await Promise.all([
         scrimRepo.createScrim(
@@ -62,7 +64,17 @@ export const initScrimService = (
         voiceChannels[0].createInvite(),
         voiceChannels[1].createInvite()
       ]);
-      return { scrim, lobbyDetails: { teamNames, voiceInvite: [inviteBlue.url, inviteRed.url] } };
+      console.info(`Elo difference is ${matchup.eloDifference}`);
+      return {
+        scrim,
+        lobbyDetails: {
+          teamNames,
+          voiceInvite: [inviteBlue.url, inviteRed.url],
+          eloDifference: matchup.eloDifference,
+          offroleCount: matchup.offroleCount,
+          autoFilledCount: users.filter(u => u.isFill).length
+        }
+      };
     },
     reportWinner: async (scrim, team) => {
       const updated = await scrimRepo.updateScrim({ ...scrim, status: 'COMPLETED', winner: team });
@@ -145,7 +157,7 @@ export const initScrimService = (
       const lobbyName = `${chance.word({ length: 5 })}${chance.integer({ min: 10, max: 20 })}`;
       const password = chance.integer({ min: 1000, max: 9999 });
 
-      const matchEmbed = matchDetailsEmbed(scrim, opggBlue, opggRed, teamNames);
+      const matchEmbed = matchDetailsEmbed(scrim, opggBlue, opggRed, lobbyDetails);
       const blueEmbed = lobbyDetailsEmbed(teamNames[0], scrim.id, teams.BLUE, draftURLs.BLUE, lobbyName, password);
       const redEmbed = lobbyDetailsEmbed(teamNames[1], scrim.id, teams.RED, draftURLs.RED, lobbyName, password);
 

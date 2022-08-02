@@ -65,13 +65,6 @@ export const calculatePlayerPool = (users: User[]) => {
       const index = ROLE_ORDER[user.secondary];
       const elo = user.elo - OFFROLE_PENALTY[user.rank];
       talentPool[index].push({ ...user, elo });
-      if (user.isFill) {
-        for (let i = 0; i < talentPool.length; i++) {
-          if (i != index && i != ROLE_ORDER[user.main]) {
-            talentPool[i].push({ ...user, elo });
-          }
-        }
-      }
     }
   }
   return talentPool;

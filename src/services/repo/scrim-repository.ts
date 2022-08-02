@@ -54,11 +54,11 @@ export const initScrimRepository = (prisma: PrismaClient) => {
         const batch = await prisma.$transaction([
           prisma.user.updateMany({
             where: { id: { in: winners } },
-            data: { win: { increment: 1 } }
+            data: { wins: { increment: 1 } }
           }),
           prisma.user.updateMany({
             where: { id: { in: losers } },
-            data: { loss: { increment: 1 } }
+            data: { losses: { increment: 1 } }
           })
         ]);
         console.info(`Finished reporting winners: ${batch[0].count + batch[1].count} players updated`);

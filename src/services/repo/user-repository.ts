@@ -48,7 +48,7 @@ export const initUserRepository = (prisma: PrismaClient) => {
         users.map((user) =>
           prisma.user.update({
             where: { id: user.id },
-            data: { elo: user.elo, loss: user.losses, win: user.elo }
+            data: { elo: user.elo, losses: user.losses, wins: user.wins }
           })
         )
       );

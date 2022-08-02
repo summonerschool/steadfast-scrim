@@ -17,8 +17,8 @@ model User {
   rank         Rank
   main         Role
   secondary    Role
-  win          Int      @default(0)
-  loss         Int      @default(0)
+  wins         Int      @default(0)
+  losses       Int      @default(0)
   elo          Int      @default(0)
   external_elo Int      @default(0)
   player       Player[]

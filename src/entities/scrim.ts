@@ -44,4 +44,7 @@ export const mapToScrim = (dbScrim: PrismaScrim, dbPlayers: PrismaPlayer[]) => {
 export type LobbyDetails = {
   teamNames: [string, string];
   voiceInvite: [string, string];
+  eloDifference: number
+  offroleCount: number
+  autoFilledCount: number
 };
