@@ -45,7 +45,7 @@ export const matchDetailsEmbed = (scrim: Scrim, opggBlue: string, opggRed: strin
         : `${autoFilledCount} players have been autofilled`
     }\n
     Elo difference: ${eloDifference}\n
-    Players on offrole: ${offroleCount}\n\n
+    Players on offrole: ${offroleCount}\n
     **Lobby creator**: <@${lobbyCreator.userID}>\n
       `
     )

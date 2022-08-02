@@ -92,13 +92,14 @@ export const initQueueService = (userRepo: UserRepository) => {
       const users = [...queue.values()];
       const roleCount = service.getRoleCount(users);
       const requireFill = new Map<Role, number>();
+      console.log({ roleCount });
       for (const [role, count] of roleCount) {
         if (count < 2) {
           requireFill.set(role, 2 - count);
         }
       }
       const requiredAmountOfFillers = [...requireFill.values()].reduce((prev, curr) => prev + curr, 0);
-      console.log(requireFill)
+      console.log({ requireFill });
       for (let i = 0; i < requiredAmountOfFillers; i++) {
         const role = chance.pickone([...requireFill.keys()]);
         const rolesWithSurplus = [...roleCount].sort((a, b) => a[1] - b[1]);
@@ -112,8 +113,8 @@ export const initQueueService = (userRepo: UserRepository) => {
               u.secondary != role
           )
         );
-        queues.set(guildID, queue.set(user.id, { ...user, secondary: role, isFill: true }))
-        console.log(`set ${user.leagueIGN} to ${role}`)
+        queues.set(guildID, queue.set(user.id, { ...user, secondary: role, isFill: true }));
+        console.log(`set ${user.leagueIGN} to ${role}`);
 
         roleCount.set(user.secondary, roleCount.get(user.secondary)!! - 1);
         roleCount.set(role, roleCount.get(role)!! + 1);

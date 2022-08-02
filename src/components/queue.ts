@@ -4,11 +4,9 @@ import { capitalize, POSITION_EMOJI_TRANSLATION } from '../utils/utils';
 
 type QueueCommand = 'show' | 'leave' | 'join';
 
-export const queueEmbed = (users: User[], command: QueueCommand, callerID: string) => {
+export const queueEmbed = (users: User[], command: QueueCommand, callerID: string, detailed: boolean = false) => {
   const plural = users.length === 1 ? '1 player is' : `${users.length} players are`;
-  const embed = new EmbedBuilder()
-  .setTitle(`${plural} currently in the queue`)
-  .setTimestamp(new Date());
+  const embed = new EmbedBuilder().setTitle(`${plural} currently in the queue`).setTimestamp(new Date());
 
   switch (command) {
     case 'join':
@@ -41,12 +39,17 @@ export const queueEmbed = (users: User[], command: QueueCommand, callerID: strin
         resultRanks += `${capitalize(rank)}: ${count}\n`;
       }
 
-      return embed.addFields(
+      const msg = embed.addFields(
         { name: 'Ranks', value: resultRanks },
-        { name: 'Players', value: mentions.join('\n') },
-        // { name: 'Main roles', value: roleCountToText(mainCount), inline: true },
-        // { name: 'Secondary roles', value: roleCountToText(secondaryCount), inline: true }
+        { name: 'Players', value: mentions.join('\n') }
       );
+      if (detailed) {
+        msg.addFields(
+          { name: 'Main roles', value: roleCountToText(mainCount), inline: true },
+          { name: 'Secondary roles', value: roleCountToText(secondaryCount), inline: true }
+        );
+      }
+      return msg;
   }
 };
 

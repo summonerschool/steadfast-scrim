@@ -34,12 +34,20 @@ class QueueCommand extends SlashCommand {
         {
           type: CommandOptionType.SUB_COMMAND,
           name: 'leave',
-          description: 'Leave the queue'
+          description: 'Leave the queue',
         },
         {
           type: CommandOptionType.SUB_COMMAND,
           name: 'show',
-          description: 'Show users currently in queue'
+          description: 'Show users currently in queue',
+          options: [
+            {
+              type: CommandOptionType.BOOLEAN,
+              name: "detailed",
+              description: "Show with roles queued up",
+              required: false,
+            }
+          ]
         }
       ]
     });
@@ -82,7 +90,7 @@ class QueueCommand extends SlashCommand {
         }
         case 'show': {
           const users = queueService.getUsersInQueue(guildID);
-          const embed = queueEmbed(users, 'show', ctx.user.id);
+          const embed = queueEmbed(users, 'show', ctx.user.id, ctx.options.show["detailed"]);
           return {
             embeds: [embed as any],
             allowedMentions: { everyone: false }

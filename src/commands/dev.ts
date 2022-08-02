@@ -16,11 +16,6 @@ class DevCommand extends SlashCommand {
           name: 'seed',
           description: 'make test users join'
         },
-        {
-          type: CommandOptionType.SUB_COMMAND,
-          name: 'delete',
-          description: 'delete voice channel'
-        }
       ]
     });
 
