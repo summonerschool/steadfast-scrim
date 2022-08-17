@@ -40,10 +40,4 @@ export const POSITION_EMOJI_TRANSLATION: { [key: string]: string } = {
   SUPPORT: '<:SUPPORT:996381337139281971>'
 };
 
-export const RIOT_SERVERS = {
-  EUW: 'euw1',
-  EUNE: 'eune1',
-  NA: 'na1'
-};
-
 export const capitalize = (text: string) => `${text[0].toUpperCase()}${text.slice(1).toLowerCase()}`;

@@ -1,10 +1,8 @@
 import { Role } from '@prisma/client';
-import { rankEnum, roleEnum, User, userSchema } from '../entities/user';
-// import { rankEnum, roleEnum, User, userSchema } from '../entities/user';
+import { User } from '../entities/user';
 import { NotFoundError } from '../errors/errors';
 import { chance } from '../lib/chance';
 import { UserRepository } from './repo/user-repository';
-import { ScrimService } from './scrim-service';
 
 interface QueueService {
   joinQueue: (userID: string, guildID: string) => Promise<User[]>;
