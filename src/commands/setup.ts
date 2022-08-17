@@ -20,7 +20,7 @@ class SetupCommand extends SlashCommand {
   constructor(creator: SlashCreator) {
     super(creator, {
       name: 'setup',
-      description: 'Setup a player profile for in-house games',
+      description: 'Setup a player profile for the in-house games',
       options: [
         {
           type: CommandOptionType.STRING,
@@ -42,21 +42,21 @@ class SetupCommand extends SlashCommand {
           type: CommandOptionType.STRING,
           name: 'rank',
           required: true,
-          description: 'What is your current rank on your main?',
+          description: 'Set a fall-back rank if we cannot determine your rank.',
           choices: rank
         },
         {
           type: CommandOptionType.STRING,
           name: 'main',
           required: true,
-          description: 'Choose the role you main',
+          description: 'Pick your main role',
           choices: roles
         },
         {
           type: CommandOptionType.STRING,
           name: 'secondary',
           required: true,
-          description: 'Choose your secondary role',
+          description: 'Pick your secondary',
           choices: roles
         }
       ]

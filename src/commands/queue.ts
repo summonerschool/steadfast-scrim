@@ -3,10 +3,6 @@ import {
   CommandOptionType,
   CommandContext,
   SlashCreator,
-  Message,
-  ComponentType,
-  ButtonStyle,
-  MessageOptions
 } from 'slash-create';
 import { queueService, scrimService } from '../services';
 import { queueEmbed } from '../components/queue';
@@ -29,7 +25,7 @@ class QueueCommand extends SlashCommand {
         {
           type: CommandOptionType.SUB_COMMAND,
           name: 'join',
-          description: 'Join a queue'
+          description: 'Join a queue for an inhouse-game'
         },
         {
           type: CommandOptionType.SUB_COMMAND,
@@ -44,7 +40,7 @@ class QueueCommand extends SlashCommand {
             {
               type: CommandOptionType.BOOLEAN,
               name: "detailed",
-              description: "Show with roles queued up",
+              description: "Show a detailed list of the current queue",
               required: false,
             }
           ]
