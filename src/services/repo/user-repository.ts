@@ -44,15 +44,14 @@ export const initUserRepository = (prisma: PrismaClient) => {
       return users.map(mapToUser);
     },
     updateUserWithResult: async (users: User[]) => {
-      const promises = await prisma.$transaction(
-        users.map((user) =>
-          prisma.user.update({
-            where: { id: user.id },
-            data: { elo: user.elo, losses: user.losses, wins: user.wins }
-          })
-        )
+      const promises = users.map((user) =>
+        prisma.user.update({
+          where: { id: user.id },
+          data: { elo: user.elo, losses: user.losses, wins: user.wins }
+        })
       );
-      return promises.length;
+      const results = await prisma.$transaction(promises);
+      return results.length;
     }
   };
   return repo;

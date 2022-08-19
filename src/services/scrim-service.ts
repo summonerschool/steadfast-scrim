@@ -72,7 +72,7 @@ export const initScrimService = (
           voiceInvite: [inviteBlue.url, inviteRed.url],
           eloDifference: matchup.eloDifference,
           offroleCount: matchup.offroleCount,
-          autoFilledCount: users.filter(u => u.isFill).length
+          autoFilledCount: users.filter((u) => u.isFill).length
         }
       };
     },
@@ -139,9 +139,10 @@ export const initScrimService = (
         if (hasWon) {
           return { ...user, elo, wins: user.wins + 1 };
         } else {
-          return { ...user, elo, wins: user.losses + 1 };
+          return { ...user, elo, losses: user.losses + 1 };
         }
       });
+      console.log(updatedUsers.map((u) => `${u.leagueIGN}: ${u.elo}`));
       return userRepo.updateUserWithResult(updatedUsers);
     },
     sendMatchDetails: async (scrim, users, lobbyDetails) => {
