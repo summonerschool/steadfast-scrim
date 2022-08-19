@@ -33,11 +33,11 @@ export const POSITION_IMAGE_TRANSLATION: { [key: string]: string } = {
 };
 
 export const POSITION_EMOJI_TRANSLATION: { [key: string]: string } = {
-  TOP: '<:TOP:1010191406666633266>',
-  JUNGLE: '<:JUNGLE:1010191406666633266>',
-  MID: '<:MID:1010191406666633266>',
-  BOT: '<:BOT:1010191406666633266>',
-  SUPPORT: '<:SUPPORT:1010191406666633266>'
+  TOP: '<:TOP:1010190987420762153>',
+  JUNGLE: '<:JUNGLE:1010190985663365261>',
+  MID: '<:MID:1010190983939493888>',
+  BOT: '<:BOTTOM:1010190988809093171>',
+  SUPPORT: '<:SUPPORT:1010190959709016235>'
 };
 
 export const capitalize = (text: string) => `${text[0].toUpperCase()}${text.slice(1).toLowerCase()}`;
