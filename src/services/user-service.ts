@@ -55,8 +55,8 @@ export const initUserService = (userRepo: UserRepository): UserService => {
       }
       const mymmr = res.data;
 
-      const rank = mymmr.ranked.closestRank;
-      const elo = mymmr.ranked.avg || ELO_TRANSLATION[rank.split(' ')[0].toUpperCase()]; // TODO: set some defaults ???
+      const rank = mymmr.ranked.closestRank.split(' ')[0].toUpperCase();
+      const elo = mymmr.ranked.avg || ELO_TRANSLATION[rank]; // TODO: set some defaults ???
 
       return {
         rank: rank,
