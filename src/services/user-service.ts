@@ -4,6 +4,7 @@ import { UserRepository } from './repo/user-repository';
 import dotenv from 'dotenv';
 import { WhatIsMyMMRResponse } from '../entities/external';
 import axios from 'axios';
+import { ELO_TRANSLATION } from '../utils/utils';
 dotenv.config();
 
 export interface UserService {
@@ -19,7 +20,7 @@ export interface UserService {
   ) => Promise<User>;
   setUserElo: (id: string, elo: number, external_elo?: number | undefined) => Promise<User>;
   getUserProfile: (id: string) => Promise<User>;
-  fetchMyMMR: (server: string, leagueIGN: string) => Promise<{ elo: number; rank: string }>;
+  fetchMyMMR: (server: string, leagueIGN: string) => Promise<{ elo: number; rank: string | null }>;
 }
 
 export const initUserService = (userRepo: UserRepository): UserService => {
@@ -45,8 +46,6 @@ export const initUserService = (userRepo: UserRepository): UserService => {
       return user;
     },
     fetchMyMMR: async (server, leagueIGN) => {
-      let rank: string;
-
       const res = await axios.get<WhatIsMyMMRResponse | Error>(
         `https://${server.toLowerCase()}.whatismymmr.com/api/v1/summoner?name=${leagueIGN}`
       );
@@ -56,10 +55,8 @@ export const initUserService = (userRepo: UserRepository): UserService => {
       }
       const mymmr = res.data;
 
-      const elo = mymmr.ranked.avg || mymmr.normal.avg || mymmr.ARAM.avg || 0; // TODO: set some defaults ???
-
-      rank = mymmr.ranked.closestRank || mymmr.normal.closestRank || mymmr.ARAM.closestRank || '';
-      rank = rank.split(' ')[0].toUpperCase();
+      const rank = mymmr.ranked.closestRank;
+      const elo = mymmr.ranked.avg || ELO_TRANSLATION[rank.split(' ')[0].toUpperCase()]; // TODO: set some defaults ???
 
       return {
         rank: rank,
