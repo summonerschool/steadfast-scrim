@@ -1,10 +1,5 @@
 import { Rank, Role } from '@prisma/client';
-import {
-  CommandContext,
-  CommandOptionType,
-  SlashCommand,
-  SlashCreator
-} from 'slash-create';
+import { CommandContext, CommandOptionType, SlashCommand, SlashCreator } from 'slash-create';
 import { userService } from '../services';
 // @ts-ignore
 import { capitalize, ELO_TRANSLATION } from '../utils/utils';
@@ -34,8 +29,8 @@ class SetupCommand extends SlashCommand {
           required: true,
           description: 'What is your league region?',
           choices: [
-            { name: 'Europe West', value: 'EUW' },
-            { name: 'North America', value: 'NA' }
+            { name: 'Europe West', value: 'EUW' }
+            // { name: 'North America', value: 'NA' }
           ]
         },
         {
@@ -70,11 +65,11 @@ class SetupCommand extends SlashCommand {
 
     if (main === secondary) {
       console.log('someone tried to pick the same main and secondary role');
-      return { content: 'Main and secondary role needs to be different', ephemeral: true }
+      return { content: 'Main and secondary role needs to be different', ephemeral: true };
     }
 
     const rankInfo = await userService.fetchMyMMR(region, ign).catch(() => {
-      return ({ rank: rank, elo: ELO_TRANSLATION[rank] })
+      return { rank: rank, elo: ELO_TRANSLATION[rank] };
     });
     const user = await userService.setUserProfile(
       ctx.user.id,
