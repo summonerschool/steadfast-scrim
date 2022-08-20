@@ -62,7 +62,8 @@ export const initDiscordService = (discordClient: Discord.Client) => {
       // Move users to lobby
       const members = teamVCs.reduce((prev, curr) => [...prev, ...curr.members.values()], [] as Discord.GuildMember[]);
       const movePromises = members.map((m) => m.voice.setChannel(lobby));
-      await Promise.all(movePromises);
+      const moveRes = await Promise.all(movePromises);
+      console.log({ moveRes });
       // Delete voice channels and remove them from active voice ids list
       const deleted = await Promise.all(teamVCs.map((vc) => vc.delete()));
       const current = activeVoiceIDs.get(guildID) || [];
