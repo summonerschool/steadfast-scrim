@@ -75,7 +75,8 @@ export const initScrimService = (
         }
       };
     },
-    reportWinner: async (scrim, winner) => {
+    reportWinner: async (old, winner) => {
+      const scrim = await scrimRepo.updateScrim({ ...old, status: 'COMPLETED', winner: winner });
       const userIDs = scrim.players.map((p) => p.userID);
       const users = await userRepo.getUsers({ id: { in: userIDs } });
       const red: User[] = [];
@@ -106,10 +107,8 @@ export const initScrimService = (
         }
       });
       console.log(updatedUsers.map((u) => `${u.leagueIGN}: ${u.elo}`));
-      const updated = scrimRepo.updateScrim({ ...scrim, status: 'COMPLETED', winner: winner });
       const res = await userRepo.updateUserWithResult(updatedUsers);
-      console.log({ res });
-      return !!updated;
+      return res > 0;
     },
     createProdraftLobby: async (scrimID, teamNames) => {
       const PRODRAFT_URL = 'http://prodraft.leagueoflegends.com/draft';
