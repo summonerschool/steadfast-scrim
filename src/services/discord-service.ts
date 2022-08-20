@@ -19,7 +19,6 @@ process.on('exit', async () => {
 
 export const initDiscordService = (discordClient: Discord.Client) => {
   const voiceCategoryID = process.env.VOICE_CATEGORY_ID || '';
-  const voiceLobbyID = process.env.VOICE_LOBBY_ID || '';
 
   const service: DiscordService = {
     createVoiceChannels: async (guildID, teamNames) => {
@@ -50,20 +49,9 @@ export const initDiscordService = (discordClient: Discord.Client) => {
     },
     deleteVoiceChannels: async (guildID, ids) => {
       const guild = await discordClient.guilds.fetch({ guild: guildID });
-      const channels = await Promise.all([
-        guild.channels.fetch(voiceLobbyID),
-        ...ids.map((id) => guild.channels.fetch(id))
-      ]);
+      const channels = await Promise.all(ids.map((id) => guild.channels.fetch(id)));
 
-      const [lobby, ...teamVCs] = channels.filter(
-        (vc): vc is VoiceChannel => vc != null && vc.parent?.id === voiceCategoryID
-      );
-
-      // Move users to lobby
-      const members = teamVCs.reduce((prev, curr) => [...prev, ...curr.members.values()], [] as Discord.GuildMember[]);
-      const movePromises = members.map((m) => m.voice.setChannel(lobby));
-      const moveRes = await Promise.all(movePromises);
-      console.log({ moveRes });
+      const teamVCs = channels.filter((vc): vc is VoiceChannel => vc != null && vc.parent?.id === voiceCategoryID);
       // Delete voice channels and remove them from active voice ids list
       const deleted = await Promise.all(teamVCs.map((vc) => vc.delete()));
       const current = activeVoiceIDs.get(guildID) || [];
