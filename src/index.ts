@@ -29,11 +29,7 @@ creator.on('commandRun', (command, _, ctx) => {
 creator.on('commandRegister', (command) => logger.info(`Registered command ${command.commandName}`));
 creator.on('commandError', (command, error) => logger.error(`Command ${command.commandName}:`, error));
 
-const server = creator
-  .withServer(new FastifyServer())
-  .registerCommandsIn(path.join(__dirname, 'commands'), ['.ts'])
-  .syncCommands({ deleteCommands: true });
-
+const server = creator.withServer(new FastifyServer()).registerCommandsIn(path.join(__dirname, 'commands'), ['.ts']);
 server.startServer().then(() => {});
 
 console.log(`Starting server at "localhost:${creator.options.serverPort}/interactions"`);
