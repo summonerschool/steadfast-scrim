@@ -13,7 +13,7 @@ export const queueEmbed = (users: User[], command: QueueCommand, callerID: strin
       return embed.setDescription(`<@${callerID}> has joined the queue.`);
     case 'leave':
       return embed.setDescription(`<@${callerID}> has left the queue.`);
-    case 'show':
+    case 'show': {
       if (users.length === 0) {
         return embed;
       }
@@ -50,6 +50,7 @@ export const queueEmbed = (users: User[], command: QueueCommand, callerID: strin
         );
       }
       return msg;
+    }
   }
 };
 

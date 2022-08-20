@@ -20,12 +20,11 @@ export interface ScrimService {
     users: User[]
   ) => Promise<{ scrim: Scrim; lobbyDetails: LobbyDetails }>;
   getUserProfilesInScrim: (scrimID: number, side: GameSide) => Promise<User[]>;
-  reportWinner: (scrim: Scrim, side: GameSide) => Promise<boolean>;
+  reportWinner: (scrim: Scrim, winner: GameSide) => Promise<boolean>;
   createProdraftLobby: (scrimID: number, teamNames: [string, string]) => Promise<ProdraftURLs>;
   getIncompleteScrims: (userID: string) => Promise<Scrim[]>;
   findScrim: (scrimID: number) => Promise<Scrim>;
   remakeScrim: (scrim: Scrim) => Promise<boolean>;
-  addResultsToPlayerStats: (scrim: Scrim) => Promise<number>;
   sendMatchDetails: (scrim: Scrim, users: User[], lobbyDetails: LobbyDetails) => Promise<EmbedBuilder>;
 }
 
@@ -76,8 +75,40 @@ export const initScrimService = (
         }
       };
     },
-    reportWinner: async (scrim, team) => {
-      const updated = await scrimRepo.updateScrim({ ...scrim, status: 'COMPLETED', winner: team });
+    reportWinner: async (scrim, winner) => {
+      const userIDs = scrim.players.map((p) => p.userID);
+      const users = await userRepo.getUsers({ id: { in: userIDs } });
+      const red: User[] = [];
+      const blue: User[] = [];
+      // Sort the users into side
+      console.log(`${scrim.winner} WIN`);
+      for (const user of users) {
+        const side = scrim.players.find((p) => p.userID == user.id)!!.side;
+        if (side === 'BLUE') blue.push(user);
+        if (side === 'RED') red.push(user);
+      }
+      // Get the average elo for the teams
+      const totalBlueElo = blue.reduce((prev, curr) => prev + curr.elo, 0);
+      const totalRedElo = red.reduce((prev, curr) => prev + curr.elo, 0);
+
+      const blueWinChances = 1 / (1 + 10 ** ((totalRedElo - totalBlueElo) / 650));
+      const redWinChances = 1 - blueWinChances;
+      const updatedUsers: User[] = users.map((user) => {
+        const totalGames = user.wins + user.losses;
+        const K = totalGames <= 14 ? 60 - 2 * totalGames : 32;
+        const eloChange = Math.round(K * (scrim.winner === 'BLUE' ? 1 - blueWinChances : 1 - redWinChances));
+        const hasWon = scrim.players.find((p) => p.userID === user.id)!!.side === scrim.winner;
+        const elo = hasWon ? user.elo + eloChange : user.elo - eloChange;
+        if (hasWon) {
+          return { ...user, elo, wins: user.wins + 1 };
+        } else {
+          return { ...user, elo, losses: user.losses + 1 };
+        }
+      });
+      console.log(updatedUsers.map((u) => `${u.leagueIGN}: ${u.elo}`));
+      const updated = scrimRepo.updateScrim({ ...scrim, status: 'COMPLETED', winner: winner });
+      const res = await userRepo.updateUserWithResult(updatedUsers);
+      console.log({ res });
       return !!updated;
     },
     createProdraftLobby: async (scrimID, teamNames) => {
@@ -110,40 +141,6 @@ export const initScrimService = (
       const remakeScrim: Scrim = { ...scrim, status: 'REMAKE' };
       const success = await scrimRepo.updateScrim(remakeScrim);
       return success.status === 'REMAKE';
-    },
-    addResultsToPlayerStats: async (scrim) => {
-      const userIDs = scrim.players.map((p) => p.userID);
-      const users = await userRepo.getUsers({ id: { in: userIDs } });
-      const red: User[] = [];
-      const blue: User[] = [];
-
-      // Sort the users into side
-      console.log(`${scrim.winner} WIN`);
-      for (const user of users) {
-        const side = scrim.players.find((p) => p.userID == user.id)!!.side;
-        if (side === 'BLUE') blue.push(user);
-        if (side === 'RED') red.push(user);
-      }
-      // Get the average elo for the teams
-      const totalBlueElo = blue.reduce((prev, curr) => prev + curr.elo, 0);
-      const totalRedElo = red.reduce((prev, curr) => prev + curr.elo, 0);
-
-      const blueWinChances = 1 / (1 + 10 ** ((totalRedElo - totalBlueElo) / 650));
-      const redWinChances = 1 - blueWinChances;
-      const updatedUsers: User[] = users.map((user) => {
-        const totalGames = user.wins + user.losses;
-        const K = totalGames <= 14 ? 60 - 2 * totalGames : 32;
-        const eloChange = Math.round(K * (scrim.winner === 'BLUE' ? 1 - blueWinChances : 1 - redWinChances));
-        const hasWon = scrim.players.find((p) => p.userID === user.id)!!.side === scrim.winner;
-        const elo = hasWon ? user.elo + eloChange : user.elo - eloChange;
-        if (hasWon) {
-          return { ...user, elo, wins: user.wins + 1 };
-        } else {
-          return { ...user, elo, losses: user.losses + 1 };
-        }
-      });
-      console.log(updatedUsers.map((u) => `${u.leagueIGN}: ${u.elo}`));
-      return userRepo.updateUserWithResult(updatedUsers);
     },
     sendMatchDetails: async (scrim, users, lobbyDetails) => {
       const { teamNames, voiceInvite } = lobbyDetails;

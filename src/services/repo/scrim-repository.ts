@@ -1,6 +1,6 @@
 import { Prisma, PrismaClient, Role, Side, Status } from '@prisma/client';
 import { mapToScrim, Player, Scrim } from '../../entities/scrim';
-import { Region } from '../../entities/user';
+import { Region, User } from '../../entities/user';
 
 export interface ScrimRepository {
   createScrim: (guildID: string, region: Region, players: Player[], voiceIDs: string[]) => Promise<Scrim>;
@@ -47,23 +47,6 @@ export const initScrimRepository = (prisma: PrismaClient) => {
           id: scrim.id
         }
       });
-      // Increase users wins/losses
-      if (scrim.winner) {
-        const winners = scrim.players.filter((p) => p.side == scrim.winner).map((p) => p.userID);
-        const losers = scrim.players.filter((p) => p.side != scrim.winner).map((p) => p.userID);
-        const batch = await prisma.$transaction([
-          prisma.user.updateMany({
-            where: { id: { in: winners } },
-            data: { wins: { increment: 1 } }
-          }),
-          prisma.user.updateMany({
-            where: { id: { in: losers } },
-            data: { losses: { increment: 1 } }
-          })
-        ]);
-        console.info(`Finished reporting winners: ${batch[0].count + batch[1].count} players updated`);
-      }
-
       return mapToScrim(res, []);
     },
     getScrims: async (filter) => {

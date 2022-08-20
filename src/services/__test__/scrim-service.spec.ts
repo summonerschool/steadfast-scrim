@@ -45,24 +45,15 @@ describe('ScrimService', () => {
     const players = matchmakingService.matchupToPlayers(matchup, twoOfEach);
     const scrim: Scrim = {
       id: chance.integer(),
-      winner: 'BLUE',
+      winner: undefined,
       status: 'STARTED',
       voiceIDs: [],
       players: players
     };
 
     userRepository.getUsers.mockResolvedValueOnce([...twoOfEach]);
-    scrimService.addResultsToPlayerStats(scrim);
-
-    const scrim2: Scrim = {
-      id: chance.integer(),
-      winner: 'RED',
-      status: 'STARTED',
-      voiceIDs: [],
-      players: players
-    };
-    userRepository.getUsers.mockResolvedValueOnce([...twoOfEach]);
-    scrimService.addResultsToPlayerStats(scrim2);
+    const what = scrimService.reportWinner(scrim, 'BLUE');
+    expect(what).toBe(true);
   });
 });
 const createTestUser = (role?: Role, secondary?: Role, name?: string, elo?: number) =>

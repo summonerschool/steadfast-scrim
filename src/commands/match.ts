@@ -44,11 +44,13 @@ class MatchCommand extends SlashCommand {
     const scrim = await scrimService.findScrim(match_id);
     const player = scrim.players.find((p) => p.userID === ctx.user.id)!;
     const deleted = await discordService.deleteVoiceChannels(ctx.guildID!!, scrim.voiceIDs);
-    console.log(deleted)
-    if (status == 'REMAKE') {
+    console.log(deleted);
+    if (status === 'REMAKE') {
       // TODO REMAKE LOGIC
       const res = await scrimService.remakeScrim(scrim);
-      return res ? `Match #${match_id} has been reported as a remake` : 'Could not remake match. Please contact a moderator';
+      return res
+        ? `Match #${match_id} has been reported as a remake`
+        : 'Could not remake match. Please contact a moderator';
     }
     const enemy = player.side == 'BLUE' ? 'RED' : 'BLUE';
     const winner = status == 'WIN' ? player.side : enemy;
