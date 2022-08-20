@@ -2,7 +2,7 @@ import { EmbedBuilder } from '@discordjs/builders';
 import { User } from '../entities/user';
 import { POSITION_EMOJI_TRANSLATION, RANK_IMAGE_TRANSLATION } from '../utils/utils';
 
-export const SetupFeedbackEmbed = (user: User) => {
+export const ProfileEmbed = (user: User) => {
   const roles_to_image = [user.main, user.secondary].map((x) => {
     // return `![${x}](${POSITION_IMAGE_TRANSLATION[x]})`;
     return `${POSITION_EMOJI_TRANSLATION[x]}`;

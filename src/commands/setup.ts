@@ -3,7 +3,7 @@ import { CommandContext, CommandOptionType, SlashCommand, SlashCreator } from 's
 import { userService } from '../services';
 // @ts-ignore
 import { capitalize, ELO_TRANSLATION } from '../utils/utils';
-import { SetupFeedbackEmbed } from '../components/setup-feedback';
+import { ProfileEmbed } from '../components/setup-feedback';
 
 const rank = Object.entries(Rank).map(([key, val]) => ({ name: capitalize(key), value: val }));
 const roles = Object.entries(Role).map(([key, val]) => ({
@@ -82,7 +82,7 @@ class SetupCommand extends SlashCommand {
       rankInfo.elo
     );
     return {
-      embeds: [SetupFeedbackEmbed(user)],
+      embeds: [ProfileEmbed(user)],
       ephemeral: true
     };
   }
