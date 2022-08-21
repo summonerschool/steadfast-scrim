@@ -50,6 +50,7 @@ export const initDiscordService = (discordClient: Discord.Client) => {
     deleteVoiceChannels: async (guildID, ids) => {
       const guild = await discordClient.guilds.fetch({ guild: guildID });
       const current = activeVoiceIDs.get(guildID) || [];
+      console.log({ currentVoiceIDs: current });
       if (!current.some((id) => ids.includes(id))) {
         return false;
       }
