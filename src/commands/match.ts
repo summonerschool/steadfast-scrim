@@ -43,8 +43,6 @@ class MatchCommand extends SlashCommand {
     const { match_id, status } = ctx.options;
     const scrim = await scrimService.findScrim(match_id);
     const player = scrim.players.find((p) => p.userID === ctx.user.id)!;
-    const deleted = await discordService.deleteVoiceChannels(ctx.guildID!!, scrim.voiceIDs);
-    console.log(deleted);
     if (status === 'REMAKE') {
       // TODO REMAKE LOGIC
       const res = await scrimService.remakeScrim(scrim);
@@ -58,6 +56,7 @@ class MatchCommand extends SlashCommand {
     if (!success) {
       return 'Oops! Could not set winner of match';
     }
+    await discordService.deleteVoiceChannels(ctx.guildID!!, scrim.voiceIDs);
     return `${capitalize(winner)} has been registered as the winner ✅`;
   }
 

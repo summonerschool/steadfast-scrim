@@ -77,12 +77,14 @@ export const initScrimService = (
     },
     reportWinner: async (old, winner) => {
       const scrim = await scrimRepo.updateScrim({ ...old, status: 'COMPLETED', winner: winner });
+      scrim.players = old.players;
+
       const userIDs = scrim.players.map((p) => p.userID);
       const users = await userRepo.getUsers({ id: { in: userIDs } });
       const red: User[] = [];
       const blue: User[] = [];
       // Sort the users into side
-      console.log(`${scrim.winner} WIN`);
+      console.info(`${scrim.winner} WIN`);
       for (const user of users) {
         const side = scrim.players.find((p) => p.userID == user.id)!!.side;
         if (side === 'BLUE') blue.push(user);
@@ -106,7 +108,7 @@ export const initScrimService = (
           return { ...user, elo, losses: user.losses + 1 };
         }
       });
-      console.log(updatedUsers.map((u) => `${u.leagueIGN}: ${u.elo}`));
+      console.info(updatedUsers.map((u) => `${u.leagueIGN}: ${u.elo}`));
       const res = await userRepo.updateUserWithResult(updatedUsers);
       return res > 0;
     },
