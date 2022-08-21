@@ -40,6 +40,7 @@ export const initDiscordService = (discordClient: Discord.Client) => {
       ]);
       const curr = activeVoiceIDs.get(guildID) || [];
       activeVoiceIDs.set(guildID, [...curr, channels[0].id, channels[1].id]);
+      console.log({ activeVoiceIDs });
       return [channels[0], channels[1]];
     },
     sendMatchDirectMessage: async (userIDs: string[], message) => {
