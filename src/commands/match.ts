@@ -46,6 +46,9 @@ class MatchCommand extends SlashCommand {
     if (!player) {
       return { content: `You did not play in match #${match_id}❌`, ephemeral: true };
     }
+    if (scrim.status === 'COMPLETED') {
+      return { content: `Match has already been reported`, ephemeral: true };
+    }
     if (status === 'REMAKE') {
       // TODO REMAKE LOGIC
       const res = await scrimService.remakeScrim(scrim);
