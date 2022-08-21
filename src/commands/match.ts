@@ -42,7 +42,10 @@ class MatchCommand extends SlashCommand {
   async run(ctx: CommandContext) {
     const { match_id, status } = ctx.options;
     const scrim = await scrimService.findScrim(match_id);
-    const player = scrim.players.find((p) => p.userID === ctx.user.id)!;
+    const player = scrim.players.find((p) => p.userID === ctx.user.id);
+    if (!player) {
+      return { content: `You did not play in match #${match_id}❌`, ephemeral: true };
+    }
     if (status === 'REMAKE') {
       // TODO REMAKE LOGIC
       const res = await scrimService.remakeScrim(scrim);
