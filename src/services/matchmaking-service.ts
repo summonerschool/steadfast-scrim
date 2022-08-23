@@ -134,6 +134,7 @@ export const findBestMatchup = (
 
   if (!bestMatchupByOffroleCount || !bestMatchupByEloDiff) {
     console.log({ bestMatchupByEloDiff, bestMatchupByOffroleCount });
+    console.log({ users, combinations });
     return { valid: false };
   }
   console.info(matchupToString(bestMatchupByOffroleCount));
