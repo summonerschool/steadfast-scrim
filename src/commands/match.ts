@@ -52,6 +52,7 @@ class MatchCommand extends SlashCommand {
     if (status === 'REMAKE') {
       // TODO REMAKE LOGIC
       const res = await scrimService.remakeScrim(scrim);
+      await discordService.deleteVoiceChannels(ctx.guildID!!, scrim.voiceIDs);
       return res
         ? `Match #${match_id} has been reported as a remake`
         : 'Could not remake match. Please contact a moderator';

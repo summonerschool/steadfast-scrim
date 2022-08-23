@@ -40,7 +40,6 @@ export const initDiscordService = (discordClient: Discord.Client) => {
       ]);
       const curr = activeVoiceIDs.get(guildID) || [];
       activeVoiceIDs.set(guildID, [...curr, channels[0].id, channels[1].id]);
-      console.log({ activeVoiceIDs });
       return [channels[0], channels[1]];
     },
     sendMatchDirectMessage: async (userIDs: string[], message) => {
@@ -51,7 +50,6 @@ export const initDiscordService = (discordClient: Discord.Client) => {
     deleteVoiceChannels: async (guildID, ids) => {
       const guild = await discordClient.guilds.fetch({ guild: guildID });
       const current = activeVoiceIDs.get(guildID) || [];
-      console.log({ currentVoiceIDs: current });
       if (!current.some((id) => ids.includes(id))) {
         return false;
       }
@@ -64,6 +62,7 @@ export const initDiscordService = (discordClient: Discord.Client) => {
         guildID,
         current.filter((id) => deleted.some((vc) => vc.id !== id))
       );
+      console.log({ activeVoiceIDs });
 
       return true;
     }
