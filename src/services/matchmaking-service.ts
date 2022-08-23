@@ -133,6 +133,7 @@ export const findBestMatchup = (
   }
 
   if (!bestMatchupByOffroleCount || !bestMatchupByEloDiff) {
+    console.log({ bestMatchupByEloDiff, bestMatchupByOffroleCount });
     return { valid: false };
   }
   console.info(matchupToString(bestMatchupByOffroleCount));
