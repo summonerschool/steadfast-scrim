@@ -6,7 +6,7 @@ export interface ProdraftResponse {
   game: object;
 }
 
-export interface ProdraftURLs {
+export interface DraftURLs {
   RED: string;
   BLUE: string;
   SPECTATOR: string;

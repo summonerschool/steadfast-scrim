@@ -5,12 +5,12 @@ import { MatchmakingService } from './matchmaking-service';
 import { ScrimRepository } from './repo/scrim-repository';
 import { UserRepository } from './repo/user-repository';
 import { Status } from '@prisma/client';
-import axios from 'axios';
 import { NotFoundError } from '../errors/errors';
-import { ProdraftURLs, ProdraftResponse } from '../entities/external';
+import { DraftURLs, ProdraftResponse } from '../entities/external';
 import { EmbedBuilder } from 'discord.js';
 import { lobbyDetailsEmbed, matchDetailsEmbed } from '../components/match-message';
 import { DiscordService } from './discord-service';
+import WebSocket from 'ws';
 
 export interface ScrimService {
   generateScoutingLink: (users: User[]) => string;
@@ -21,11 +21,19 @@ export interface ScrimService {
   ) => Promise<{ scrim: Scrim; lobbyDetails: LobbyDetails }>;
   getUserProfilesInScrim: (scrimID: number, side: GameSide) => Promise<User[]>;
   reportWinner: (scrim: Scrim, winner: GameSide) => Promise<boolean>;
-  createProdraftLobby: (scrimID: number, teamNames: [string, string]) => Promise<ProdraftURLs>;
+  createDraftLobby: (teamNames: [string, string]) => Promise<DraftURLs>;
   getIncompleteScrims: (userID: string) => Promise<Scrim[]>;
   findScrim: (scrimID: number) => Promise<Scrim>;
   remakeScrim: (scrim: Scrim) => Promise<boolean>;
   sendMatchDetails: (scrim: Scrim, users: User[], lobbyDetails: LobbyDetails) => Promise<EmbedBuilder>;
+}
+
+interface RoomCreatedResult {
+  type: string;
+  roomId: string;
+  bluePassword: string;
+  redPassword: string;
+  adminPassword: string;
 }
 
 export const initScrimService = (
@@ -112,21 +120,42 @@ export const initScrimService = (
       const res = await userRepo.updateUserWithResult(updatedUsers);
       return res > 0;
     },
-    createProdraftLobby: async (scrimID, teamNames) => {
-      const PRODRAFT_URL = 'http://prodraft.leagueoflegends.com/draft';
+    createDraftLobby: async (teamNames) => {
       const payload = {
-        team1Name: teamNames[0],
-        team2Name: teamNames[1],
-        matchName: `Summoner School Game #${scrimID}`
+        type: 'createroom',
+        blueName: teamNames[0],
+        redName: teamNames[1],
+        disabledTurns: [],
+        disabledChamps: [],
+        timePerPick: 60,
+        timePerBan: 45
       };
-      const res = await axios.post<ProdraftResponse>(PRODRAFT_URL, payload);
-      const data = res.data;
 
-      return {
-        BLUE: `http://prodraft.leagueoflegends.com/?draft=${data.id}&auth=${data.auth[0]}`,
-        RED: `http://prodraft.leagueoflegends.com/?draft=${data.id}&auth=${data.auth[1]}`,
-        SPECTATOR: `http://prodraft.leagueoflegends.com/?draft=${data.id}`
-      };
+      return new Promise((resolve, reject) => {
+        const ws = new WebSocket('wss://draftlol.dawe.gg/');
+        ws.onopen = () => {
+          ws.send(JSON.stringify(payload));
+          ws.onclose = () => console.log('CLOSED');
+          ws.onmessage = (msg) => {
+            const data = JSON.parse(msg.data.toString());
+            if (data.type === 'roomcreated') {
+              const room: RoomCreatedResult = data;
+              console.log({ room });
+              ws.close();
+
+              const DRAFTLOL_URL = `https://draftlol.dawe.gg/${room.roomId}`;
+              resolve({
+                BLUE: `${DRAFTLOL_URL}/${room.bluePassword}`,
+                RED: `${DRAFTLOL_URL}/${room.redPassword}`,
+                SPECTATOR: DRAFTLOL_URL
+              });
+            }
+          };
+        };
+        ws.onerror = (err) => {
+          reject(err);
+        };
+      });
     },
     getIncompleteScrims: async (userID) => {
       return scrimRepo.getScrims({ players: { some: { user_id: userID } }, status: Status.STARTED });
@@ -147,7 +176,7 @@ export const initScrimService = (
       const { teamNames, voiceInvite } = lobbyDetails;
       const teams = sortUsersByTeam(users, scrim.players);
       const promises = await Promise.all([
-        service.createProdraftLobby(scrim.id, teamNames),
+        service.createDraftLobby(teamNames),
         service.generateScoutingLink(teams.BLUE),
         service.generateScoutingLink(teams.RED)
       ]);
@@ -175,7 +204,11 @@ export const initScrimService = (
         })
       ]);
       `${directMsg[0] + directMsg[1]} DMs have been sent`;
-      const publicEmbed = matchEmbed.addFields({ name: 'Draft', value: `[Spectate Draft](${draftURLs.SPECTATOR})` });
+      const publicEmbed = matchEmbed.addFields({
+        name: 'Draft',
+        value: `[Spectate Draft](${draftURLs.SPECTATOR})`,
+        inline: true
+      });
       return publicEmbed;
     }
   };
