@@ -128,7 +128,7 @@ export const initScrimService = (
         disabledTurns: [],
         disabledChamps: [],
         timePerPick: 60,
-        timePerBan: 45
+        timePerBan: 60
       };
 
       return new Promise((resolve, reject) => {
