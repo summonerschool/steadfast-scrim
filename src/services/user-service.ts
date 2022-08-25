@@ -21,6 +21,7 @@ export interface UserService {
   setUserElo: (id: string, elo: number, external_elo?: number | undefined) => Promise<User>;
   getUserProfile: (id: string) => Promise<User>;
   fetchMyMMR: (server: string, leagueIGN: string) => Promise<{ elo: number; rank: string | null }>;
+  getUsers: (ids: string[]) => Promise<User[]>;
 }
 
 export const initUserService = (userRepo: UserRepository): UserService => {
@@ -62,6 +63,9 @@ export const initUserService = (userRepo: UserRepository): UserService => {
         rank: rank,
         elo: elo
       };
+    },
+    getUsers: async (ids) => {
+      return userRepo.getUsers({ id: { in: ids } });
     }
   };
   return service;

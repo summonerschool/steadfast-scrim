@@ -1,25 +1,21 @@
 import { Role } from '@prisma/client';
 import { User } from '../entities/user';
 import { NotFoundError } from '../errors/errors';
-import { chance } from '../lib/chance';
 import { UserRepository } from './repo/user-repository';
 
 interface QueueService {
   joinQueue: (userID: string, guildID: string) => Promise<User[]>;
   leaveQueue: (userID: string, guildID: string) => User[];
-  getUsersInQueue: (guildID: string) => User[];
+  getQueue: (guildID: string) => Map<string, User>;
   canCreateMatch: (
     users: User[]
   ) => { users: User[]; valid: true } | { valid: false; roleCount: Map<Role, number> | null };
   resetQueue: (guildID: string) => void;
   attemptMatchCreation: (guildID: string) => MatchmakingStatus;
-  autoFillUsers: (guildID: string) => User[];
-  getRoleCount: (users: User[]) => Map<Role, number>;
 }
 
 export enum MatchmakingStatus {
   NOT_ENOUGH_PLAYERS,
-  INSUFICCENT_ROLE_DIVERSITY,
   VALID_MATCH
 }
 
@@ -66,71 +62,14 @@ export const initQueueService = (userRepo: UserRepository) => {
     attemptMatchCreation: (guildID) => {
       const queue = queues.get(guildID);
       if (!queue || queue.size < 10) return MatchmakingStatus.NOT_ENOUGH_PLAYERS;
-      const roles = service.getRoleCount([...queue.values()]);
-      for (const [_, count] of roles) {
-        if (count < 2) return MatchmakingStatus.INSUFICCENT_ROLE_DIVERSITY;
-      }
       return MatchmakingStatus.VALID_MATCH;
     },
-    getRoleCount: (users) => {
-      const roles = new Map<Role, number>();
-      for (const u of users) {
-        // Increment all roles if you're fill
-        let mainRoleCount = roles.get(u.main) || 0;
-        let secondaryCount = roles.get(u.secondary) || 0;
-        mainRoleCount += 1;
-        secondaryCount += 1;
-        roles.set(u.main, mainRoleCount);
-        roles.set(u.secondary, secondaryCount);
-      }
-      return roles;
-    },
-    autoFillUsers: (guildID) => {
-      const queue = queues.get(guildID)!!;
-      const users = [...queue.values()];
-      const roleCount = service.getRoleCount(users);
-      const requireFill = new Map<Role, number>();
-      console.log({ roleCount });
-      for (const [role, count] of roleCount) {
-        if (count < 2) {
-          requireFill.set(role, 2 - count);
-        }
-      }
-      const requiredAmountOfFillers = [...requireFill.values()].reduce((prev, curr) => prev + curr, 0);
-      console.log({ requireFill });
-      for (let i = 0; i < requiredAmountOfFillers; i++) {
-        const role = chance.pickone([...requireFill.keys()]);
-        const rolesWithSurplus = [...roleCount].sort((a, b) => a[1] - b[1]);
-        const roleToTakeFrom = rolesWithSurplus[rolesWithSurplus.length - 1];
-        // pick a random user that does not have that required role
-        const user = chance.pickone(
-          users.filter(
-            (u) =>
-              (u.main === roleToTakeFrom[0] || u.secondary === roleToTakeFrom[0]) &&
-              u.main != role &&
-              u.secondary != role
-          )
-        );
-        queues.set(guildID, queue.set(user.id, { ...user, secondary: role, isFill: true }));
-        console.log(`set ${user.leagueIGN} to ${role}`);
-
-        roleCount.set(user.secondary, roleCount.get(user.secondary)!! - 1);
-        roleCount.set(role, roleCount.get(role)!! + 1);
-        const count = requireFill.get(role)!!;
-        if (count - 1 == 0) {
-          requireFill.delete(role);
-        } else {
-          requireFill.set(role, count - 1);
-        }
-      }
-      return [...queues.get(guildID)!!.values()];
-    },
-    getUsersInQueue: (guildID) => {
+    getQueue: (guildID) => {
       let queue = queues.get(guildID);
       if (!queue) {
         queue = new Map<string, User>();
       }
-      return [...queue.values()];
+      return queue;
     },
     resetQueue: (guildID) => {
       const queue = queues.get(guildID);

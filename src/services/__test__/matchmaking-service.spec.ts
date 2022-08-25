@@ -1,5 +1,4 @@
 import { Role, User, userSchema } from '../../entities/user';
-import { NoMatchupPossibleError } from '../../errors/errors';
 import { chance } from '../../lib/chance';
 import { initMatchmakingService } from '../matchmaking-service';
 
@@ -24,15 +23,134 @@ describe('MatchmakingService', () => {
     expect(ids.length).toEqual(new Set(ids).size);
   });
 
-  // test('No matchups possible', () => {
-  //   const users = [...invalid];
-  //   expect(matchmakingService.startMatchmaking(users).length).toEqual(2);
-  // });
-
-  test('User can fill', () => {
-    expect(() => matchmakingService.startMatchmaking(invalid)).toThrowError(NoMatchupPossibleError);
+  test('No matchups possible', () => {
+    const users = matchmakingService.attemptFill(fail)
+    expect(users.length).toEqual(10);
   });
 });
+
+const fail: User[] = [
+  {
+    id: '183908254210981888',
+    leagueIGN: 'kharann',
+    main: 'JUNGLE',
+    rank: 'GOLD',
+    region: 'EUW',
+    secondary: 'MID',
+    wins: 2,
+    losses: 0,
+    elo: 2086,
+    external_elo: 2000
+  },
+  {
+    id: '164357764020305920',
+    leagueIGN: 'Tikka Masala',
+    rank: 'GOLD',
+    region: 'EUW',
+    main: 'TOP',
+    secondary: 'BOT',
+    wins: 8,
+    losses: 4,
+    elo: 2157,
+    external_elo: 2000
+  },
+  {
+    id: '717686953524330587',
+    leagueIGN: 'Kazzara',
+    main: 'BOT',
+    secondary: 'MID',
+    rank: 'GOLD',
+    region: 'EUW',
+    wins: 0,
+    losses: 1,
+    elo: 1605,
+    external_elo: 1663
+  },
+  {
+    id: '134168788718452736',
+    leagueIGN: 'koreanhypetrain',
+    main: 'JUNGLE',
+    secondary: 'TOP',
+    wins: 1,
+    losses: 5,
+    rank: 'GOLD',
+    region: 'EUW',
+    elo: 2042,
+    external_elo: 2208
+  },
+  {
+    id: '270437177186320385',
+    leagueIGN: 'aapathes',
+    main: 'JUNGLE',
+    secondary: 'TOP',
+    wins: 5,
+    losses: 4,
+    elo: 2592,
+    rank: 'GOLD',
+    region: 'EUW',
+    external_elo: 2400
+  },
+  {
+    id: '91423469811531776',
+    leagueIGN: 'Stasko',
+    main: 'TOP',
+    secondary: 'JUNGLE',
+    wins: 2,
+    rank: 'GOLD',
+    region: 'EUW',
+    losses: 5,
+    elo: 1914,
+    external_elo: 2000
+  },
+  {
+    id: '396669041655152650',
+    leagueIGN: 'Darkleynad777',
+    main: 'TOP',
+    secondary: 'BOT',
+    wins: 6,
+    rank: 'GOLD',
+    region: 'EUW',
+    losses: 3,
+    elo: 1270,
+    external_elo: 1200
+  },
+  {
+    id: '766404374766288926',
+    leagueIGN: 'LAMPOST MALONE',
+    main: 'TOP',
+    secondary: 'JUNGLE',
+    wins: 3,
+    rank: 'GOLD',
+    region: 'EUW',
+    losses: 0,
+    elo: 2088,
+    external_elo: 2000
+  },
+  {
+    id: '199898480024485888',
+    leagueIGN: 'AA Cancels',
+    main: 'BOT',
+    secondary: 'TOP',
+    wins: 4,
+    losses: 7,
+    elo: 2007,
+    rank: 'GOLD',
+    region: 'EUW',
+    external_elo: 2070
+  },
+  {
+    id: '105780609393139712',
+    leagueIGN: 'smack enjoyer',
+    main: 'TOP',
+    secondary: 'JUNGLE',
+    wins: 2,
+    losses: 3,
+    elo: 2072,
+    rank: 'GOLD',
+    region: 'EUW',
+    external_elo: 2098
+  }
+];
 
 const createTestUser = (role?: Role, secondary?: Role, name?: string, elo?: number) =>
   userSchema.parse({

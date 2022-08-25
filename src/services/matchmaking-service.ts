@@ -1,12 +1,13 @@
 import { Matchup, Pool, Team } from '../entities/matchmaking';
 import { GameSide, Player } from '../entities/scrim';
-import { Role, ROLE_ORDER, User } from '../entities/user';
+import { Role, roleEnum, ROLE_ORDER, User } from '../entities/user';
 import { NoMatchupPossibleError } from '../errors/errors';
 import { chance } from '../lib/chance';
 
 export interface MatchmakingService {
   startMatchmaking: (users: User[], prioritizeElo?: boolean) => [Matchup, Matchup];
   matchupToPlayers: (matchup: Matchup, users: User[], randomSide?: boolean) => Player[];
+  attemptFill: (users: User[]) => User[];
 }
 
 export const initMatchmakingService = () => {
@@ -28,6 +29,50 @@ export const initMatchmakingService = () => {
       const blueTeam = teamToPlayers(teams[0], 'BLUE', users);
       const redTeam = teamToPlayers(teams[1], 'RED', users);
       return [...blueTeam, ...redTeam];
+    },
+    attemptFill: (queuers) => {
+      const ROLE_COUNT = 10;
+      const PLAYER_COUNT = 10;
+      const users = chance.shuffle(queuers);
+      // create graph of players
+      const graph = [];
+      for (const user of users) {
+        const row = [...new Array(ROLE_COUNT)].map(() => false);
+        row[ROLE_ORDER[user.main]] = true;
+        row[ROLE_ORDER[user.secondary]] = true;
+        row[ROLE_ORDER[user.main] + 5] = true;
+        row[ROLE_ORDER[user.secondary] + 5] = true;
+        graph.push(row);
+      }
+
+      // Availaible roles
+      const matchRoles = [...new Array(ROLE_COUNT)].map(() => -1);
+      let result = 0;
+      for (let u = 0; u < PLAYER_COUNT; u++) {
+        let seen = [...new Array(ROLE_COUNT)].map(() => false);
+        if (bpm(graph, u, seen, matchRoles)) {
+          result++;
+        }
+      }
+      if (result === PLAYER_COUNT) {
+        console.info("NO NEED FOR AUTOFILL")
+        return users
+      }
+
+      let seen = [...new Array(PLAYER_COUNT)].map(() => false);
+      for (let i = 0; i < matchRoles.length; i++) {
+        if (matchRoles[i] > -1) seen[matchRoles[i]] = true;
+      }
+      for (let i = 0; i < matchRoles.length; i++) {
+        if (matchRoles[i] === -1) {
+          const uIndex = seen.findIndex((val) => val == false);
+          matchRoles[i] = uIndex;
+          seen[uIndex] = true;
+          users[uIndex] = { ...users[uIndex], secondary: ROLE_ORDER[i < 5 ? i : i - 5] as Role, isFill: true };
+        }
+      }
+      console.info({ result, matchRoles });
+      return users;
     }
   };
   return service;
@@ -207,4 +252,17 @@ const matchupToString = (matchup: Matchup) => {
   ${matchup.team1.map((p) => p.leagueIGN).join(', ')} vs ${matchup.team2.map((p) => p.leagueIGN).join(', ')}\n
   ${matchup.team1.map((p) => p.elo)} vs ${matchup.team2.map((p) => p.elo)}
   `;
+};
+
+const bpm = (bpGraph: boolean[][], u: number, seen: boolean[], matchRoles: number[]): boolean => {
+  for (let v = 0; v < 10; v++) {
+    if (bpGraph[u][v] && !seen[v]) {
+      seen[v] = true;
+      if (matchRoles[v] < 0 || bpm(bpGraph, matchRoles[v], seen, matchRoles)) {
+        matchRoles[v] = u;
+        return true;
+      }
+    }
+  }
+  return false;
 };

@@ -5,17 +5,8 @@ import { chance } from '../../lib/chance';
 import { Role, User, userSchema } from '../../entities/user';
 import { ScrimRepository } from '../repo/scrim-repository';
 import { initMatchmakingService } from '../matchmaking-service';
-import { Player, Scrim } from '../../entities/scrim';
+import { Scrim } from '../../entities/scrim';
 import { DiscordService } from '../discord-service';
-
-const roleToPlayer = (role: Role): User =>
-  userSchema.parse({
-    id: chance.guid(),
-    leagueIGN: chance.name({ full: false }),
-    rank: 'GOLD',
-    server: 'EUW',
-    roles: [role]
-  });
 
 describe('ScrimService', () => {
   const scrimRepository = mockDeep<ScrimRepository>();
@@ -52,7 +43,9 @@ describe('ScrimService', () => {
     };
 
     userRepository.getUsers.mockResolvedValueOnce([...twoOfEach]);
-    const what = scrimService.reportWinner(scrim, 'BLUE');
+    userRepository.updateUserWithResult.mockResolvedValueOnce(10)
+    scrimRepository.updateScrim.mockResolvedValueOnce(scrim)
+    const what = await scrimService.reportWinner(scrim, 'BLUE');
     expect(what).toBe(true);
   });
 });

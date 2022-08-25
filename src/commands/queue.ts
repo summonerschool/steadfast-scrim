@@ -4,7 +4,7 @@ import {
   CommandContext,
   SlashCreator,
 } from 'slash-create';
-import { queueService, scrimService } from '../services';
+import { queueService, scrimService, userService } from '../services';
 import { queueEmbed } from '../components/queue';
 import { NoMatchupPossibleError } from '../errors/errors';
 import { User } from '../entities/user';
@@ -57,27 +57,16 @@ class QueueCommand extends SlashCommand {
     try {
       switch (ctx.subcommands[0]) {
         case 'join': {
-          const users = await queueService.joinQueue(ctx.user.id, guildID);
+          const queuers = await queueService.joinQueue(ctx.user.id, guildID);
           // TODO: Move this logic to service
           const status = queueService.attemptMatchCreation(guildID);
-          switch (status) {
-            case MatchmakingStatus.NOT_ENOUGH_PLAYERS: {
-              const embed = queueEmbed(users, 'join', ctx.user.id);
+          if (MatchmakingStatus.NOT_ENOUGH_PLAYERS) {
+              const embed = queueEmbed(queuers, 'join', ctx.user.id);
               return { embeds: [embed as any], allowedMentions: { everyone: false } };
-            }
-            case MatchmakingStatus.INSUFICCENT_ROLE_DIVERSITY: {
-              const usersWithFill = queueService.autoFillUsers(guildID)
-              queueService.resetQueue(guildID)
-              const msg = startMatchmaking(usersWithFill, guildID);
-              return msg;
-            }
-            case MatchmakingStatus.VALID_MATCH: {
-              const users = queueService.getUsersInQueue(guildID);
-              queueService.resetQueue(guildID)
-              const msg = startMatchmaking(users, guildID);
-              return msg;
-            }
           }
+          const users = await userService.getUsers(queuers.map(u => u.id))
+          queueService.resetQueue(guildID)
+          return startMatchmaking(users, guildID)
         }
         case 'leave': {
           const users = queueService.leaveQueue(ctx.user.id, guildID);
@@ -85,7 +74,7 @@ class QueueCommand extends SlashCommand {
           return { embeds: [embed as any], allowedMentions: { everyone: false } };
         }
         case 'show': {
-          const users = queueService.getUsersInQueue(guildID);
+          const users = [...queueService.getQueue(guildID).values()];
           const embed = queueEmbed(users, 'show', ctx.user.id, ctx.options.show["detailed"]);
           return {
             embeds: [embed as any],
