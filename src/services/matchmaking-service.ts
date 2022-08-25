@@ -33,7 +33,13 @@ export const initMatchmakingService = () => {
     attemptFill: (queuers) => {
       const ROLE_COUNT = 10;
       const PLAYER_COUNT = 10;
-      const users = chance.shuffle(queuers);
+      // Randomize, but let autofill protected people come first
+      const users = chance.shuffle(queuers).sort((a,b) => {
+        if (a.autofillProtected && b.autofillProtected) return 0
+        else if (a.autofillProtected && !b.autofillProtected) return -1
+        else if (!a.autofillProtected && b.autofillProtected) return 1
+        else return 0
+      });
       // create graph of players
       const graph = [];
       for (const user of users) {

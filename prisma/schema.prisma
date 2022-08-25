@@ -11,17 +11,18 @@ datasource db {
 }
 
 model User {
-  id           String   @id
-  league_ign   String   @unique
-  region       Region
-  rank         Rank
-  main         Role
-  secondary    Role
-  wins         Int      @default(0)
-  losses       Int      @default(0)
-  elo          Int      @default(0)
-  external_elo Int      @default(0)
-  player       Player[]
+  id                  String   @id
+  league_ign          String   @unique
+  region              Region
+  rank                Rank
+  main                Role
+  secondary           Role
+  wins                Int      @default(0)
+  losses              Int      @default(0)
+  elo                 Int      @default(0)
+  external_elo        Int      @default(0)
+  autofill_protected Boolean  @default(false)
+  player              Player[]
 }
 
 enum Side {

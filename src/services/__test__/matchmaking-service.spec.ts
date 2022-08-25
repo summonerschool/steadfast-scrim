@@ -40,7 +40,8 @@ const fail: User[] = [
     wins: 2,
     losses: 0,
     elo: 2086,
-    external_elo: 2000
+    external_elo: 2000,
+    autofillProtected: true
   },
   {
     id: '164357764020305920',
@@ -88,7 +89,8 @@ const fail: User[] = [
     elo: 2592,
     rank: 'GOLD',
     region: 'EUW',
-    external_elo: 2400
+    external_elo: 2400,
+    autofillProtected: true
   },
   {
     id: '91423469811531776',
