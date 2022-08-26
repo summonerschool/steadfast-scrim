@@ -1,0 +1,5 @@
+-- AlterTable
+ALTER TABLE "Player" ADD COLUMN     "pre_game_elo" INT4 NOT NULL DEFAULT 0;
+
+-- AlterTable
+ALTER TABLE "User" ADD COLUMN     "registered_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP;

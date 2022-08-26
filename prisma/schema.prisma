@@ -11,18 +11,19 @@ datasource db {
 }
 
 model User {
-  id                  String   @id
-  league_ign          String   @unique
-  region              Region
-  rank                Rank
-  main                Role
-  secondary           Role
-  wins                Int      @default(0)
-  losses              Int      @default(0)
-  elo                 Int      @default(0)
-  external_elo        Int      @default(0)
+  id                 String   @id
+  league_ign         String   @unique
+  region             Region
+  rank               Rank
+  main               Role
+  secondary          Role
+  wins               Int      @default(0)
+  losses             Int      @default(0)
+  elo                Int      @default(0)
+  external_elo       Int      @default(0)
   autofill_protected Boolean  @default(false)
-  player              Player[]
+  registered_at      DateTime @default(now())
+  player             Player[]
 }
 
 enum Side {
@@ -31,12 +32,13 @@ enum Side {
 }
 
 model Player {
-  user     User   @relation(fields: [user_id], references: [id])
-  scrim    Scrim  @relation(fields: [scrim_id], references: [id])
-  user_id  String
-  scrim_id Int
-  role     Role
-  side     Side
+  user         User   @relation(fields: [user_id], references: [id])
+  scrim        Scrim  @relation(fields: [scrim_id], references: [id])
+  user_id      String
+  scrim_id     Int
+  role         Role
+  side         Side
+  pre_game_elo Int    @default(0)
 
   @@id([user_id, scrim_id])
 }
