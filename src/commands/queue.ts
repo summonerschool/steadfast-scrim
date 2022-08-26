@@ -60,7 +60,7 @@ class QueueCommand extends SlashCommand {
           const queuers = await queueService.joinQueue(ctx.user.id, guildID);
           // TODO: Move this logic to service
           const status = queueService.attemptMatchCreation(guildID);
-          if (MatchmakingStatus.NOT_ENOUGH_PLAYERS) {
+          if (status === MatchmakingStatus.NOT_ENOUGH_PLAYERS) {
               const embed = queueEmbed(queuers, 'join', ctx.user.id);
               return { embeds: [embed as any], allowedMentions: { everyone: false } };
           }
