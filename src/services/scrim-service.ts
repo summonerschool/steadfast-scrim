@@ -55,14 +55,14 @@ export const initScrimService = (
       return users;
     },
     createBalancedScrim: async (guildID, region, queuers) => {
-      const users = matchmakingService.attemptFill(queuers)
+      const users = matchmakingService.attemptFill(queuers);
       const teamNames: [string, string] = [`Blue ${chance.animal()}`, `Red ${chance.animal()}`];
       const [rolePrio, eloPrio] = matchmakingService.startMatchmaking(users);
       // random number
       const matchup = rolePrio.eloDifference < 500 ? rolePrio : eloPrio;
       const players = matchmakingService.matchupToPlayers(matchup, users);
       const voiceChannels = await discordService.createVoiceChannels(guildID, teamNames);
-      const [scrim, inviteBlue, inviteRed] = await Promise.all([
+      const [scrim, inviteBlue, inviteRed, _] = await Promise.all([
         scrimRepo.createScrim(
           guildID,
           region,
@@ -70,7 +70,8 @@ export const initScrimService = (
           voiceChannels.map((vc) => vc.id)
         ),
         voiceChannels[0].createInvite(),
-        voiceChannels[1].createInvite()
+        voiceChannels[1].createInvite(),
+        userRepo.updateUserFillStatus(users)
       ]);
       console.info(`Elo difference is ${matchup.eloDifference}`);
       return {

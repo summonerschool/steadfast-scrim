@@ -6,6 +6,7 @@ export interface UserRepository {
   getUserByID: (id: User['id']) => Promise<User | undefined>;
   getUsers: (filter?: Prisma.UserWhereInput) => Promise<User[]>;
   updateUserWithResult: (users: User[]) => Promise<number>;
+  updateUserFillStatus: (users: User[]) => Promise<number>;
 }
 
 export const initUserRepository = (prisma: PrismaClient) => {
@@ -52,6 +53,28 @@ export const initUserRepository = (prisma: PrismaClient) => {
       );
       const results = await prisma.$transaction(promises);
       return results.length;
+    },
+    updateUserFillStatus: async (users) => {
+      const nonfilled: string[] = [];
+      const autofilled: string[] = [];
+      for (const user of users) {
+        if (user.isFill) {
+          autofilled.push(user.id);
+        } else {
+          nonfilled.push(user.id);
+        }
+      }
+      const [res1, res2] = await prisma.$transaction([
+        // User got their role
+        prisma.user.updateMany({
+          where: { id: { in: nonfilled }, autofill_protected: true },
+          data: { autofill_protected: false }
+        }),
+        // Autofilled user is protected
+        prisma.user.updateMany({ where: { id: { in: autofilled } }, data: { autofill_protected: true } })
+      ]);
+      console.log({ autofillProtoected: res2 });
+      return res1.count + res2.count;
     }
   };
   return repo;
