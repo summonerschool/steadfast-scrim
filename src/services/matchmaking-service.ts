@@ -34,11 +34,11 @@ export const initMatchmakingService = () => {
       const ROLE_COUNT = 10;
       const PLAYER_COUNT = 10;
       // Randomize, but let autofill protected people come first
-      const users = chance.shuffle(queuers).sort((a,b) => {
-        if (a.autofillProtected && b.autofillProtected) return 0
-        else if (a.autofillProtected && !b.autofillProtected) return -1
-        else if (!a.autofillProtected && b.autofillProtected) return 1
-        else return 0
+      const users = chance.shuffle(queuers).sort((a, b) => {
+        if (a.autofillProtected && b.autofillProtected) return 0;
+        else if (a.autofillProtected && !b.autofillProtected) return -1;
+        else if (!a.autofillProtected && b.autofillProtected) return 1;
+        else return 0;
       });
       // create graph of players
       const graph = [];
@@ -61,8 +61,8 @@ export const initMatchmakingService = () => {
         }
       }
       if (result === PLAYER_COUNT) {
-        console.info("NO NEED FOR AUTOFILL")
-        return users
+        console.info('NO NEED FOR AUTOFILL');
+        return users;
       }
 
       let seen = [...new Array(PLAYER_COUNT)].map(() => false);
@@ -86,8 +86,8 @@ export const initMatchmakingService = () => {
 
 const teamToPlayers = (team: Team, side: GameSide, users: User[]) => {
   const players: Player[] = team.map((player, i) => {
-    const user = users.find((u) => u.id == player.id)!!;
-    return { userID: user.id, role: ROLE_ORDER[i] as Role, side: side };
+    const user: User = users.find((u) => u.id == player.id)!!;
+    return { userID: user.id, role: ROLE_ORDER[i] as Role, side: side, pregameElo: user.elo };
   });
   return players;
 };

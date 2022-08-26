@@ -9,7 +9,8 @@ export type GameSide = z.infer<typeof gamesideEnum>;
 export const playerSchema = z.object({
   userID: z.string(),
   role: roleEnum,
-  side: gamesideEnum
+  side: gamesideEnum,
+  pregameElo: z.number()
 });
 
 export const scrimSchema = z.object({
@@ -27,7 +28,8 @@ export const mapToPlayer = (p: PrismaPlayer) => {
   return playerSchema.parse({
     role: p.role,
     userID: p.user_id,
-    side: p.side
+    side: p.side,
+    pregameElo: p.pregameElo
   });
 };
 

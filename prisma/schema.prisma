@@ -32,13 +32,13 @@ enum Side {
 }
 
 model Player {
-  user         User   @relation(fields: [user_id], references: [id])
-  scrim        Scrim  @relation(fields: [scrim_id], references: [id])
-  user_id      String
-  scrim_id     Int
-  role         Role
-  side         Side
-  pre_game_elo Int    @default(0)
+  user       User   @relation(fields: [user_id], references: [id])
+  scrim      Scrim  @relation(fields: [scrim_id], references: [id])
+  user_id    String
+  scrim_id   Int
+  role       Role
+  side       Side
+  pregameElo Int    @default(0) @map("pre_game_elo")
 
   @@id([user_id, scrim_id])
 }
