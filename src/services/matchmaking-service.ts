@@ -93,7 +93,7 @@ const teamToPlayers = (team: Team, side: GameSide, users: User[]) => {
 };
 
 // Probably needs adjustments
-const OFFROLE_PENALTY: { [key in User['rank']]: number } = {
+export const OFFROLE_PENALTY: { [key in User['rank']]: number } = {
   IRON: 200,
   BRONZE: 200,
   SILVER: 200,

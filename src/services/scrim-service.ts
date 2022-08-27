@@ -1,7 +1,7 @@
 import { Scrim, GameSide, Player, LobbyDetails } from '../entities/scrim';
 import { Region, User } from '../entities/user';
 import { chance } from '../lib/chance';
-import { MatchmakingService } from './matchmaking-service';
+import { MatchmakingService, OFFROLE_PENALTY } from './matchmaking-service';
 import { ScrimRepository } from './repo/scrim-repository';
 import { UserRepository } from './repo/user-repository';
 import { Status } from '@prisma/client';
@@ -91,18 +91,21 @@ export const initScrimService = (
 
       const userIDs = scrim.players.map((p) => p.userID);
       const users = await userRepo.getUsers({ id: { in: userIDs } });
+
+      const playerMap = new Map<string, Player>();
       const red: User[] = [];
       const blue: User[] = [];
       // Sort the users into side
       console.info(`${scrim.winner} WIN`);
       for (const user of users) {
-        const side = scrim.players.find((p) => p.userID == user.id)!!.side;
-        if (side === 'BLUE') blue.push(user);
-        if (side === 'RED') red.push(user);
+        const player = scrim.players.find((p) => p.userID == user.id)!!;
+        if (player.side === 'BLUE') blue.push(user);
+        if (player.side === 'RED') red.push(user);
+        playerMap.set(user.id, player);
       }
       // Get the average elo for the teams
-      const totalBlueElo = blue.reduce((prev, curr) => prev + curr.elo, 0);
-      const totalRedElo = red.reduce((prev, curr) => prev + curr.elo, 0);
+      const totalBlueElo = getTeamTotalElo(blue, playerMap);
+      const totalRedElo = getTeamTotalElo(red, playerMap);
 
       const blueWinChances = 1 / (1 + 10 ** ((totalRedElo - totalBlueElo) / 650));
       const redWinChances = 1 - blueWinChances;
@@ -229,3 +232,13 @@ const sortUsersByTeam = (users: User[], players: Player[]) => {
   }
   return teams;
 };
+
+const getTeamTotalElo = (team: User[], players: Map<string, Player>): number =>
+  team.reduce((prev, curr) => {
+    let elo = prev + curr.elo;
+    const player = players.get(curr.id)!!;
+    if (curr.main != player.role) {
+      elo -= OFFROLE_PENALTY[curr.rank];
+    }
+    return elo;
+  }, 0);

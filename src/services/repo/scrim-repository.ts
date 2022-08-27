@@ -15,7 +15,8 @@ export const initScrimRepository = (prisma: PrismaClient) => {
       const playerData = players.map((player) => ({
         user_id: player.userID,
         role: Role[player.role],
-        side: Side[player.side]
+        side: Side[player.side],
+        pregameElo: player.pregameElo
       }));
       const res = await prisma.scrim.create({
         data: {
