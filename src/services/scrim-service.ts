@@ -106,22 +106,23 @@ export const initScrimService = (
       // Get the average elo for the teams
       const totalBlueElo = getTeamTotalElo(blue, playerMap);
       const totalRedElo = getTeamTotalElo(red, playerMap);
-
       const blueWinChances = 1 / (1 + 10 ** ((totalRedElo - totalBlueElo) / 650));
       const redWinChances = 1 - blueWinChances;
+      let text = `Game #${scrim.id}\nBlue Elo: ${totalBlueElo}\nRed Elo:${totalRedElo}\n`;
       const updatedUsers: User[] = users.map((user) => {
         const totalGames = user.wins + user.losses;
         const K = totalGames <= 14 ? 60 - 2 * totalGames : 32;
         const eloChange = Math.round(K * (scrim.winner === 'BLUE' ? 1 - blueWinChances : 1 - redWinChances));
         const hasWon = scrim.players.find((p) => p.userID === user.id)!!.side === scrim.winner;
         const elo = hasWon ? user.elo + eloChange : user.elo - eloChange;
+        text += `${user.leagueIGN}: ${user.elo} -> ${elo}\n`;
         if (hasWon) {
           return { ...user, elo, wins: user.wins + 1 };
         } else {
           return { ...user, elo, losses: user.losses + 1 };
         }
       });
-      console.info(updatedUsers.map((u) => `${u.leagueIGN}: ${u.elo}`));
+      console.info(text);
       const res = await userRepo.updateUserWithResult(updatedUsers);
       return res > 0;
     },
