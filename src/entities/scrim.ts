@@ -10,7 +10,7 @@ export const playerSchema = z.object({
   userID: z.string(),
   role: roleEnum,
   side: gamesideEnum,
-  pregameElo: z.number()
+  pregameElo: z.number().optional().default(0)
 });
 
 export const scrimSchema = z.object({
@@ -46,7 +46,7 @@ export const mapToScrim = (dbScrim: PrismaScrim, dbPlayers: PrismaPlayer[]) => {
 export type LobbyDetails = {
   teamNames: [string, string];
   voiceInvite: [string, string];
-  eloDifference: number
-  offroleCount: number
-  autoFilledCount: number
+  eloDifference: number;
+  offroleCount: number;
+  autoFilledCount: number;
 };

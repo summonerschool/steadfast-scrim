@@ -13,10 +13,10 @@ export interface MatchmakingService {
 export const initMatchmakingService = () => {
   const service: MatchmakingService = {
     startMatchmaking: (users, prioritizeElo = false) => {
-      let playerPool = calculatePlayerPool(users);
-      let combinations = generateAllPossibleTeams(playerPool);
+      const playerPool = calculatePlayerPool(users);
+      const combinations = generateAllPossibleTeams(playerPool);
       // team vs team with elo difference. The players are sorted by their ID within the team
-      let res = findBestMatchup(combinations, users, prioritizeElo);
+      const res = findBestMatchup(combinations, users, prioritizeElo);
       if (!res.valid) {
         throw new NoMatchupPossibleError('No matchups possible with the chosen roles.');
       }
@@ -55,7 +55,7 @@ export const initMatchmakingService = () => {
       const matchRoles = [...new Array(ROLE_COUNT)].map(() => -1);
       let result = 0;
       for (let u = 0; u < PLAYER_COUNT; u++) {
-        let seen = [...new Array(ROLE_COUNT)].map(() => false);
+        const seen = [...new Array(ROLE_COUNT)].map(() => false);
         if (bpm(graph, u, seen, matchRoles)) {
           result++;
         }
@@ -65,7 +65,7 @@ export const initMatchmakingService = () => {
         return users;
       }
 
-      let seen = [...new Array(PLAYER_COUNT)].map(() => false);
+      const seen = [...new Array(PLAYER_COUNT)].map(() => false);
       for (let i = 0; i < matchRoles.length; i++) {
         if (matchRoles[i] > -1) seen[matchRoles[i]] = true;
       }

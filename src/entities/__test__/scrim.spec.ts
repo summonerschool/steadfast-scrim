@@ -7,11 +7,12 @@ describe('Scrim entities', () => {
       user_id: '1',
       scrim_id: 1,
       role: 'JUNGLE',
-      side: 'BLUE'
+      side: 'BLUE',
+      pregameElo: 1600
     };
     const player = mapToPlayer(data);
-    const { user_id, role, side } = data;
-    expect(player).toEqual({ userID: user_id, role, side });
+    const { user_id, role, side, pregameElo } = data;
+    expect(player).toEqual({ userID: user_id, role, side, pregameElo });
   });
 
   it('Maps prisma scrim correctly', async () => {
@@ -20,19 +21,22 @@ describe('Scrim entities', () => {
         user_id: '1',
         scrim_id: 1,
         role: 'BOT',
-        side: 'BLUE'
+        side: 'BLUE',
+        pregameElo: 1600
       },
       {
         user_id: '2',
         scrim_id: 1,
         role: 'SUPPORT',
-        side: 'RED'
+        side: 'RED',
+        pregameElo: 1600
       },
       {
         user_id: '3',
         scrim_id: 1,
         role: 'JUNGLE',
-        side: 'BLUE'
+        side: 'BLUE',
+        pregameElo: 1600
       }
     ];
 
