@@ -73,7 +73,7 @@ export const initScrimService = (
         voiceChannels[1].createInvite(),
         userRepo.updateUserFillStatus(users)
       ]);
-      console.info(`Elo difference is ${matchup.eloDifference}`);
+      console.info(`Elo difference is ${matchup.eloDifference}'`);
       return {
         scrim,
         lobbyDetails: {
@@ -96,7 +96,6 @@ export const initScrimService = (
       const red: User[] = [];
       const blue: User[] = [];
       // Sort the users into side
-      console.info(`${scrim.winner} WIN`);
       for (const user of users) {
         const player = scrim.players.find((p) => p.userID == user.id)!!;
         if (player.side === 'BLUE') blue.push(user);
@@ -108,7 +107,7 @@ export const initScrimService = (
       const totalRedElo = getTeamTotalElo(red, playerMap);
       const blueWinChances = 1 / (1 + 10 ** ((totalRedElo - totalBlueElo) / 650));
       const redWinChances = 1 - blueWinChances;
-      let text = `Game #${scrim.id}\nBlue Elo: ${totalBlueElo}\nRed Elo:${totalRedElo}\n`;
+      let text = `Game #${scrim.id}\nBlue Elo: ${totalBlueElo}\nRed Elo:${totalRedElo}\nWinner is ${winner}\n`;
       const updatedUsers: User[] = users.map((user) => {
         const totalGames = user.wins + user.losses;
         const K = totalGames <= 14 ? 60 - 2 * totalGames : 32;

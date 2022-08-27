@@ -73,7 +73,6 @@ export const initUserRepository = (prisma: PrismaClient) => {
         // Autofilled user is protected
         prisma.user.updateMany({ where: { id: { in: autofilled } }, data: { autofill_protected: true } })
       ]);
-      console.log({ autofillProtoected: res2 });
       return res1.count + res2.count;
     }
   };

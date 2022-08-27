@@ -60,8 +60,8 @@ export const initMatchmakingService = () => {
           result++;
         }
       }
+      console.info({ result, matchRoles });
       if (result === PLAYER_COUNT) {
-        console.info('NO NEED FOR AUTOFILL');
         return users;
       }
 
@@ -77,7 +77,6 @@ export const initMatchmakingService = () => {
           users[uIndex] = { ...users[uIndex], secondary: ROLE_ORDER[i < 5 ? i : i - 5] as Role, isFill: true };
         }
       }
-      console.info({ result, matchRoles });
       return users;
     }
   };
@@ -184,12 +183,12 @@ export const findBestMatchup = (
   }
 
   if (!bestMatchupByOffroleCount || !bestMatchupByEloDiff) {
-    console.log({ bestMatchupByEloDiff, bestMatchupByOffroleCount });
-    console.log({ users, combinations });
     return { valid: false };
   }
-  console.info(matchupToString(bestMatchupByOffroleCount));
-  console.info(matchupToString(bestMatchupByEloDiff));
+  console.info({
+    offroleCountMatchup: matchupToString(bestMatchupByOffroleCount),
+    elodiffMatchup: matchupToString(bestMatchupByEloDiff)
+  });
 
   return { valid: true, matchupByOffrole: bestMatchupByOffroleCount, matchupByElo: bestMatchupByEloDiff };
 };
