@@ -16,8 +16,15 @@ const sortByRole = (p1: Player, p2: Player) => {
   return ROLES_ORDER[p1.role] - ROLES_ORDER[p2.role];
 };
 const teamToString = (player: Player) => `${player.role}: <@${player.userID}>`;
+const eloText = (blue: Player[], red: Player[]) => {
+  let text = '';
+  for (let i = 0; i < 5; i++) {
+    text += `${blue[i]} vs ${red[i]}`;
+  }
+  return text;
+};
 
-export const matchDetailsEmbed = (scrim: Scrim, opggBlue: string, opggRed: string, lobbyDetails: LobbyDetails) => {
+export const matchDetailsEmbed = (scrim: Scrim, lobbyDetails: LobbyDetails) => {
   const { teamNames, eloDifference, offroleCount, autoFilledCount } = lobbyDetails;
   const lobbyCreator = chance.pickone(scrim.players);
   // Sort the teams by side
@@ -26,13 +33,9 @@ export const matchDetailsEmbed = (scrim: Scrim, opggBlue: string, opggRed: strin
     teams[player.side].push(player);
   });
 
-  const scoutingLinksMsg = `
-    [**Blue OP.GG**](${opggBlue})
-    [**Red OP.GG**](${opggRed})
-  `;
+  const blue = teams.BLUE.sort(sortByRole);
+  const red = teams.RED.sort(sortByRole);
 
-  const redText = teams.RED.sort(sortByRole).map(teamToString);
-  const blueText = teams.BLUE.sort(sortByRole).map(teamToString);
   const embed = new EmbedBuilder()
     .setColor(698371)
     .setTitle(`Queue Popped!`)
@@ -50,9 +53,9 @@ export const matchDetailsEmbed = (scrim: Scrim, opggBlue: string, opggRed: strin
       `
     )
     .addFields(
-      { name: teamNames[0], value: blueText.join('\n'), inline: true },
-      { name: teamNames[1], value: redText.join('\n'), inline: true },
-      { name: 'Scouting links:', value: scoutingLinksMsg }
+      { name: teamNames[0], value: blue.map(teamToString).join('\n'), inline: true },
+      { name: 'Elo', value: eloText(red, red), inline: true },
+      { name: teamNames[1], value: red.map(teamToString).join('\n'), inline: true }
     )
     .setTimestamp();
   return embed;
@@ -62,21 +65,32 @@ export const lobbyDetailsEmbed = (
   teamName: string,
   scrimID: number,
   teammates: User[],
+  enemies: User[],
   draftURL: string,
   lobbyName: string,
-  password: number
+  password: number,
+  opggTeam: string,
+  opggEnemy: string
 ) => {
   const detailsText = `
       Lobby name: ${lobbyName}
       Password: ${password}
       [**Join draft**](${draftURL})
+      [**Spectate draft**](${draftURL.split('/').slice(0, -1).join('/')})
       `;
+  const scoutingLinksMsg = `
+    [**Team OP.GG**](${opggTeam})
+    [**Enemy OP.GG**](${opggEnemy})
+  `;
+
   const embed = new EmbedBuilder()
     .setColor(698371)
-    .setTitle(`Summoner School Game #${scrimID}`)
+    .setTitle(`Summoner School Match #${scrimID}`)
     .setDescription(`**${teamName}**`)
     .addFields({ name: 'Lobby details', value: detailsText, inline: true })
-    .addFields({ name: 'Teammates IGNs', value: teammates.map((p) => p.leagueIGN).join('\n'), inline: true })
+    .addFields({ name: 'Scouting Links', value: scoutingLinksMsg, inline: true })
+    .addFields({ name: 'Teammates IGNs', value: teammates.map((p) => p.leagueIGN).join('\n') })
+    .addFields({ name: 'Enemy IGNs', value: enemies.map((p) => p.leagueIGN).join('\n'), inline: true })
     .setTimestamp();
   return embed;
 };

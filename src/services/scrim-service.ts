@@ -190,9 +190,29 @@ export const initScrimService = (
       const lobbyName = `${chance.word({ length: 5 })}${chance.integer({ min: 10, max: 20 })}`;
       const password = chance.integer({ min: 1000, max: 9999 });
 
-      const matchEmbed = matchDetailsEmbed(scrim, opggBlue, opggRed, lobbyDetails);
-      const blueEmbed = lobbyDetailsEmbed(teamNames[0], scrim.id, teams.BLUE, draftURLs.BLUE, lobbyName, password);
-      const redEmbed = lobbyDetailsEmbed(teamNames[1], scrim.id, teams.RED, draftURLs.RED, lobbyName, password);
+      const matchEmbed = matchDetailsEmbed(scrim, lobbyDetails);
+      const blueEmbed = lobbyDetailsEmbed(
+        teamNames[0],
+        scrim.id,
+        teams.BLUE,
+        teams.RED,
+        draftURLs.BLUE,
+        lobbyName,
+        password,
+        opggBlue,
+        opggRed
+      );
+      const redEmbed = lobbyDetailsEmbed(
+        teamNames[1],
+        scrim.id,
+        teams.RED,
+        teams.BLUE,
+        draftURLs.RED,
+        lobbyName,
+        password,
+        opggRed,
+        opggBlue
+      );
 
       const players = scrim.players.filter((p) => !p.userID.includes('-'));
       const blueIDs = players.filter((p) => p.side === 'BLUE').map((p) => p.userID);
