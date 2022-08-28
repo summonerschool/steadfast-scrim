@@ -73,7 +73,7 @@ export const initScrimService = (
         voiceChannels[1].createInvite(),
         userRepo.updateUserFillStatus(users)
       ]);
-      console.info(`Elo difference is ${matchup.eloDifference}`);
+      console.info(`Elo difference is ${matchup.eloDifference}'`);
       return {
         scrim,
         lobbyDetails: {
@@ -96,7 +96,6 @@ export const initScrimService = (
       const red: User[] = [];
       const blue: User[] = [];
       // Sort the users into side
-      console.info(`${scrim.winner} WIN`);
       for (const user of users) {
         const player = scrim.players.find((p) => p.userID == user.id)!!;
         if (player.side === 'BLUE') blue.push(user);
@@ -108,7 +107,7 @@ export const initScrimService = (
       const totalRedElo = getTeamTotalElo(red, playerMap);
       const blueWinChances = 1 / (1 + 10 ** ((totalRedElo - totalBlueElo) / 650));
       const redWinChances = 1 - blueWinChances;
-      let text = `Game #${scrim.id}\nBlue Elo: ${totalBlueElo}\nRed Elo:${totalRedElo}\n`;
+      let text = `Game #${scrim.id}\nBlue Elo: ${totalBlueElo}\nRed Elo:${totalRedElo}\nWinner is ${winner}\n`;
       const updatedUsers: User[] = users.map((user) => {
         const totalGames = user.wins + user.losses;
         const K = totalGames <= 14 ? 60 - 2 * totalGames : 32;
@@ -191,9 +190,29 @@ export const initScrimService = (
       const lobbyName = `${chance.word({ length: 5 })}${chance.integer({ min: 10, max: 20 })}`;
       const password = chance.integer({ min: 1000, max: 9999 });
 
-      const matchEmbed = matchDetailsEmbed(scrim, opggBlue, opggRed, lobbyDetails);
-      const blueEmbed = lobbyDetailsEmbed(teamNames[0], scrim.id, teams.BLUE, draftURLs.BLUE, lobbyName, password);
-      const redEmbed = lobbyDetailsEmbed(teamNames[1], scrim.id, teams.RED, draftURLs.RED, lobbyName, password);
+      const matchEmbed = matchDetailsEmbed(scrim, lobbyDetails);
+      const blueEmbed = lobbyDetailsEmbed(
+        teamNames[0],
+        scrim.id,
+        teams.BLUE,
+        teams.RED,
+        draftURLs.BLUE,
+        lobbyName,
+        password,
+        opggBlue,
+        opggRed
+      );
+      const redEmbed = lobbyDetailsEmbed(
+        teamNames[1],
+        scrim.id,
+        teams.RED,
+        teams.BLUE,
+        draftURLs.RED,
+        lobbyName,
+        password,
+        opggRed,
+        opggBlue
+      );
 
       const players = scrim.players.filter((p) => !p.userID.includes('-'));
       const blueIDs = players.filter((p) => p.side === 'BLUE').map((p) => p.userID);
@@ -213,7 +232,6 @@ export const initScrimService = (
       const publicEmbed = matchEmbed.addFields({
         name: 'Draft',
         value: `[Spectate Draft](${draftURLs.SPECTATOR})`,
-        inline: true
       });
       return publicEmbed;
     }

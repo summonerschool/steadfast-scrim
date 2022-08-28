@@ -29,6 +29,5 @@ describe('UserService', () => {
       1700,
       1700
     );
-    console.log(res);
   });
 });

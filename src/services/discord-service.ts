@@ -58,12 +58,12 @@ export const initDiscordService = (discordClient: Discord.Client) => {
       const teamVCs = channels.filter((vc): vc is VoiceChannel => vc != null && vc.parent?.id === voiceCategoryID);
       // Delete voice channels and remove them from active voice ids list
       const deleted = await Promise.all(teamVCs.map((vc) => vc.delete()));
+      const deletedIDs = deleted.map(vc => vc.id)
       activeVoiceIDs.set(
         guildID,
-        current.filter((id) => deleted.some((vc) => vc.id !== id))
+        current.filter((id) => !deletedIDs.includes(id))
       );
-      console.log({ activeVoiceIDs });
-
+      console.log({ activeVoiceIDs, deleted });
       return true;
     }
   };

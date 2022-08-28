@@ -64,7 +64,6 @@ class SetupCommand extends SlashCommand {
     const { ign, rank, region, main, secondary } = ctx.options;
 
     if (main === secondary) {
-      console.log('someone tried to pick the same main and secondary role');
       return { content: 'Main and secondary role needs to be different', ephemeral: true };
     }
 
