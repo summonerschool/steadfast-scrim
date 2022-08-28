@@ -15,14 +15,7 @@ const ROLES_ORDER = {
 const sortByRole = (p1: Player, p2: Player) => {
   return ROLES_ORDER[p1.role] - ROLES_ORDER[p2.role];
 };
-const teamToString = (player: Player) => `${player.role}: <@${player.userID}>`;
-const eloText = (blue: Player[], red: Player[]) => {
-  let text = '';
-  for (let i = 0; i < 5; i++) {
-    text += `${blue[i]} vs ${red[i]}`;
-  }
-  return text;
-};
+const teamToString = (player: Player) => `${player.role}: <@${player.userID}> (${player.pregameElo})`;
 
 export const matchDetailsEmbed = (scrim: Scrim, lobbyDetails: LobbyDetails) => {
   const { teamNames, eloDifference, offroleCount, autoFilledCount } = lobbyDetails;
@@ -54,7 +47,6 @@ export const matchDetailsEmbed = (scrim: Scrim, lobbyDetails: LobbyDetails) => {
     )
     .addFields(
       { name: teamNames[0], value: blue.map(teamToString).join('\n'), inline: true },
-      { name: 'Elo', value: eloText(red, red), inline: true },
       { name: teamNames[1], value: red.map(teamToString).join('\n'), inline: true }
     )
     .setTimestamp();
