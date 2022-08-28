@@ -67,6 +67,8 @@ class SetupCommand extends SlashCommand {
       return { content: 'Main and secondary role needs to be different', ephemeral: true };
     }
 
+    console.info(`${ctx.user.username}(${ctx.user.id}) setup with the rank ${rank}`)
+
     const rankInfo = await userService.fetchMyMMR(region, ign).catch(() => {
       return { rank: rank, elo: ELO_TRANSLATION[rank] };
     });
