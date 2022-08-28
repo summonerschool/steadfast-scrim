@@ -79,7 +79,7 @@ export const lobbyDetailsEmbed = (
     .setColor(698371)
     .setTitle(`Summoner School Match #${scrimID}`)
     .setDescription(`**${teamName}**`)
-    .addFields({ name: 'Lobby details', value: detailsText, inline: true })
+    .addFields({ name: 'Lobby details', value: detailsText })
     .addFields({ name: 'Scouting Links', value: scoutingLinksMsg, inline: true })
     .addFields({ name: 'Teammates IGNs', value: teammates.map((p) => p.leagueIGN).join('\n') })
     .addFields({ name: 'Enemy IGNs', value: enemies.map((p) => p.leagueIGN).join('\n'), inline: true })

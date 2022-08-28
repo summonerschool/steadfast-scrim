@@ -232,7 +232,6 @@ export const initScrimService = (
       const publicEmbed = matchEmbed.addFields({
         name: 'Draft',
         value: `[Spectate Draft](${draftURLs.SPECTATOR})`,
-        inline: true
       });
       return publicEmbed;
     }
