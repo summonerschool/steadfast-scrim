@@ -37,7 +37,7 @@ export const matchDetailsEmbed = (scrim: Scrim, lobbyDetails: LobbyDetails) => {
     **MATCH ID**: **${scrim.id}**\n
     ${
       autoFilledCount === 0
-        ? 'No autofilled players in this, feel free to swap roles among yourselves.'
+        ? 'No autofilled players in this'
         : `${autoFilledCount} players have been autofilled`
     }\n
     Elo difference: ${eloDifference}\n
