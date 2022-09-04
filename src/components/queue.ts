@@ -1,12 +1,21 @@
 import { EmbedBuilder } from '@discordjs/builders';
-import { Role, User } from '../entities/user';
+import { Region, Role, User } from '../entities/user';
 import { capitalize, POSITION_EMOJI_TRANSLATION } from '../utils/utils';
 
 type QueueCommand = 'show' | 'leave' | 'join';
 
-export const queueEmbed = (users: User[], command: QueueCommand, callerID: string, detailed: boolean = false) => {
+export const queueEmbed = (
+  users: User[],
+  command: QueueCommand,
+  callerID: string,
+  region: Region,
+  detailed: boolean = false
+) => {
   const plural = users.length === 1 ? '1 player is' : `${users.length} players are`;
-  const embed = new EmbedBuilder().setTitle(`${plural} currently in the queue`).setTimestamp(new Date());
+  const embed = new EmbedBuilder()
+    .setTitle(`${plural} currently in the ${region} queue`)
+    .setTimestamp(new Date())
+    .setColor(region === 'EUW' ? [40, 99, 206] : [187, 26, 52]);
 
   switch (command) {
     case 'join':
