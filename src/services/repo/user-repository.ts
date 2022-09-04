@@ -13,27 +13,39 @@ export const initUserRepository = (prisma: PrismaClient) => {
   const repo: UserRepository = {
     upsertUser: async (payload) => {
       const { id, rank, region, main, secondary, elo, external_elo, leagueIGN } = payload;
-      const user = await prisma.user.upsert({
-        where: { id: payload.id },
-        create: {
-          id,
-          league_ign: leagueIGN,
-          rank,
-          region,
-          main,
-          secondary,
-          elo: elo,
-          external_elo: external_elo
-        },
-        update: {
-          league_ign: leagueIGN,
-          external_elo: external_elo,
-          rank,
-          region,
-          main,
-          secondary
-        }
+      let user = await prisma.user.findUnique({
+        where: { id: id }
       });
+      if (!user) {
+        user = await prisma.user.create({
+          data: {
+            id,
+            league_ign: leagueIGN,
+            rank,
+            region,
+            main,
+            secondary,
+            elo: elo,
+            external_elo: external_elo
+          }
+        });
+      } else {
+        const hasPlayed = user.wins + user.losses === 0;
+        // Update elo if the user has no games played
+        user = await prisma.user.update({
+          where: { id: payload.id },
+          data: {
+            league_ign: leagueIGN,
+            rank,
+            region,
+            main,
+            secondary,
+            elo: hasPlayed ? elo : undefined,
+            external_elo: hasPlayed ? external_elo : undefined
+          }
+        });
+      }
+
       return mapToUser(user);
     },
     getUserByID: async (id) => {
