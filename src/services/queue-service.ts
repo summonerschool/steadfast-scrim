@@ -1,17 +1,11 @@
-import { Role } from '@prisma/client';
-import { User } from '../entities/user';
-import { NotFoundError } from '../errors/errors';
-import { UserRepository } from './repo/user-repository';
+import { Region, User } from '../entities/user';
 
 interface QueueService {
-  joinQueue: (userID: string, guildID: string) => Promise<User[]>;
-  leaveQueue: (userID: string, guildID: string) => User[];
-  getQueue: (guildID: string) => Map<string, User>;
-  canCreateMatch: (
-    users: User[]
-  ) => { users: User[]; valid: true } | { valid: false; roleCount: Map<Role, number> | null };
-  resetQueue: (guildID: string) => void;
-  attemptMatchCreation: (guildID: string) => MatchmakingStatus;
+  joinQueue: (user: User, guildID: string, region: Region) => User[];
+  leaveQueue: (userID: string, guildID: string, region: Region) => User[];
+  getQueue: (guildID: string, region: Region) => Map<string, User>;
+  resetQueue: (guildID: string, region: Region) => void;
+  attemptMatchCreation: (guildID: string, region: Region) => MatchmakingStatus;
 }
 
 export enum MatchmakingStatus {
@@ -19,61 +13,48 @@ export enum MatchmakingStatus {
   VALID_MATCH
 }
 
-export const initQueueService = (userRepo: UserRepository) => {
-  const queues = new Map<string, Map<string, User>>();
+type Queues = {
+  EUW: Map<string, User>;
+  NA: Map<string, User>;
+};
+
+export const initQueueService = () => {
+  const queues = new Map<string, Queues>();
 
   const service: QueueService = {
-    joinQueue: async (userID, guildID) => {
-      const user = await userRepo.getUserByID(userID);
-      if (!user) {
-        throw new NotFoundError("You can't join a queue without a profile. Please use /setup");
-      }
-      const queue = queues.get(guildID) || new Map<string, User>();
-      if (queue.get(user.id)) {
+    joinQueue: (user, guildID, region) => {
+      const queue: Queues = queues.get(guildID) || { EUW: new Map(), NA: new Map() };
+      if (queue[region].get(user.id)) {
         throw new Error("You're already in queue");
       }
-      queues.set(guildID, queue.set(user.id, user));
-      return [...queue.values()];
+      queue[region] = queue[region].set(user.id, user);
+      queues.set(guildID, queue);
+      return [...queue[region].values()];
     },
-    leaveQueue: (userID, guildID) => {
-      const queue = queues.get(guildID) || new Map<string, User>();
-      const user = queue.get(userID);
-      if (!user) {
-        throw new Error('You have not joined any queues');
-      }
-      queue.delete(userID);
-      return [...queue.values()];
-    },
-    canCreateMatch: (users) => {
-      // might sort or filter or order more here
-      if (users.length >= 10) {
-        const sufficentRoles = new Map<Role, number>();
-        users.forEach((u) => {
-          sufficentRoles.set(u.main, (sufficentRoles.get(u.main) || 0) + 1);
-          sufficentRoles.set(u.secondary, (sufficentRoles.get(u.secondary) || 0) + 1);
-        });
-        for (const [_, count] of sufficentRoles) {
-          if (count < 2) return { users, valid: false, roleCount: sufficentRoles };
-        }
-        return { users, valid: true };
-      }
-      return { valid: false, roleCount: null };
-    },
-    attemptMatchCreation: (guildID) => {
+    leaveQueue: (userID, guildID, region) => {
       const queue = queues.get(guildID);
-      if (!queue || queue.size < 10) return MatchmakingStatus.NOT_ENOUGH_PLAYERS;
+      if (queue && queue[region].delete(userID)) {
+        return [...queue[region].values()];
+      } else {
+        throw new Error("You're not in the specified queue");
+      }
+    },
+    attemptMatchCreation: (guildID, region) => {
+      const queue = queues.get(guildID);
+      if (!queue || queue[region].size < 10) return MatchmakingStatus.NOT_ENOUGH_PLAYERS;
       return MatchmakingStatus.VALID_MATCH;
     },
-    getQueue: (guildID) => {
+    getQueue: (guildID, region) => {
       let queue = queues.get(guildID);
       if (!queue) {
-        queue = new Map<string, User>();
+        queue = { EUW: new Map(), NA: new Map() };
+        queues.set(guildID, queue);
       }
-      return queue;
+      return queue[region];
     },
-    resetQueue: (guildID) => {
+    resetQueue: (guildID, region) => {
       const queue = queues.get(guildID);
-      if (queue) queue.clear();
+      if (queue) queue[region].clear();
     }
   };
   return service;
