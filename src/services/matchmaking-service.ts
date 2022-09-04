@@ -93,15 +93,15 @@ const teamToPlayers = (team: Team, side: GameSide, users: User[]) => {
 
 // Probably needs adjustments
 export const OFFROLE_PENALTY: { [key in User['rank']]: number } = {
-  IRON: 200,
+  IRON: 100,
   BRONZE: 200,
-  SILVER: 200,
-  GOLD: 200,
-  PLATINUM: 200,
-  DIAMOND: 200,
-  MASTER: 200,
+  SILVER: 250,
+  GOLD: 300,
+  PLATINUM: 350,
+  DIAMOND: 300,
+  MASTER: 250,
   GRANDMASTER: 200,
-  CHALLENGER: 200
+  CHALLENGER: 150
 };
 
 // Puts every user into a pool based on role.
