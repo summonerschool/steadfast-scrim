@@ -241,17 +241,15 @@ export const initScrimService = (
 };
 
 const sortUsersByTeam = (users: User[], players: Player[]) => {
-  const sideMap = new Map<string, GameSide>();
   const red: (User | undefined)[] = [, , , , ,];
   const blue: (User | undefined)[] = [, , , , ,];
   for (const player of players) {
     const user = users.find((u) => u.id === player.userID);
     if (!user) continue;
-    sideMap.set(user.id, player.side);
     if (player.side === 'BLUE') red[ROLE_ORDER[player.role]] = user;
     if (player.side === 'RED') blue[ROLE_ORDER[player.role]] = user;
   }
-  return { RED: red, BLUE: blue };
+  return { RED: red, BLUE: blue } as { RED: Team; BLUE: Team };
 };
 
 const getTeamTotalElo = (team: User[], players: Map<string, Player>): number =>
