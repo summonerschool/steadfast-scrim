@@ -1,5 +1,5 @@
 import { Scrim, GameSide, Player, LobbyDetails } from '../entities/scrim';
-import { Region, User } from '../entities/user';
+import { Region, ROLE_ORDER, User } from '../entities/user';
 import { chance } from '../lib/chance';
 import { MatchmakingService, OFFROLE_PENALTY } from './matchmaking-service';
 import { ScrimRepository } from './repo/scrim-repository';
@@ -11,6 +11,7 @@ import { EmbedBuilder } from 'discord.js';
 import { lobbyDetailsEmbed, matchDetailsEmbed } from '../components/match-message';
 import { DiscordService } from './discord-service';
 import WebSocket from 'ws';
+import { Team } from '../entities/matchmaking';
 
 export interface ScrimService {
   generateScoutingLink: (users: User[]) => string;
@@ -231,7 +232,7 @@ export const initScrimService = (
       `${directMsg[0] + directMsg[1]} DMs have been sent`;
       const publicEmbed = matchEmbed.addFields({
         name: 'Draft',
-        value: `[Spectate Draft](${draftURLs.SPECTATOR})`,
+        value: `[Spectate Draft](${draftURLs.SPECTATOR})`
       });
       return publicEmbed;
     }
@@ -241,15 +242,16 @@ export const initScrimService = (
 
 const sortUsersByTeam = (users: User[], players: Player[]) => {
   const sideMap = new Map<string, GameSide>();
-  const teams = { RED: [], BLUE: [] } as { [key in GameSide]: User[] };
+  const red: (User | undefined)[] = [, , , , ,];
+  const blue: (User | undefined)[] = [, , , , ,];
   for (const player of players) {
     const user = users.find((u) => u.id === player.userID);
     if (!user) continue;
     sideMap.set(user.id, player.side);
-    if (player.side === 'BLUE') teams.BLUE.push(user);
-    if (player.side === 'RED') teams.RED.push(user);
+    if (player.side === 'BLUE') red[ROLE_ORDER[player.role]] = user;
+    if (player.side === 'RED') blue[ROLE_ORDER[player.role]] = user;
   }
-  return teams;
+  return { RED: red, BLUE: blue };
 };
 
 const getTeamTotalElo = (team: User[], players: Map<string, Player>): number =>

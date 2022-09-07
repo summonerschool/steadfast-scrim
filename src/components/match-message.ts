@@ -35,11 +35,7 @@ export const matchDetailsEmbed = (scrim: Scrim, lobbyDetails: LobbyDetails) => {
     .setDescription(
       `
     **MATCH ID**: **${scrim.id}**\n
-    ${
-      autoFilledCount === 0
-        ? 'No autofilled players in this'
-        : `${autoFilledCount} players have been autofilled`
-    }\n
+    ${autoFilledCount === 0 ? 'No autofilled players in this' : `${autoFilledCount} players have been autofilled`}\n
     Elo difference: ${eloDifference}\n
     Players on offrole: ${offroleCount}\n
     **Lobby creator**: <@${lobbyCreator.userID}>\n
@@ -79,10 +75,14 @@ export const lobbyDetailsEmbed = (
     .setColor(698371)
     .setTitle(`Summoner School Match #${scrimID}`)
     .setDescription(`**${teamName}**`)
-    .addFields({ name: 'Lobby details', value: detailsText })
-    .addFields({ name: 'Scouting Links', value: scoutingLinksMsg, inline: true })
-    .addFields({ name: 'Teammates IGNs', value: teammates.map((p) => p.leagueIGN).join('\n') })
-    .addFields({ name: 'Enemy IGNs', value: enemies.map((p) => p.leagueIGN).join('\n'), inline: true })
+    .addFields(
+      { name: 'Lobby details', value: detailsText, inline: true },
+      { name: 'Scouting Links', value: scoutingLinksMsg, inline: true }
+    )
+    .addFields(
+      { name: 'Teammates IGNs', value: teammates.map((p) => p.leagueIGN).join('\n'), inline: true },
+      { name: 'Enemy IGNs', value: enemies.map((p) => p.leagueIGN).join('\n'), inline: true }
+    )
     .setTimestamp();
   return embed;
 };
