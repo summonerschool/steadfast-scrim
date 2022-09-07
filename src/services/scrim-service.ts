@@ -246,8 +246,8 @@ const sortUsersByTeam = (users: User[], players: Player[]) => {
   for (const player of players) {
     const user = users.find((u) => u.id === player.userID);
     if (!user) continue;
-    if (player.side === 'BLUE') red[ROLE_ORDER[player.role]] = user;
-    if (player.side === 'RED') blue[ROLE_ORDER[player.role]] = user;
+    if (player.side === 'BLUE') blue[ROLE_ORDER[player.role]] = user;
+    if (player.side === 'RED') red[ROLE_ORDER[player.role]] = user;
   }
   return { RED: red, BLUE: blue } as { RED: Team; BLUE: Team };
 };
