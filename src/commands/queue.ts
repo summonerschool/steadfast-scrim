@@ -85,7 +85,7 @@ class QueueCommand extends SlashCommand {
             return { embeds: [embed as any], allowedMentions: { everyone: false } };
           }
           const users = await userService.getUsers(queuers.map((u) => u.id));
-          queueService.resetQueue(guildID, region);
+          queueService.popQueue(users, guildID, region);
           return startMatchmaking(users, guildID);
         }
         case 'leave': {
