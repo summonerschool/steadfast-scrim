@@ -16,7 +16,7 @@ describe('MatchmakingService', () => {
   test('Matchmake a matchup that requires secondary role', () => {
     const matchups = matchmakingService.startMatchmaking(notTwoOfEach);
     const matchup = matchups[0];
-    expect(matchup.eloDifference).toEqual(119);
+    expect(matchup.eloDifference).toEqual(19);
     const players = matchmakingService.matchupToPlayers(matchup, notTwoOfEach);
     const ids = players.map((p) => p.userID);
     // No duplicate users

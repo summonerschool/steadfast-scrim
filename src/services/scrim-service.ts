@@ -27,6 +27,7 @@ export interface ScrimService {
   findScrim: (scrimID: number) => Promise<Scrim>;
   remakeScrim: (scrim: Scrim) => Promise<boolean>;
   sendMatchDetails: (scrim: Scrim, users: User[], lobbyDetails: LobbyDetails) => Promise<EmbedBuilder>;
+  getActiveScrims: () => Scrim[]
 }
 
 interface RoomCreatedResult {
@@ -43,6 +44,7 @@ export const initScrimService = (
   matchmakingService: MatchmakingService,
   discordService: DiscordService
 ) => {
+  const activeGames = new Map<number, Scrim>();
   const service: ScrimService = {
     // Generates an opgg link for scouting purposes
     generateScoutingLink: (users) => {
@@ -74,6 +76,7 @@ export const initScrimService = (
         voiceChannels[1].createInvite(),
         userRepo.updateUserFillStatus(users)
       ]);
+      activeGames.set(scrim.id, scrim);
       console.info(`Elo difference is ${matchup.eloDifference}'`);
       return {
         scrim,
@@ -124,6 +127,7 @@ export const initScrimService = (
       });
       console.info(text);
       const res = await userRepo.updateUserWithResult(updatedUsers);
+      activeGames.delete(scrim.id)
       return res > 0;
     },
     createDraftLobby: async (teamNames) => {
@@ -176,6 +180,7 @@ export const initScrimService = (
     remakeScrim: async (scrim) => {
       const remakeScrim: Scrim = { ...scrim, status: 'REMAKE' };
       const success = await scrimRepo.updateScrim(remakeScrim);
+      activeGames.delete(scrim.id)
       return success.status === 'REMAKE';
     },
     sendMatchDetails: async (scrim, users, lobbyDetails) => {
@@ -235,6 +240,9 @@ export const initScrimService = (
         value: `[Spectate Draft](${draftURLs.SPECTATOR})`
       });
       return publicEmbed;
+    },
+    getActiveScrims: () => {
+      return [...activeGames.values()]
     }
   };
   return service;

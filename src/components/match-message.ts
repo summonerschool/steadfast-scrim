@@ -63,7 +63,7 @@ export const lobbyDetailsEmbed = (
   const detailsText = `
       Lobby name: ${lobbyName}
       Password: ${password}
-      [**Join draft**](${draftURL})
+      [**Become Draft Captain**](${draftURL})
       [**Spectate draft**](${draftURL.split('/').slice(0, -1).join('/')})
       `;
   const scoutingLinksMsg = `
