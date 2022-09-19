@@ -1,10 +1,10 @@
 import { Region, User } from '../entities/user';
+import { ScrimService } from './scrim-service';
 
 interface QueueService {
   joinQueue: (user: User, guildID: string, region: Region) => User[];
   leaveQueue: (userID: string, guildID: string, region: Region) => User[];
   getQueue: (guildID: string, region: Region) => Map<string, User>;
-  popQueue: (users: User[], guildID: string, region: Region) => void;
   resetQueue: (guildID: string, region: Region) => void;
   attemptMatchCreation: (guildID: string, region: Region) => MatchmakingStatus;
 }
@@ -19,9 +19,8 @@ type Queues = {
   NA: Map<string, User>;
 };
 
-export const initQueueService = () => {
+export const initQueueService = (scrimService: ScrimService) => {
   const queues = new Map<string, Queues>();
-  const usersInGame = new Map<string, User>();
 
   const service: QueueService = {
     joinQueue: (user, guildID, region) => {
@@ -29,9 +28,11 @@ export const initQueueService = () => {
       if (queue[region].get(user.id)) {
         throw new Error("You're already in queue");
       }
-      const isInGame = usersInGame.get(user.id);
-      if (!!isInGame) {
-        throw new Error("You're already in a game. Please report the match before queuing up again.");
+      const activeScrims = scrimService.getActiveScrims()
+      for (const scrim of activeScrims) {
+        if (scrim.players.some(p => p.userID === user.id)) {
+          throw new Error("You're already in a game. Please report the match before queuing up again.");
+        }
       }
       queue[region] = queue[region].set(user.id, user);
       queues.set(guildID, queue);
@@ -58,18 +59,12 @@ export const initQueueService = () => {
       }
       return queue[region];
     },
-    popQueue: (users, guildID, region) => {
-      service.resetQueue(guildID, region);
-      for (const user of users) {
-        usersInGame.set(user.id, user);
-      }
-    },
     resetQueue: (guildID, region) => {
       const queue = queues.get(guildID);
       if (queue) {
         queue[region].clear();
       }
-    }
+    },
   };
   return service;
 };
