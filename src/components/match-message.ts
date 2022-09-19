@@ -80,7 +80,7 @@ export const lobbyDetailsEmbed = (
       { name: 'Scouting Links', value: scoutingLinksMsg, inline: true }
     )
     .addFields(
-      { name: 'Teammates IGNs', value: teammates.map((p) => p.leagueIGN).join('\n')},
+      { name: 'Teammates IGNs', value: teammates.map((p) => p.leagueIGN).join('\n'), inline: true},
       { name: 'Enemy IGNs', value: enemies.map((p) => p.leagueIGN).join('\n'), inline: true }
     )
     .setTimestamp();
