@@ -6,12 +6,14 @@ interface QueueService {
   leaveQueue: (userID: string, guildID: string, region: Region) => User[];
   getQueue: (guildID: string, region: Region) => Map<string, User>;
   resetQueue: (guildID: string, region: Region) => void;
+  removeUserFromQueue: (guildID: string, region: Region, ids: string[]) => void;
   attemptMatchCreation: (guildID: string, region: Region) => MatchmakingStatus;
 }
 
 export enum MatchmakingStatus {
   NOT_ENOUGH_PLAYERS,
-  VALID_MATCH
+  VALID_MATCH,
+  UNEVEN_RANK_DISTRIBUTION
 }
 
 type Queues = {
@@ -42,11 +44,11 @@ export const initQueueService = (scrimService: ScrimService) => {
       queues.set(guildID, queue);
 
       // removes the user after 8 hours
-      const now = new Date().toLocaleDateString()
+      const now = new Date().toLocaleDateString();
       resetTimer.set(
         user.id,
         setTimeout(() => {
-          console.info(`${user.leagueIGN} joined at ${now} and was removed at ${new Date().toLocaleDateString()}`)
+          console.info(`${user.leagueIGN} joined at ${now} and was removed at ${new Date().toLocaleDateString()}`);
           service.leaveQueue(user.id, guildID, region);
         }, REMOVE_DURATION)
       );
@@ -65,7 +67,15 @@ export const initQueueService = (scrimService: ScrimService) => {
     attemptMatchCreation: (guildID, region) => {
       const queue = queues.get(guildID);
       if (!queue || queue[region].size < 10) return MatchmakingStatus.NOT_ENOUGH_PLAYERS;
-      return MatchmakingStatus.VALID_MATCH;
+
+      const users = [...queue[region].values()];
+      const averageElo = users.reduce((prev, curr) => prev + curr.elo, 0) / users.length;
+      console.info(`Average elo is ${averageElo}`);
+      const filtered = users.filter((u) => Math.abs(averageElo - u.elo) < 800);
+      if (filtered.length >= 10) {
+        return MatchmakingStatus.VALID_MATCH;
+      }
+      return MatchmakingStatus.UNEVEN_RANK_DISTRIBUTION;
     },
     getQueue: (guildID, region) => {
       let queue = queues.get(guildID);
@@ -79,6 +89,15 @@ export const initQueueService = (scrimService: ScrimService) => {
       const queue = queues.get(guildID);
       if (queue) {
         queue[region].clear();
+      }
+    },
+    removeUserFromQueue: (guildID, region, ids) => {
+      const queue = queues.get(guildID);
+      if (queue) {
+        const regionQueue = queue[region];
+        for (const id of ids) {
+          regionQueue.delete(id);
+        }
       }
     }
   };
