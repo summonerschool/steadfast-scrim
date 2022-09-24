@@ -107,7 +107,7 @@ class QueueCommand extends SlashCommand {
                   const { embeds } = await startMatchmaking(players, guildID);
                   await ctx.send({ embeds: embeds as any });
                   this.timer = undefined;
-                }, 1000 * 60 * 2);
+                }, 1000 * 60 * 5);
                 return {
                   content:
                     'Player(s) currently too far above/below average MMR for this game. If other players are not found in 5 minutes this match will continue'
