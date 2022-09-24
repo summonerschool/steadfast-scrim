@@ -132,6 +132,10 @@ class QueueCommand extends SlashCommand {
         }
         case 'leave': {
           const users = queueService.leaveQueue(ctx.user.id, guildID, region);
+          if (users.length < 10) {
+            clearTimeout(this.timer)
+            this.timer = undefined
+          }
           const embed = queueEmbed(users, 'leave', ctx.user.id, region);
           return { embeds: [embed as any], allowedMentions: { everyone: false } };
         }
