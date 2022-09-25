@@ -135,7 +135,7 @@ class QueueCommand extends SlashCommand {
                     } else {
                       const voteState = voted.set(userID, true);
                       const passVoteCount = [...voteState.values()].reduce((sum, curr) => sum + (curr ? 1 : 0), 0);
-                      if (passVoteCount < 1) {
+                      if (passVoteCount < 6) {
                         await voteCtx.editParent(text + `\n${6 - passVoteCount} votes required to pop queue now.`);
                       } else {
                         this.resetTimer(guildID, region);
