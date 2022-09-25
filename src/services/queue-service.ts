@@ -27,7 +27,7 @@ type Queues = {
 const HOUR = 3600000;
 const REMOVE_DURATION = HOUR * 8;
 
-export const initQueueService = (scrimService: ScrimService, userService: UserService) => {
+export const initQueueService = (scrimService: ScrimService) => {
   const queues = new Map<string, Queues>();
   const resetTimer = new Map<string, NodeJS.Timeout>();
 
