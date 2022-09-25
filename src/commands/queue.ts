@@ -85,8 +85,8 @@ class QueueCommand extends SlashCommand {
           const queuers = queueService.joinQueue(user, guildID, region);
           const status = queueService.attemptMatchCreation(guildID, region);
           if (status === MatchmakingStatus.NOT_ENOUGH_PLAYERS) {
-              const embed = queueEmbed(queuers, 'join', ctx.user.id, region);
-              return { embeds: [embed as any], allowedMentions: { everyone: false } };
+            const embed = queueEmbed(queuers, 'join', ctx.user.id, region);
+            return { embeds: [embed as any], allowedMentions: { everyone: false } };
           }
           switch (status) {
             case MatchmakingStatus.UNEVEN_RANK_DISTRIBUTION: {
@@ -140,19 +140,20 @@ class QueueCommand extends SlashCommand {
                       } else {
                         this.resetTimer(guildID, region);
                         await voteCtx.editParent({ content: 'Vote went through, creating match...', components: [] });
-                        const embed = await queueService.createMatch(guildID, region)
-                        await voteCtx.sendFollowUp({ embeds: [embed as any] })
+                        const embed = await queueService.createMatch(guildID, region);
+                        await voteCtx.sendFollowUp({ embeds: [embed as any] });
                       }
                     }
                   },
                   TIME_TO_MATCH
                 );
               }
-              break
+              break;
             }
             case MatchmakingStatus.VALID_MATCH: {
               this.resetTimer(guildID, region);
-              return queueService.createMatch(guildID, region);
+              const embed = await queueService.createMatch(guildID, region);
+              return { embeds: [embed as any] };
             }
           }
           break;
