@@ -8,17 +8,11 @@ import {
   ButtonStyle,
   Message
 } from 'slash-create';
-import { queueService, scrimService, userService } from '../services';
+import { queueService, userService } from '../services';
 import { queueEmbed } from '../components/queue';
 import { NoMatchupPossibleError } from '../errors/errors';
-import { regionEnum, User } from '../entities/user';
+import { Region, regionEnum } from '../entities/user';
 import { MatchmakingStatus } from '../services/queue-service';
-
-const startMatchmaking = async (users: User[], guildID: string) => {
-  const { scrim, lobbyDetails } = await scrimService.createBalancedScrim(guildID, users[0].region, users);
-  const matchEmbed = await scrimService.sendMatchDetails(scrim, users, lobbyDetails);
-  return { embeds: [matchEmbed] };
-};
 
 const queueCommandOptions: ApplicationCommandOption[] = [
   {
@@ -46,7 +40,7 @@ const queueCommandOptions: ApplicationCommandOption[] = [
 ];
 
 class QueueCommand extends SlashCommand {
-  private timer: NodeJS.Timeout | undefined;
+  private voteTimer = new Map<string, NodeJS.Timeout>();
   constructor(creator: SlashCreator) {
     super(creator, {
       name: 'queue',
@@ -95,7 +89,7 @@ class QueueCommand extends SlashCommand {
           if (status === MatchmakingStatus.NOT_ENOUGH_PLAYERS) {
 =======
 
-          console.info(status)
+          console.info(status);
           switch (status) {
             case MatchmakingStatus.NOT_ENOUGH_PLAYERS: {
 >>>>>>> 9e5e665 (implement voting)
@@ -104,12 +98,14 @@ class QueueCommand extends SlashCommand {
           }
           switch (status) {
             case MatchmakingStatus.UNEVEN_RANK_DISTRIBUTION: {
-              // 5 min timer
-              // TODO: move this to queue service
-              if (this.timer === undefined) {
-                const def = await ctx.defer();
-                let votes = 0;
-                const msg = (await ctx.send('6 votes required', {
+              const key = `${guildID}_${region}`;
+              const timer = this.voteTimer.get(key);
+              const TIME_TO_MATCH = 1000 * 60 * 3;
+              if (!timer) {
+                await ctx.defer();
+                const text =
+                  'Player(s) currently too far above/below average MMR for this game. If other players are not found in 3 minutes, or the vote passes, this match will continue';
+                const msg = (await ctx.send(text + `\n6 votes required to pop queue now.`, {
                   components: [
                     {
                       type: ComponentType.ACTION_ROW,
@@ -127,61 +123,53 @@ class QueueCommand extends SlashCommand {
                     }
                   ]
                 })) as Message;
-                ctx.registerComponent('vote', async (voteCtx) => {
-                  votes += 1;
-                  if (votes < 6) {
-                    await voteCtx.editParent(`${6 - votes} votes required`);
-                  } else {
-                    await msg.edit({ content: 'Vote went through, creating match...', components: [] });
-                    clearTimeout(this.timer)
-                  }
-                }, 1000 * 60 * 3, async () => {
-                  const users = [...queueService.getQueue(guildID, region).values()];
-                  const averageElo = users.reduce((prev, curr) => prev + curr.elo, 0) / users.length;
-                  // Sort from Highest to Lowest.
-                  const relevantUsers = users
-                    .sort((a, b) => Math.abs(averageElo - a.elo) - Math.abs(averageElo - b.elo))
-                    .slice(0, 10);
-                  queueService.removeUserFromQueue(
-                    guildID,
-                    region,
-                    relevantUsers.map((u) => u.id)
-                  );
-                  await msg.edit({ content: '3 minutes has passed, creating match...', components: [] });
-                  const players = await userService.getUsers(relevantUsers.map((u) => u.id));
-                  const { embeds } = await startMatchmaking(players, guildID);
+                setTimeout(async () => {
+                  const embeds = queueService.createMatch(guildID, region);
                   await ctx.send({ embeds: embeds as any });
-                });
-                return {
-                  content:
-                    'Player(s) currently too far above/below average MMR for this game. If other players are not found in 3 minutes this match will continue'
-                };
+                  await msg.edit({ content: '3 minutes has passed, creating match...', components: [] });
+                }, TIME_TO_MATCH);
+
+                const voted = new Map<string, boolean>();
+
+                ctx.registerComponent(
+                  'vote',
+                  async (voteCtx) => {
+                    console.log({voted})
+                    const users = queueService.getQueue(guildID, region);
+                    const userID = ctx.user.id;
+                    if (voted.get(userID)) {
+                      voteCtx.send({ content: 'You have already voted', ephemeral: true });
+                    } else if (!users.get(userID)) {
+                      voteCtx.send({ content: 'You are not a part of the queue', ephemeral: true });
+                    } else {
+                      const voteState = voted.set(userID, true);
+                      const yesVote = [...voteState.values()].reduce((sum, curr) => sum + (curr ? 1 : 0), 0);
+                      if (yesVote < 1) {
+                        await voteCtx.editParent(text + `\n${6 - yesVote} votes required to pop queue now.`);
+                      } else {
+                        this.resetTimer(guildID, region);
+                        await voteCtx.editParent({ content: 'Vote went through, creating match...', components: [] });
+                        const embed = await queueService.createMatch(guildID, region)
+                        await voteCtx.sendFollowUp({ embeds: [embed as any] })
+                      }
+                    }
+                  },
+                  1000 * 60 * 3
+                );
               }
+              break
             }
             case MatchmakingStatus.VALID_MATCH: {
-              queueService.resetQueue(guildID, region);
-              clearTimeout(this.timer);
-              this.timer = undefined;
-              const users = await userService.getUsers(queuers.map((u) => u.id));
-              const averageElo = users.reduce((prev, curr) => prev + curr.elo, 0) / users.length;
-              // Sort from Highest to Lowest.
-              const relevantUsers = users
-                .sort((a, b) => Math.abs(averageElo - a.elo) - Math.abs(averageElo - b.elo))
-                .slice(0, 10);
-              // Users who did not get into the game gets botoed
-              users.slice(10).forEach((u) => queueService.joinQueue(u, guildID, region));
-              return startMatchmaking(relevantUsers, guildID);
+              this.resetTimer(guildID, region);
+              return queueService.createMatch(guildID, region);
             }
-            default:
-              console.log("Something went wrong")
           }
-          break
+          break;
         }
         case 'leave': {
           const users = queueService.leaveQueue(ctx.user.id, guildID, region);
           if (users.length < 10) {
-            clearTimeout(this.timer);
-            this.timer = undefined;
+            this.resetTimer(guildID, region);
           }
           const embed = queueEmbed(users, 'leave', ctx.user.id, region);
           return { embeds: [embed as any], allowedMentions: { everyone: false } };
@@ -198,6 +186,12 @@ class QueueCommand extends SlashCommand {
         console.error(err);
       }
     }
+  }
+
+  private resetTimer(guildID: string, region: Region) {
+    const key = `${guildID}_${region}`;
+    clearTimeout(this.voteTimer.get(key));
+    this.voteTimer.delete(key);
   }
 }
 
