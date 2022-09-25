@@ -1,5 +1,7 @@
 import { Region, User } from '../entities/user';
+import { EmbedBuilder } from 'discord.js';
 import { ScrimService } from './scrim-service';
+import { UserService } from './user-service';
 
 interface QueueService {
   joinQueue: (user: User, guildID: string, region: Region) => User[];
@@ -8,6 +10,7 @@ interface QueueService {
   resetQueue: (guildID: string, region: Region) => void;
   removeUserFromQueue: (guildID: string, region: Region, ids: string[]) => void;
   attemptMatchCreation: (guildID: string, region: Region) => MatchmakingStatus;
+  createMatch: (guildID: string, region: Region) => Promise<EmbedBuilder >;
 }
 
 export enum MatchmakingStatus {
@@ -24,7 +27,7 @@ type Queues = {
 const HOUR = 3600000;
 const REMOVE_DURATION = HOUR * 8;
 
-export const initQueueService = (scrimService: ScrimService) => {
+export const initQueueService = (scrimService: ScrimService, userService: UserService) => {
   const queues = new Map<string, Queues>();
   const resetTimer = new Map<string, NodeJS.Timeout>();
 
@@ -67,7 +70,6 @@ export const initQueueService = (scrimService: ScrimService) => {
     attemptMatchCreation: (guildID, region) => {
       const queue = queues.get(guildID);
       if (!queue || queue[region].size < 10) return MatchmakingStatus.NOT_ENOUGH_PLAYERS;
-
       const users = [...queue[region].values()];
       const averageElo = users.reduce((prev, curr) => prev + curr.elo, 0) / users.length;
       console.info(`Average elo is ${averageElo}`);
@@ -99,7 +101,25 @@ export const initQueueService = (scrimService: ScrimService) => {
           regionQueue.delete(id);
         }
       }
-    }
+    },
+    createMatch: async (guildID, region) => {
+      const queue = queues.get(guildID)
+      if (!queue) {
+        throw new Error("Not enough players in queue.")
+      }
+      const users = [...queue[region].values()]
+      service.resetQueue(guildID, region)
+      const averageElo = users.reduce((prev, curr) => prev + curr.elo, 0) / users.length;
+      // Sort from Highest to Lowest.
+      const relevantUsers = users
+        .sort((a, b) => Math.abs(averageElo - a.elo) - Math.abs(averageElo - b.elo))
+        .slice(0, 10);
+      // Users who did not get into the game gets botoed
+      users.slice(10).forEach((u) => service.joinQueue(u, guildID, region));
+      const { scrim, lobbyDetails } = await scrimService.createBalancedScrim(guildID, region, relevantUsers);
+      const matchEmbed = await scrimService.sendMatchDetails(scrim, relevantUsers, lobbyDetails);
+      return matchEmbed;
+    },
   };
   return service;
 };
