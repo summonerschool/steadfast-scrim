@@ -84,15 +84,7 @@ class QueueCommand extends SlashCommand {
           const user = await userService.getUserProfile(ctx.user.id);
           const queuers = queueService.joinQueue(user, guildID, region);
           const status = queueService.attemptMatchCreation(guildID, region);
-<<<<<<< HEAD
-          console.info({status})
           if (status === MatchmakingStatus.NOT_ENOUGH_PLAYERS) {
-=======
-
-          console.info(status);
-          switch (status) {
-            case MatchmakingStatus.NOT_ENOUGH_PLAYERS: {
->>>>>>> 9e5e665 (implement voting)
               const embed = queueEmbed(queuers, 'join', ctx.user.id, region);
               return { embeds: [embed as any], allowedMentions: { everyone: false } };
           }
@@ -154,7 +146,7 @@ class QueueCommand extends SlashCommand {
                       }
                     }
                   },
-                  1000 * 60 * 3
+                  TIME_TO_MATCH
                 );
               }
               break
