@@ -77,9 +77,8 @@ export const lobbyDetailsEmbed = (
     .setDescription(`**${teamName}**`)
     .addFields(
       { name: 'Lobby details', value: detailsText, inline: true },
-      { name: 'Scouting Links', value: scoutingLinksMsg, inline: true }
-    )
-    .addFields(
+      { name: 'Scouting Links', value: scoutingLinksMsg, inline: true },
+      { name: '\u200B', value: '\u200B' },
       { name: 'Teammates IGNs', value: teammates.map((p) => p.leagueIGN).join('\n'), inline: true},
       { name: 'Enemy IGNs', value: enemies.map((p) => p.leagueIGN).join('\n'), inline: true }
     )

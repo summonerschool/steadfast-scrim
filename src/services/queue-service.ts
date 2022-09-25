@@ -116,10 +116,8 @@ export const initQueueService = (scrimService: ScrimService, userService: UserSe
         .slice(0, 10);
       // Users who did not get into the game gets botoed
       users.slice(10).forEach((u) => service.joinQueue(u, guildID, region));
-
       const { scrim, lobbyDetails } = await scrimService.createBalancedScrim(guildID, region, relevantUsers);
       const matchEmbed = await scrimService.sendMatchDetails(scrim, relevantUsers, lobbyDetails);
-      console.log(matchEmbed)
       return matchEmbed;
     },
   };

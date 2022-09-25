@@ -116,8 +116,8 @@ class QueueCommand extends SlashCommand {
                   ]
                 })) as Message;
                 setTimeout(async () => {
-                  const embeds = queueService.createMatch(guildID, region);
-                  await ctx.send({ embeds: embeds as any });
+                  const embed = await queueService.createMatch(guildID, region);
+                  await ctx.send({ embeds: [embed as any] });
                   await msg.edit({ content: '3 minutes has passed, creating match...', components: [] });
                 }, TIME_TO_MATCH);
 
@@ -126,18 +126,17 @@ class QueueCommand extends SlashCommand {
                 ctx.registerComponent(
                   'vote',
                   async (voteCtx) => {
-                    console.log({voted})
                     const users = queueService.getQueue(guildID, region);
-                    const userID = ctx.user.id;
+                    const userID = voteCtx.user.id;
                     if (voted.get(userID)) {
                       voteCtx.send({ content: 'You have already voted', ephemeral: true });
                     } else if (!users.get(userID)) {
                       voteCtx.send({ content: 'You are not a part of the queue', ephemeral: true });
                     } else {
                       const voteState = voted.set(userID, true);
-                      const yesVote = [...voteState.values()].reduce((sum, curr) => sum + (curr ? 1 : 0), 0);
-                      if (yesVote < 1) {
-                        await voteCtx.editParent(text + `\n${6 - yesVote} votes required to pop queue now.`);
+                      const passVoteCount = [...voteState.values()].reduce((sum, curr) => sum + (curr ? 1 : 0), 0);
+                      if (passVoteCount < 1) {
+                        await voteCtx.editParent(text + `\n${6 - passVoteCount} votes required to pop queue now.`);
                       } else {
                         this.resetTimer(guildID, region);
                         await voteCtx.editParent({ content: 'Vote went through, creating match...', components: [] });

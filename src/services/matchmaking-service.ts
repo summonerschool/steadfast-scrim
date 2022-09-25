@@ -252,9 +252,9 @@ export const calculateEloDifference = (t1: Team, t2: Team) => {
 
 const matchupToString = (matchup: Matchup) => {
   return `
-  Elo Difference: ${matchup.eloDifference}\n
-  Lane fair lane: ${matchup.leastFairLaneDiff}\n
-  ${matchup.team1.map((p) => p.leagueIGN).join(', ')} vs ${matchup.team2.map((p) => p.leagueIGN).join(', ')}\n
+  Elo Difference: ${matchup.eloDifference}
+  Lane fair lane: ${matchup.leastFairLaneDiff}
+  ${matchup.team1.map((p) => p.leagueIGN).join(', ')} vs ${matchup.team2.map((p) => p.leagueIGN).join(', ')}
   ${matchup.team1.map((p) => p.elo)} vs ${matchup.team2.map((p) => p.elo)}
   `;
 };
