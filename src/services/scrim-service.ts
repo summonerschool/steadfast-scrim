@@ -48,7 +48,7 @@ export const initScrimService = (
   const service: ScrimService = {
     // Generates an opgg link for scouting purposes
     generateScoutingLink: (users) => {
-      const summoners = encodeURIComponent(users.map((user) => user.leagueIGN).join(','));
+      const summoners = users.map((user) => encodeURIComponent(user.leagueIGN)).join(',');
       const server = users[0].region.toLocaleLowerCase();
       // const link = `https://op.gg/multisearch/${server}?summoners=${summoners}`;
       const link = `https://u.gg/multisearch?summoners=${summoners}&region=${server}1`;
