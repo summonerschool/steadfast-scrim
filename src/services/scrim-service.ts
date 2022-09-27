@@ -27,7 +27,7 @@ export interface ScrimService {
   findScrim: (scrimID: number) => Promise<Scrim>;
   remakeScrim: (scrim: Scrim) => Promise<boolean>;
   sendMatchDetails: (scrim: Scrim, users: User[], lobbyDetails: LobbyDetails) => Promise<EmbedBuilder>;
-  getActiveScrims: () => Scrim[]
+  getActiveScrims: () => Scrim[];
 }
 
 interface RoomCreatedResult {
@@ -50,7 +50,8 @@ export const initScrimService = (
     generateScoutingLink: (users) => {
       const summoners = encodeURIComponent(users.map((user) => user.leagueIGN).join(','));
       const server = users[0].region.toLocaleLowerCase();
-      const link = `https://op.gg/multisearch/${server}?summoners=${summoners}`;
+      // const link = `https://op.gg/multisearch/${server}?summoners=${summoners}`;
+      const link = `https://u.gg/multisearch?summoners=${summoners}&region=${server}1`;
       return link;
     },
     getUserProfilesInScrim: async (scrimID: number, side: GameSide) => {
@@ -127,7 +128,7 @@ export const initScrimService = (
       });
       console.info(text);
       const res = await userRepo.updateUserWithResult(updatedUsers);
-      activeGames.delete(scrim.id)
+      activeGames.delete(scrim.id);
       return res > 0;
     },
     createDraftLobby: async (teamNames) => {
@@ -180,7 +181,7 @@ export const initScrimService = (
     remakeScrim: async (scrim) => {
       const remakeScrim: Scrim = { ...scrim, status: 'REMAKE' };
       const success = await scrimRepo.updateScrim(remakeScrim);
-      activeGames.delete(scrim.id)
+      activeGames.delete(scrim.id);
       return success.status === 'REMAKE';
     },
     sendMatchDetails: async (scrim, users, lobbyDetails) => {
@@ -242,7 +243,7 @@ export const initScrimService = (
       return publicEmbed;
     },
     getActiveScrims: () => {
-      return [...activeGames.values()]
+      return [...activeGames.values()];
     }
   };
   return service;
