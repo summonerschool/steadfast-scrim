@@ -50,7 +50,6 @@ export const initScrimService = (
     generateScoutingLink: (users) => {
       const summoners = users.map((user) => encodeURIComponent(user.leagueIGN)).join(',');
       const server = users[0].region.toLocaleLowerCase();
-      // const link = `https://op.gg/multisearch/${server}?summoners=${summoners}`;
       const link = `https://u.gg/multisearch?summoners=${summoners}&region=${server}1`;
       return link;
     },

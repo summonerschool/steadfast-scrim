@@ -10,7 +10,7 @@ import {
 } from 'slash-create';
 import { queueService, userService } from '../services';
 import { queueEmbed } from '../components/queue';
-import { NoMatchupPossibleError } from '../errors/errors';
+import { MatchAlreadyCreatedError, NoMatchupPossibleError } from '../errors/errors';
 import { Region, regionEnum } from '../entities/user';
 import { MatchmakingStatus } from '../services/queue-service';
 
@@ -170,7 +170,7 @@ class QueueCommand extends SlashCommand {
           return 'no such command exists';
       }
     } catch (err) {
-      if (err instanceof NoMatchupPossibleError) {
+      if (err instanceof NoMatchupPossibleError || err instanceof MatchAlreadyCreatedError) {
         return { content: err.message };
       } else if (err instanceof Error) {
         return { content: err.message, ephemeral: true };
