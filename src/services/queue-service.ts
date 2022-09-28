@@ -2,6 +2,7 @@ import { Region, User } from '../entities/user';
 import { EmbedBuilder } from 'discord.js';
 import { ScrimService } from './scrim-service';
 import { MatchAlreadyCreatedError } from '../errors/errors';
+import { queueEmbed } from '../components/queue';
 
 interface QueueService {
   joinQueue: (user: User, guildID: string, region: Region) => User[];
@@ -105,7 +106,7 @@ export const initQueueService = (scrimService: ScrimService) => {
     createMatch: async (guildID, region) => {
       const queue = queues.get(guildID);
       if (!queue || queue[region].size < 10) {
-        throw new MatchAlreadyCreatedError("Match has already been created.")
+        return new EmbedBuilder().setTitle(`${queue ? queue[region].size : 0}`).setDescription("Queue just popped.")
       }
       const users = [...queue[region].values()];
       service.resetQueue(guildID, region);
