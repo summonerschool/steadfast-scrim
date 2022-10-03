@@ -115,11 +115,13 @@ class QueueCommand extends SlashCommand {
                     }
                   ]
                 })) as Message;
-                setTimeout(async () => {
+                const timeoutRef = setTimeout(async () => {
                   const embed = await queueService.createMatch(guildID, region);
                   await ctx.send({ embeds: [embed as any] });
                   await msg.edit({ content: '3 minutes has passed, creating match...', components: [] });
+                  this.resetTimer(guildID, region);
                 }, TIME_TO_MATCH);
+                this.voteTimer.set(key, timeoutRef);
 
                 const voted = new Map<string, boolean>();
 

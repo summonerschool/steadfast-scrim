@@ -106,7 +106,7 @@ export const initQueueService = (scrimService: ScrimService) => {
     createMatch: async (guildID, region) => {
       const queue = queues.get(guildID);
       if (!queue || queue[region].size < 10) {
-        return new EmbedBuilder().setTitle(`${queue ? queue[region].size : 0}`).setDescription("Queue just popped.")
+        return new EmbedBuilder().setTitle(`${queue ? queue[region].size : 0} player's in queue`);
       }
       const users = [...queue[region].values()];
       service.resetQueue(guildID, region);
