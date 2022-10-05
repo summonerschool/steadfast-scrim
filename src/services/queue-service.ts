@@ -48,12 +48,16 @@ export const initQueueService = (scrimService: ScrimService) => {
       queues.set(guildID, queue);
 
       // removes the user after 8 hours
-      const now = new Date().toLocaleDateString();
+      const now = new Date().toISOString()
       resetTimer.set(
         user.id,
         setTimeout(() => {
-          console.info(`${user.leagueIGN} joined at ${now} and was removed at ${new Date().toLocaleDateString()}`);
-          service.leaveQueue(user.id, guildID, region);
+          console.info(`${user.leagueIGN} joined at ${now} and was removed at ${new Date().toISOString()}`);
+          try {
+            service.leaveQueue(user.id, guildID, region);
+          } catch (err) {
+            console.log(`${user.leagueIGN} already left queue.`)
+          }
         }, REMOVE_DURATION)
       );
       return [...queue[region].values()];
