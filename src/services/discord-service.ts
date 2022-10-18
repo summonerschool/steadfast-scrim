@@ -5,6 +5,7 @@ export interface DiscordService {
   sendMatchDirectMessage: (userIDs: string[], message: Discord.MessageOptions) => Promise<number>;
   createVoiceChannels: (guildID: string, teamNames: [string, string]) => Promise<[VoiceChannel, VoiceChannel]>;
   deleteVoiceChannels: (guildID: string, ids: string[]) => Promise<boolean>;
+  sendMessageInChannel: (msg: string) => void;
 }
 
 export const activeVoiceIDs = new Map<string, string[]>();
@@ -19,6 +20,7 @@ process.on('exit', async () => {
 
 export const initDiscordService = (discordClient: Discord.Client) => {
   const voiceCategoryID = process.env.VOICE_CATEGORY_ID || '';
+  const commandChannelID = process.env.COMMAND_CHANNEL_ID || '';
 
   const service: DiscordService = {
     createVoiceChannels: async (guildID, teamNames) => {
@@ -58,13 +60,25 @@ export const initDiscordService = (discordClient: Discord.Client) => {
       const teamVCs = channels.filter((vc): vc is VoiceChannel => vc != null && vc.parent?.id === voiceCategoryID);
       // Delete voice channels and remove them from active voice ids list
       const deleted = await Promise.all(teamVCs.map((vc) => vc.delete()));
-      const deletedIDs = deleted.map(vc => vc.id)
+      const deletedIDs = deleted.map((vc) => vc.id);
       activeVoiceIDs.set(
         guildID,
         current.filter((id) => !deletedIDs.includes(id))
       );
       console.log({ activeVoiceIDs, deleted });
       return true;
+    },
+    sendMessageInChannel: async (msg) => {
+      let channel = discordClient.channels.cache.get(commandChannelID);
+      if (!channel) {
+        const res = await discordClient.channels.fetch(commandChannelID);
+        if (res) channel = res;
+        else {
+          throw new Error("Could not send message")
+        }
+      }
+      const commandChannel = channel as Discord.TextChannel
+      await commandChannel.send(msg)
     }
   };
   return service;

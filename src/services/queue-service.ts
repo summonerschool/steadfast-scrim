@@ -3,6 +3,7 @@ import { EmbedBuilder } from 'discord.js';
 import { ScrimService } from './scrim-service';
 import { MatchAlreadyCreatedError } from '../errors/errors';
 import { queueEmbed } from '../components/queue';
+import { DiscordService } from './discord-service';
 
 interface QueueService {
   joinQueue: (user: User, guildID: string, region: Region) => User[];
@@ -28,14 +29,37 @@ type Queues = {
 const HOUR = 3600000;
 const REMOVE_DURATION = HOUR * 8;
 
-export const initQueueService = (scrimService: ScrimService) => {
+export const initQueueService = (scrimService: ScrimService, discordService:DiscordService) => {
   const queues = new Map<string, Queues>();
   const resetTimer = new Map<string, NodeJS.Timeout>();
+
+  const startQueueUserTimeout = (user: User, guildID: string, region: Region) => {
+    const now = new Date().toISOString();
+    resetTimer.set(
+      user.id,
+      setTimeout(() => {
+        try {
+          service.leaveQueue(user.id, guildID, region);
+          console.info(`${user.leagueIGN} joined at ${now} and was removed at ${new Date().toISOString()}`);
+          discordService.sendMessageInChannel(`<@${user.id}> has been in queue for 8 hours, and been removed due to inactivity.`)
+        } catch (err) {
+          console.log(`${user.leagueIGN} already left queue.`);
+        }
+      }, REMOVE_DURATION)
+    );
+  };
+  const stopQueueUserTimout = (userID: string) => {
+    clearTimeout(resetTimer.get(userID));
+    resetTimer.delete(userID);
+  };
 
   const service: QueueService = {
     joinQueue: (user, guildID, region) => {
       const queue: Queues = queues.get(guildID) || { EUW: new Map(), NA: new Map() };
       if (queue[region].get(user.id)) {
+        // Reset the queue timer
+        stopQueueUserTimout(user.id);
+        startQueueUserTimeout(user, guildID, region);
         throw new Error("You're already in queue");
       }
       const activeScrims = scrimService.getActiveScrims();
@@ -46,27 +70,14 @@ export const initQueueService = (scrimService: ScrimService) => {
       }
       queue[region] = queue[region].set(user.id, user);
       queues.set(guildID, queue);
-
       // removes the user after 8 hours
-      const now = new Date().toISOString()
-      resetTimer.set(
-        user.id,
-        setTimeout(() => {
-          console.info(`${user.leagueIGN} joined at ${now} and was removed at ${new Date().toISOString()}`);
-          try {
-            service.leaveQueue(user.id, guildID, region);
-          } catch (err) {
-            console.log(`${user.leagueIGN} already left queue.`)
-          }
-        }, REMOVE_DURATION)
-      );
+      startQueueUserTimeout(user, guildID, region);
       return [...queue[region].values()];
     },
     leaveQueue: (userID, guildID, region) => {
       const queue = queues.get(guildID);
       if (queue && queue[region].delete(userID)) {
-        clearTimeout(resetTimer.get(userID));
-        resetTimer.delete(userID);
+        stopQueueUserTimout(userID);
         return [...queue[region].values()];
       } else {
         throw new Error("You're not in the specified queue");
@@ -119,6 +130,8 @@ export const initQueueService = (scrimService: ScrimService) => {
       const relevantUsers = users
         .sort((a, b) => Math.abs(averageElo - a.elo) - Math.abs(averageElo - b.elo))
         .slice(0, 10);
+      // reset remove timer
+      relevantUsers.forEach((u) => stopQueueUserTimout(u.id));
       // Users who did not get into the game gets botoed
       users.slice(10).forEach((u) => service.joinQueue(u, guildID, region));
       const { scrim, lobbyDetails } = await scrimService.createBalancedScrim(guildID, region, relevantUsers);

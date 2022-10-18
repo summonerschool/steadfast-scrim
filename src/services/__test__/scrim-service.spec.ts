@@ -26,8 +26,8 @@ describe('ScrimService', () => {
         secondary: 'MID'
       })
     );
-    const summoners = encodeURIComponent(mockGetUsersResult.map((user) => user.leagueIGN).join(','));
-    const expected = `https://op.gg/multisearch/euw?summoners=${summoners}`;
+    const summoners = mockGetUsersResult.map((user) => user.leagueIGN).join(',');
+    const expected = `https://u.gg/multisearch?summoners=${summoners}&region=euw1`;
     await expect(scrimService.generateScoutingLink(mockGetUsersResult)).toEqual(expected);
   });
 

@@ -24,4 +24,4 @@ export const userService = initUserService(userRepo);
 const matchmakingService = initMatchmakingService();
 export const discordService = initDiscordService(client);
 export const scrimService = initScrimService(scrimRepo, userRepo, matchmakingService, discordService);
-export const queueService = initQueueService(scrimService);
+export const queueService = initQueueService(scrimService, discordService);
