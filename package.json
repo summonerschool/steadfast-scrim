@@ -9,7 +9,7 @@
     "start": "cd dist && node index.js",
     "dev": "esno src/index",
     "seed": "esno src/scripts/seed-users",
-    "fix:pregame" : "esno src/scripts/fix-pregame-elo",
+    "fix:pregame": "esno src/scripts/fix-pregame-elo",
     "resetqueue": "esno src/scripts/reset-queue",
     "build": "npx tsc",
     "lint": "npx eslint --ext .ts ./src",
@@ -18,7 +18,7 @@
   },
   "dependencies": {
     "@discordjs/rest": "^0.5.0",
-    "@prisma/client": "^4.0.0",
+    "@prisma/client": "4.0.0",
     "axios": "^0.27.2",
     "cat-loggr": "^1.1.0",
     "discord-api-types": "^0.36.1",
@@ -43,10 +43,13 @@
     "jest": "^28.1.2",
     "jest-mock-extended": "^2.0.6",
     "prettier": "^2.2.1",
-    "prisma": "^4.0.0",
+    "prisma": "4.0.0",
     "slash-up": "^1.0.11",
     "ts-jest": "^28.0.5",
     "ts-node": "^9.1.1",
     "typescript": "^4.2.3"
+  },
+  "volta": {
+    "node": "16.18.1"
   }
 }

@@ -6,12 +6,13 @@ import { ScrimRepository } from './repo/scrim-repository';
 import { UserRepository } from './repo/user-repository';
 import { Status } from '@prisma/client';
 import { NotFoundError } from '../errors/errors';
-import { DraftURLs, ProdraftResponse } from '../entities/external';
+import { DraftURLs } from '../entities/external';
 import { EmbedBuilder } from 'discord.js';
 import { lobbyDetailsEmbed, matchDetailsEmbed } from '../components/match-message';
 import { DiscordService } from './discord-service';
 import WebSocket from 'ws';
 import { Team } from '../entities/matchmaking';
+import { adjectives } from '../lib/adjectives';
 
 export interface ScrimService {
   generateScoutingLink: (users: User[]) => string;
@@ -59,7 +60,10 @@ export const initScrimService = (
     },
     createBalancedScrim: async (guildID, region, queuers) => {
       const users = matchmakingService.attemptFill(queuers);
-      const teamNames: [string, string] = [`Blue ${chance.animal()}`, `Red ${chance.animal()}`];
+      const teamNames: [string, string] = [
+        `🟦 ${chance.pickone(adjectives)} ${chance.animal()}`,
+        `🟥 ${chance.pickone(adjectives)} ${chance.animal()}`
+      ];
       const [rolePrio, eloPrio] = matchmakingService.startMatchmaking(users);
       // random number
       const matchup = rolePrio.eloDifference < 500 ? rolePrio : eloPrio;
