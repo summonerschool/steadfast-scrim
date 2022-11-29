@@ -13,6 +13,7 @@ import { DiscordService } from './discord-service';
 import WebSocket from 'ws';
 import { Team } from '../entities/matchmaking';
 import { adjectives } from '../lib/adjectives';
+import { capitalize } from '../utils/utils';
 
 export interface ScrimService {
   generateScoutingLink: (users: User[]) => string;
@@ -61,8 +62,8 @@ export const initScrimService = (
     createBalancedScrim: async (guildID, region, queuers) => {
       const users = matchmakingService.attemptFill(queuers);
       const teamNames: [string, string] = [
-        `🟦 ${chance.pickone(adjectives)} ${chance.animal()}`,
-        `🟥 ${chance.pickone(adjectives)} ${chance.animal()}`
+        `🟦 ${capitalize(chance.pickone(adjectives))} ${chance.animal()}`,
+        `🟥 ${capitalize(chance.pickone(adjectives))} ${chance.animal()}`
       ];
       const [rolePrio, eloPrio] = matchmakingService.startMatchmaking(users);
       // random number
