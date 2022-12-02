@@ -29,7 +29,7 @@ type Queues = {
 const HOUR = 3600000;
 const REMOVE_DURATION = HOUR * 8;
 
-export const initQueueService = (scrimService: ScrimService, discordService:DiscordService) => {
+export const initQueueService = (scrimService: ScrimService, discordService: DiscordService) => {
   const queues = new Map<string, Queues>();
   const resetTimer = new Map<string, NodeJS.Timeout>();
 
@@ -86,14 +86,16 @@ export const initQueueService = (scrimService: ScrimService, discordService:Disc
     attemptMatchCreation: (guildID, region) => {
       const queue = queues.get(guildID);
       if (!queue || queue[region].size < 10) return MatchmakingStatus.NOT_ENOUGH_PLAYERS;
-      const users = [...queue[region].values()];
-      const averageElo = users.reduce((prev, curr) => prev + curr.elo, 0) / users.length;
-      console.info(`Average elo is ${averageElo}`);
-      const filtered = users.filter((u) => Math.abs(averageElo - u.elo) < 800);
-      if (filtered.length >= 10) {
-        return MatchmakingStatus.VALID_MATCH;
-      }
-      return MatchmakingStatus.UNEVEN_RANK_DISTRIBUTION;
+      // INACTIVE
+      // const users = [...queue[region].values()];
+      // const averageElo = users.reduce((prev, curr) => prev + curr.elo, 0) / users.length;
+      // console.info(`Average elo is ${averageElo}`);
+      // const filtered = users.filter((u) => Math.abs(averageElo - u.elo) < 800);
+      // if (filtered.length >= 10) {
+      //   return MatchmakingStatus.VALID_MATCH;
+      // }
+      // return MatchmakingStatus.UNEVEN_RANK_DISTRIBUTION;
+      return MatchmakingStatus.VALID_MATCH;
     },
     getQueue: (guildID, region) => {
       let queue = queues.get(guildID);

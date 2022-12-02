@@ -89,6 +89,8 @@ class QueueCommand extends SlashCommand {
             return { embeds: [embed as any], allowedMentions: { everyone: false } };
           }
           switch (status) {
+            // This block is inactive code
+            // Make the code finish the vote instead of someone else booting them
             case MatchmakingStatus.UNEVEN_RANK_DISTRIBUTION: {
               const key = `${guildID}_${region}`;
               const timer = this.voteTimer.get(key);
