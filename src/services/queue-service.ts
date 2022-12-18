@@ -1,8 +1,6 @@
 import { Region, User } from '../entities/user';
 import { EmbedBuilder } from 'discord.js';
 import { ScrimService } from './scrim-service';
-import { MatchAlreadyCreatedError } from '../errors/errors';
-import { queueEmbed } from '../components/queue';
 import { DiscordService } from './discord-service';
 
 interface QueueService {

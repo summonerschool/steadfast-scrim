@@ -1,7 +1,6 @@
 import dotenv from 'dotenv';
 import path from 'path';
 import { FastifyServer, SlashCreator } from 'slash-create';
-import Discord, { GatewayIntentBits } from 'discord.js';
 import CatLoggr from 'cat-loggr/ts';
 import './services';
 
@@ -30,6 +29,6 @@ creator.on('commandRegister', (command) => logger.info(`Registered command ${com
 creator.on('commandError', (command, error) => logger.error(`Command ${command.commandName}:`, error));
 
 const server = creator.withServer(new FastifyServer()).registerCommandsIn(path.join(__dirname, 'commands'), ['.ts']);
-server.startServer().then(() => {});
+server.startServer().then(() => { });
 
 console.log(`Starting server at "localhost:${creator.options.serverPort}/interactions"`);

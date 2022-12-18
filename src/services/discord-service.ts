@@ -2,10 +2,11 @@ import Discord, { ChannelType, VoiceChannel } from 'discord.js';
 import { discordService } from '.';
 
 export interface DiscordService {
-  sendMatchDirectMessage: (userIDs: string[], message: Discord.MessageOptions) => Promise<number>;
+  sendMatchDirectMessage: (userIDs: string[], message: Discord.MessageCreateOptions) => Promise<number>;
   createVoiceChannels: (guildID: string, teamNames: [string, string]) => Promise<[VoiceChannel, VoiceChannel]>;
   deleteVoiceChannels: (guildID: string, ids: string[]) => Promise<boolean>;
   sendMessageInChannel: (msg: string) => void;
+  createForumThread: (title: string, reason: string) => Promise<string>;
 }
 
 export const activeVoiceIDs = new Map<string, string[]>();
@@ -19,8 +20,9 @@ process.on('exit', async () => {
 });
 
 export const initDiscordService = (discordClient: Discord.Client) => {
-  const voiceCategoryID = process.env.VOICE_CATEGORY_ID || '';
-  const commandChannelID = process.env.COMMAND_CHANNEL_ID || '';
+  const voiceCategoryID = process.env.DISCORD_VOICE_CATEGORY_ID || '';
+  const commandChannelID = process.env.DISCORD_COMMAND_CHANNEL_ID || '';
+  const feedbackChannelID = process.env.DISCORD_DISCUSSION_CHANNEL_ID || '';
 
   const service: DiscordService = {
     createVoiceChannels: async (guildID, teamNames) => {
@@ -74,11 +76,29 @@ export const initDiscordService = (discordClient: Discord.Client) => {
         const res = await discordClient.channels.fetch(commandChannelID);
         if (res) channel = res;
         else {
-          throw new Error("Could not send message")
+          throw new Error('Could not send message');
         }
       }
-      const commandChannel = channel as Discord.TextChannel
-      await commandChannel.send(msg)
+      const commandChannel = channel as Discord.TextChannel;
+      await commandChannel.send(msg);
+    },
+    createForumThread: async (title, reason) => {
+      let channel = discordClient.channels.cache.get(feedbackChannelID);
+      if (!channel) {
+        const res = await discordClient.channels.fetch(feedbackChannelID);
+        if (res) channel = res;
+        else {
+          throw new Error('Could not send message');
+        }
+      }
+      const forum = channel as Discord.ForumChannel;
+      const res = await forum.threads.create({
+        name: title,
+        autoArchiveDuration: 90,
+        reason,
+        message: {}
+      });
+      return res.id;
     }
   };
   return service;

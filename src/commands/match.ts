@@ -63,8 +63,16 @@ class MatchCommand extends SlashCommand {
     if (!success) {
       return 'Oops! Could not set winner of match';
     }
+    const postmatchDiscussionID = await discordService.createForumThread(
+      `Match #${match_id}`,
+      `${winner} won the game.`
+    );
     await discordService.deleteVoiceChannels(ctx.guildID!!, scrim.voiceIDs);
-    return `${capitalize(winner)} has been registered as the winner ✅`;
+    return `${capitalize(
+      winner
+    )} has been registered as the winner ✅.\nDiscussion thread: https://discord.com/channels/${
+      process.env.DISCORD_FORUM_CHANNEL_ID
+    }/${postmatchDiscussionID}`;
   }
 
   async autocomplete(ctx: AutocompleteContext): Promise<AutocompleteChoice[]> {
