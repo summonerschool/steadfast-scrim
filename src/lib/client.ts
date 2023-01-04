@@ -2,7 +2,7 @@ import { REST } from '@discordjs/rest';
 import { Client, Collection, Events, GatewayIntentBits, Routes } from 'discord.js';
 import { readdirSync } from 'fs';
 import path from 'path';
-import { Event, SlashCommand } from '../types';
+import { SlashCommand } from '../types';
 
 export class ApplicationClient extends Client {
   private slashCommands = new Collection<string, SlashCommand>();
@@ -19,9 +19,15 @@ export class ApplicationClient extends Client {
         if (!command) {
           return;
         }
-        const res = await command.execute(interaction);
-        if (res) {
-          await interaction.reply({ ...res, fetchReply: true });
+        try {
+          const res = await command.execute(interaction);
+          if (res) {
+            await interaction.reply({ ...res, fetchReply: true });
+          }
+        } catch (err) {
+          if (err instanceof Error) {
+            await interaction.reply({ content: err.message, fetchReply: true, ephemeral: true });
+          }
         }
       }
     });
