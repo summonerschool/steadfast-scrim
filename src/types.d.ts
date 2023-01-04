@@ -1,7 +1,7 @@
 import {
   AutocompleteInteraction,
+  ChatInputCommandInteraction,
   ClientEvents,
-  CommandInteraction,
   InteractionReplyOptions,
   Message,
   PermissionResolvable,
@@ -12,7 +12,8 @@ import { ApplicationClient } from './lib/client';
 
 export interface SlashCommand {
   command: SlashCommandBuilder | SlashCommandSubcommandsOnlyBuilder;
-  execute: (interaction: CommandInteraction) => Promise<InteractionReplyOptions | undefined>;
+
+  execute: (interaction: ChatInputCommandInteraction) => Promise<InteractionReplyOptions | undefined>;
   autocomplete?: (interaction: AutocompleteInteraction) => void;
   cooldown?: number; // seconds
 }

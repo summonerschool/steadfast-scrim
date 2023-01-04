@@ -1,5 +1,5 @@
 import { REST } from '@discordjs/rest';
-import { Client, Collection, Events, GatewayIntentBits, Routes } from 'discord.js';
+import { BaseInteraction, Client, Collection, Events, GatewayIntentBits, Routes } from 'discord.js';
 import { readdirSync } from 'fs';
 import path from 'path';
 import { SlashCommand } from '../types';
@@ -29,6 +29,12 @@ export class ApplicationClient extends Client {
             await interaction.reply({ content: err.message, fetchReply: true, ephemeral: true });
           }
         }
+      } else if (interaction.isAutocomplete()) {
+        const command = this.slashCommands.get(interaction.commandName);
+        if (!command || !command.autocomplete) {
+          return;
+        }
+        command.autocomplete(interaction);
       }
     });
 

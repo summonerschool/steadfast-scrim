@@ -8,3 +8,8 @@ export const SetupSchema = z.object({
   main: z.nativeEnum(Role),
   secondary: z.nativeEnum(Role)
 });
+
+export const MatchSchema = z.object({
+  match_id: z.number(),
+  status: z.enum(['BLUE', 'RED', 'REMAKE'])
+});

@@ -1,8 +1,8 @@
 import { GameSide, LobbyDetails, Player, Scrim } from '../entities/scrim';
 import { chance } from '../lib/chance';
 // @ts-ignore
-import { EmbedBuilder } from '@discordjs/builders';
 import { User } from '../entities/user';
+import { EmbedBuilder } from 'discord.js';
 
 const ROLES_ORDER = {
   TOP: 1,
@@ -79,7 +79,7 @@ export const lobbyDetailsEmbed = (
       { name: 'Lobby details', value: detailsText, inline: true },
       { name: 'Scouting Links', value: scoutingLinksMsg, inline: true },
       { name: '\u200B', value: '\u200B' },
-      { name: 'Teammates IGNs', value: teammates.map((p) => p.leagueIGN).join('\n'), inline: true},
+      { name: 'Teammates IGNs', value: teammates.map((p) => p.leagueIGN).join('\n'), inline: true },
       { name: 'Enemy IGNs', value: enemies.map((p) => p.leagueIGN).join('\n'), inline: true }
     )
     .setTimestamp();

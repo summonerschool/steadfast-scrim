@@ -19,5 +19,9 @@ export const retrieveOptions = <T extends ZodRawShape>(
       input[opt.name] = opt.value;
     }
   }
-  return schema.safeParse(input);
+  const res = schema.safeParse(input);
+  if (!res.success) {
+    throw new Error(`Invalid input❌\n${formatErrors(res.error.format())}`);
+  }
+  return res.data;
 };

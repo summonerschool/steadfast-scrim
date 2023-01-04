@@ -55,10 +55,6 @@ const profile: SlashCommand = {
         )
     ),
   execute: async (interaction) => {
-    if (!interaction.isChatInputCommand()) {
-      return;
-    }
-
     const subCmd = interaction.options.getSubcommand();
     switch (subCmd) {
       case 'show': {
@@ -69,12 +65,7 @@ const profile: SlashCommand = {
       }
       case 'setup': {
         const options = retrieveOptions(interaction.options.data, SetupSchema);
-        if (!options.success) {
-          return {
-            content: `Invalid input❌\n${formatErrors(options.error.format())}`
-          };
-        }
-        const { ign, region, rank, main, secondary } = options.data;
+        const { ign, region, rank, main, secondary } = options;
         if (main === secondary) {
           return {
             content: 'Your main and secondary roles cannot be the same',
