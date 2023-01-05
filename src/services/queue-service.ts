@@ -1,9 +1,7 @@
-import { Region, User } from '../entities/user';
 import { EmbedBuilder } from 'discord.js';
 import { ScrimService } from './scrim-service';
-import { MatchAlreadyCreatedError } from '../errors/errors';
-import { queueEmbed } from '../components/queue';
 import { DiscordService } from './discord-service';
+import { Region, User } from '@prisma/client';
 
 interface QueueService {
   joinQueue: (user: User, guildID: string, region: Region) => User[];
@@ -41,7 +39,9 @@ export const initQueueService = (scrimService: ScrimService, discordService: Dis
         try {
           service.leaveQueue(user.id, guildID, region);
           console.info(`${user.leagueIGN} joined at ${now} and was removed at ${new Date().toISOString()}`);
-          discordService.sendMessageInChannel(`<@${user.id}> has been in queue for 8 hours, and been removed due to inactivity.`)
+          discordService.sendMessageInChannel(
+            `<@${user.id}> has been in queue for 8 hours, and been removed due to inactivity.`
+          );
         } catch (err) {
           console.log(`${user.leagueIGN} already left queue.`);
         }

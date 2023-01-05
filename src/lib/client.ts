@@ -1,5 +1,5 @@
-import { REST } from '@discordjs/rest';
-import { BaseInteraction, Client, Collection, Events, GatewayIntentBits, Routes } from 'discord.js';
+import axios from 'axios';
+import { Client, Collection, Events, GatewayIntentBits } from 'discord.js';
 import { readdirSync } from 'fs';
 import path from 'path';
 import { SlashCommand } from '../types';
@@ -8,11 +8,18 @@ export class ApplicationClient extends Client {
   private slashCommands = new Collection<string, SlashCommand>();
   //   private commands = new Collection<string, Command>();
   private cooldowns = new Collection<string, number>();
+  private admins: string[];
 
-  constructor() {
+  constructor(admins: string[] = []) {
     super({
-      intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.DirectMessages]
+      intents: [
+        GatewayIntentBits.Guilds,
+        GatewayIntentBits.GuildMessages,
+        GatewayIntentBits.GuildMembers,
+        GatewayIntentBits.DirectMessages
+      ]
     });
+    this.admins = admins;
     super.on(Events.InteractionCreate, async (interaction) => {
       if (interaction.isChatInputCommand()) {
         const command = this.slashCommands.get(interaction.commandName);
@@ -38,12 +45,15 @@ export class ApplicationClient extends Client {
       }
     });
 
-    super.once(Events.ClientReady, (c) => {
+    super.once(Events.ClientReady, async (c) => {
+      await this.resolveModules();
+      // await this.migrate();
       console.log(`Ready! Logged in as ${c.user.tag}`);
     });
   }
+
   private async resolveModules() {
-    const commandsDir = path.join(__dirname, '../commands2');
+    const commandsDir = path.join(__dirname, '../commands');
     await Promise.all(
       readdirSync(commandsDir).map(async (file) => {
         const command: SlashCommand = (await import(`${commandsDir}/${file}`)).default;
@@ -60,13 +70,45 @@ export class ApplicationClient extends Client {
   }
 
   public async migrate() {
-    await this.resolveModules();
     const commands = [...this.slashCommands.values()];
-    const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_BOT_TOKEN!!);
+    const guild = this.guilds.cache.get(process.env.DEVELOPMENT_GUILD_ID!)!;
+    const res = await guild.commands.set(commands.map((cmd) => cmd.command.toJSON()));
+    const guildCommands = res.filter((cmd) => this.slashCommands.get(cmd.name)?.onlyAdmin);
+    console.log(guildCommands.map((cmd) => cmd.name));
+    if (!this.admins.length) {
+      return;
+    }
+    const tokenRes = await axios.post(
+      'https://discord.com/api/oauth2/token',
+      new URLSearchParams({
+        grant_type: 'client_credentials',
+        scope: 'applications.commands.permissions.update',
+        client_id: process.env.DISCORD_APP_ID!,
+        client_secret: process.env.DISCORD_CLIENT_SECRET!
+      }),
+      {
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded'
+        }
+      }
+    );
+    const token = tokenRes.data.access_token;
 
-    await rest.put(Routes.applicationCommands(process.env.DISCORD_APP_ID!!), {
-      body: commands.map((cmd) => cmd.command.toJSON())
-    });
+    await Promise.all(
+      guildCommands.map(async (cmd) => {
+        await guild.commands.permissions.set({
+          command: cmd,
+          permissions: this.admins.map((id) => ({
+            id,
+            type: 2,
+            permission: true
+          })),
+          token
+        });
+        console.log(`${cmd.name} has been set as an admin command`);
+      })
+    );
+
     console.log(`Migrated ${commands.length} commands`);
   }
 }

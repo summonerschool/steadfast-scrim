@@ -15,6 +15,7 @@ export interface SlashCommand {
 
   execute: (interaction: ChatInputCommandInteraction) => Promise<InteractionReplyOptions | undefined>;
   autocomplete?: (interaction: AutocompleteInteraction) => void;
+  onlyAdmin?: boolean;
   cooldown?: number; // seconds
 }
 export interface Event {

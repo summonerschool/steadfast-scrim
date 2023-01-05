@@ -11,19 +11,19 @@ datasource db {
 }
 
 model User {
-  id                 String   @id
-  league_ign         String   @unique
-  region             Region
-  rank               Rank
-  main               Role
-  secondary          Role
-  wins               Int      @default(0)
-  losses             Int      @default(0)
-  elo                Int      @default(0)
-  external_elo       Int      @default(0)
-  autofill_protected Boolean  @default(false)
-  registered_at      DateTime @default(now())
-  player             Player[]
+  id                String   @id
+  leagueIGN         String   @unique @map("league_ign")
+  region            Region
+  rank              Rank
+  main              Role
+  secondary         Role
+  wins              Int      @default(0)
+  losses            Int      @default(0)
+  elo               Int      @default(0)
+  externalElo       Int      @default(0) @map("external_elo")
+  autofillProtected Boolean  @default(false) @map("autofill_protected")
+  registeredAt      DateTime @default(now()) @map("registered_at")
+  player            Player[]
 }
 
 enum Side {
@@ -32,25 +32,25 @@ enum Side {
 }
 
 model Player {
-  user       User   @relation(fields: [user_id], references: [id])
-  scrim      Scrim  @relation(fields: [scrim_id], references: [id])
-  user_id    String
-  scrim_id   Int
+  user       User   @relation(fields: [userId], references: [id])
+  scrim      Scrim  @relation(fields: [scrimId], references: [id])
+  userId     String @map("user_id")
+  scrimId    Int    @map("scrim_id")
   role       Role
   side       Side
   pregameElo Int    @default(0) @map("pre_game_elo")
 
-  @@id([user_id, scrim_id])
+  @@id([userId, scrimId])
 }
 
 model Scrim {
-  id        Int      @id @default(sequence())
-  status    Status   @default(STARTED)
-  voice_ids String[]
-  players   Player[]
-  guildID   String
-  region    Region
-  winner    Side?
+  id       Int      @id @default(sequence())
+  status   Status   @default(STARTED)
+  voiceIds String[] @map("voice_ids")
+  players  Player[]
+  guildID  String
+  region   Region
+  winner   Side?
 }
 
 enum Status {

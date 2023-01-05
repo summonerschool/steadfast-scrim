@@ -1,5 +1,5 @@
+import { User } from '@prisma/client';
 import { EmbedBuilder } from 'discord.js';
-import { User } from '../entities/user';
 import { POSITION_EMOJI_TRANSLATION, RANK_IMAGE_TRANSLATION } from '../utils/utils';
 
 export const ProfileEmbed = (user: User) => {
@@ -18,7 +18,7 @@ export const ProfileEmbed = (user: User) => {
     fields: [
       {
         name: `League IGN`,
-        value: `${user.leagueIGN}`,
+        value: `${user.league_ign}`,
         inline: false
       },
       {
