@@ -4,7 +4,7 @@ import { DiscordService } from './discord-service';
 import { Region, User } from '@prisma/client';
 
 interface QueueService {
-  joinQueue: (user: User, guildID: string, region: Region) => User[];
+  joinQueue: (user: User, guildID: string, region: Region, isFill: boolean) => User[];
   leaveQueue: (userID: string, guildID: string, region: Region) => User[];
   getQueue: (guildID: string, region: Region) => Map<string, User>;
   resetQueue: (guildID: string, region: Region) => void;
@@ -20,8 +20,8 @@ export enum MatchmakingStatus {
 }
 
 type Queues = {
-  EUW: Map<string, User>;
-  NA: Map<string, User>;
+  EUW: Map<string, User & { queuedAsFill: boolean }>;
+  NA: Map<string, User & { queuedAsFill: boolean }>;
 };
 
 const HOUR = 3600000;
@@ -54,7 +54,7 @@ export const initQueueService = (scrimService: ScrimService, discordService: Dis
   };
 
   const service: QueueService = {
-    joinQueue: (user, guildID, region) => {
+    joinQueue: (user, guildID, region, isFill) => {
       const queue: Queues = queues.get(guildID) || { EUW: new Map(), NA: new Map() };
       if (queue[region].get(user.id)) {
         // Reset the queue timer
@@ -65,7 +65,7 @@ export const initQueueService = (scrimService: ScrimService, discordService: Dis
       if (scrimService.playerIsInMatch(user.id)) {
         throw new Error("You're already in a game. Please report the match before queuing up again.");
       }
-      queue[region] = queue[region].set(user.id, user);
+      queue[region] = queue[region].set(user.id, { ...user, queuedAsFill: isFill });
       queues.set(guildID, queue);
       // removes the user after 8 hours
       startQueueUserTimeout(user, guildID, region);
@@ -132,8 +132,13 @@ export const initQueueService = (scrimService: ScrimService, discordService: Dis
       // reset remove timer
       relevantUsers.forEach((u) => stopQueueUserTimout(u.id));
       // Users who did not get into the game gets botoed
-      users.slice(10).forEach((u) => service.joinQueue(u, guildID, region));
-      const { scrim, players, lobbyDetails } = await scrimService.createBalancedScrim(guildID, region, relevantUsers);
+      users.slice(10).forEach((u) => service.joinQueue(u, guildID, region, u.queuedAsFill));
+      const { scrim, players, lobbyDetails } = await scrimService.createBalancedScrim(
+        guildID,
+        region,
+        relevantUsers,
+        relevantUsers.filter((u) => u.queuedAsFill).map((u) => u.id)
+      );
       const matchEmbed = await scrimService.sendMatchDetails(scrim, players, relevantUsers, lobbyDetails);
       return matchEmbed;
     }

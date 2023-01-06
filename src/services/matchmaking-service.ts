@@ -6,7 +6,7 @@ import { GameSide, Matchup, Pool, ROLE_ORDER, ROLE_ORDER_TO_ROLE, Team } from '.
 export interface MatchmakingService {
   startMatchmaking: (users: User[], fillers: string[]) => [Matchup, Matchup];
   matchupToPlayers: (matchup: Matchup, users: User[], randomSide?: boolean) => Omit<Player, 'scrimId'>[];
-  attemptFill: (users: User[]) => { users: User[]; fillers: string[] };
+  attemptFill: (users: User[], queuedFill: string[]) => { users: User[]; fillers: string[] };
 }
 
 // Generate a pool
@@ -32,10 +32,10 @@ export const initMatchmakingService = () => {
       const redTeam = teamToPlayers(teams[1], 'RED', users);
       return [...blueTeam, ...redTeam];
     },
-    attemptFill: (queuers) => {
+    attemptFill: (queuers, queuedFill) => {
+      const fillers = [...queuedFill];
       const ROLE_COUNT = 10;
       const PLAYER_COUNT = 10;
-      const fillers: string[] = [];
       // Randomize, but let autofill protected people come first
       const users = chance.shuffle(queuers).sort((a, b) => {
         if (a.autofillProtected && b.autofillProtected) return 0;

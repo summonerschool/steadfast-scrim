@@ -8,7 +8,12 @@ import { queueService, userService } from '..';
 
 const queueCommand = (subGroup: SlashCommandSubcommandGroupBuilder) =>
   subGroup
-    .addSubcommand((sub) => sub.setName('join').setDescription('Queue up for an in-house game'))
+    .addSubcommand((sub) =>
+      sub
+        .setName('join')
+        .setDescription('Queue up for an in-house game')
+        .addBooleanOption((opt) => opt.setName('fill').setDescription('Queue up as fill'))
+    )
     .addSubcommand((sub) => sub.setName('leave').setDescription('Leave the in-house queue'))
     .addSubcommand((sub) =>
       sub
@@ -51,8 +56,9 @@ const queue: SlashCommand = {
       }
       switch (subCommand) {
         case 'join': {
+          const isFill = interaction.options.getBoolean('fill');
           const user = await userService.getUserProfile(userId);
-          const queuers = queueService.joinQueue(user, guildId, region);
+          const queuers = queueService.joinQueue(user, guildId, region, !!isFill);
           const status = queueService.attemptMatchCreation(guildId, region);
           if (status === MatchmakingStatus.NOT_ENOUGH_PLAYERS) {
             return {

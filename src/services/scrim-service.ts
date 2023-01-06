@@ -16,7 +16,8 @@ export interface ScrimService {
   createBalancedScrim: (
     guildID: string,
     region: Region,
-    queuers: User[]
+    queuers: User[],
+    queuedFill: string[]
   ) => Promise<{ scrim: Scrim; players: Player[]; lobbyDetails: LobbyDetails }>;
   getUserProfilesInScrim: (scrimID: number, side: GameSide) => Promise<User[]>;
   reportWinner: (scrim: Scrim, winner: GameSide) => Promise<boolean>;
@@ -62,8 +63,8 @@ export const initScrimService = (
       });
       return users;
     },
-    createBalancedScrim: async (guildID, region, queuers) => {
-      const { users, fillers } = matchmakingService.attemptFill(queuers);
+    createBalancedScrim: async (guildID, region, queuers, queuedFill) => {
+      const { users, fillers } = matchmakingService.attemptFill(queuers, queuedFill);
       const teamNames: [string, string] = [
         `🟦 ${capitalize(chance.pickone(adjectives))} ${chance.animal()}`,
         `🟥 ${capitalize(chance.pickone(adjectives))} ${chance.animal()}`
