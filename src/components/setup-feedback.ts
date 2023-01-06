@@ -3,6 +3,7 @@ import { EmbedBuilder } from 'discord.js';
 import { POSITION_EMOJI_TRANSLATION, RANK_IMAGE_TRANSLATION } from '../utils/utils';
 
 export const ProfileEmbed = (user: User) => {
+  console.log(user);
   const roles_to_image = [user.main, user.secondary].map((x) => {
     // return `![${x}](${POSITION_IMAGE_TRANSLATION[x]})`;
     return `${POSITION_EMOJI_TRANSLATION[x]}`;
@@ -18,7 +19,7 @@ export const ProfileEmbed = (user: User) => {
     fields: [
       {
         name: `League IGN`,
-        value: `${user.league_ign}`,
+        value: `${user.leagueIGN}`,
         inline: false
       },
       {
@@ -41,11 +42,6 @@ export const ProfileEmbed = (user: User) => {
         value: `${user.elo}`,
         inline: true
       }
-      // {
-      //   name: `OP.GG`,
-      //   value: `[OP.GG](https://op.gg/summoners/${this.server}/${encodeURI(this.ign)})`,
-      //   inline: true
-      // }
     ]
   });
 };

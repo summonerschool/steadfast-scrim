@@ -1,8 +1,8 @@
-import { GameSide, LobbyDetails, Player, Scrim } from '../entities/scrim';
 import { chance } from '../lib/chance';
 // @ts-ignore
-import { User } from '../entities/user';
 import { EmbedBuilder } from 'discord.js';
+import { Player, Scrim, User } from '@prisma/client';
+import { GameSide, LobbyDetails } from '../models/matchmaking';
 
 const ROLES_ORDER = {
   TOP: 1,
@@ -15,14 +15,14 @@ const ROLES_ORDER = {
 const sortByRole = (p1: Player, p2: Player) => {
   return ROLES_ORDER[p1.role] - ROLES_ORDER[p2.role];
 };
-const teamToString = (player: Player) => `${player.role}: <@${player.userID}> (${player.pregameElo})`;
+const teamToString = (player: Player) => `${player.role}: <@${player.userId}> (${player.pregameElo})`;
 
-export const matchDetailsEmbed = (scrim: Scrim, lobbyDetails: LobbyDetails) => {
+export const matchDetailsEmbed = (scrim: Scrim, players: Player[], lobbyDetails: LobbyDetails) => {
   const { teamNames, eloDifference, offroleCount, autoFilledCount } = lobbyDetails;
-  const lobbyCreator = chance.pickone(scrim.players);
+  const lobbyCreator = chance.pickone(players);
   // Sort the teams by side
   const teams: { [key in GameSide]: Player[] } = { RED: [], BLUE: [] };
-  scrim.players.forEach((player) => {
+  players.forEach((player) => {
     teams[player.side].push(player);
   });
 
@@ -38,7 +38,7 @@ export const matchDetailsEmbed = (scrim: Scrim, lobbyDetails: LobbyDetails) => {
     ${autoFilledCount === 0 ? 'No autofilled players in this' : `${autoFilledCount} players have been autofilled`}\n
     Elo difference: ${eloDifference}\n
     Players on offrole: ${offroleCount}\n
-    **Lobby creator**: <@${lobbyCreator.userID}>\n
+    **Lobby creator**: <@${lobbyCreator.userId}>\n
       `
     )
     .addFields(

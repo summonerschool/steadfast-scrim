@@ -1,5 +1,5 @@
 import { NotFoundError } from '../errors/errors';
-import { WhatIsMyMMRResponse } from '../entities/external';
+import { WhatIsMyMMRResponse } from '../models/external';
 import axios from 'axios';
 import { ELO_TRANSLATION } from '../utils/utils';
 import { SetupInput } from '../schemas/user';
@@ -16,12 +16,13 @@ export interface UserService {
 export const initUserService = (prisma: PrismaClient): UserService => {
   const service: UserService = {
     setUserProfile: async (id, input, elo) => {
-      const user = await prisma.user.upsert({
+      const { ign, ...user } = input;
+      const res = await prisma.user.upsert({
         where: { id: id },
-        create: { id, elo, externalElo: elo, ...input, leagueIGN: input.ign },
-        update: { ...input, leagueIGN: input.ign }
+        create: { id, elo, externalElo: elo, leagueIGN: ign, ...user },
+        update: { leagueIGN: input.ign, ...user }
       });
-      return user;
+      return res;
     },
     updateElo: async (id, elo, externalElo) => {
       if (!elo && !externalElo) throw new Error('You must provide at least one type of elo');

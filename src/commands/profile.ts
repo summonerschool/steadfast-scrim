@@ -1,11 +1,11 @@
-import { PermissionFlagsBits, SlashCommandBuilder } from 'discord.js';
-import { userService } from '../services';
+import { SlashCommandBuilder } from 'discord.js';
 import { SlashCommand } from '../types';
 import { ProfileEmbed } from '../components/setup-feedback';
 import { Rank, Role } from '@prisma/client';
 import { capitalize, ELO_TRANSLATION } from '../utils/utils';
-import { formatErrors, retrieveOptions } from '../helpers/retrieveOptions';
+import { retrieveOptions } from '../helpers/retrieveOptions';
 import { SetupCommandInputSchema } from '../schemas/user';
+import { userService } from '..';
 
 const rank = Object.entries(Rank).map(([key, val]) => ({ name: capitalize(key), value: val }));
 const roles = Object.entries(Role).map(([key, val]) => ({

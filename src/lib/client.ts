@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { Client, Collection, Events, GatewayIntentBits } from 'discord.js';
+import { Client, Collection, Events, GatewayIntentBits, REST, Routes } from 'discord.js';
 import { readdirSync } from 'fs';
 import path from 'path';
 import { SlashCommand } from '../types';
@@ -26,14 +26,17 @@ export class ApplicationClient extends Client {
         if (!command) {
           return;
         }
+        await interaction.deferReply();
         try {
           const res = await command.execute(interaction);
           if (res) {
-            await interaction.reply({ ...res, fetchReply: true });
+            await interaction.editReply(res);
           }
         } catch (err) {
           if (err instanceof Error) {
-            await interaction.reply({ content: err.message, fetchReply: true, ephemeral: true });
+            console.log(err);
+            await interaction.editReply({ content: 'An error occurred while executing this command' });
+            await interaction.reply({ ephemeral: true, content: err.message });
           }
         }
       } else if (interaction.isAutocomplete()) {
@@ -47,7 +50,7 @@ export class ApplicationClient extends Client {
 
     super.once(Events.ClientReady, async (c) => {
       await this.resolveModules();
-      // await this.migrate();
+      await this.migrate();
       console.log(`Ready! Logged in as ${c.user.tag}`);
     });
   }
@@ -71,44 +74,51 @@ export class ApplicationClient extends Client {
 
   public async migrate() {
     const commands = [...this.slashCommands.values()];
-    const guild = this.guilds.cache.get(process.env.DEVELOPMENT_GUILD_ID!)!;
-    const res = await guild.commands.set(commands.map((cmd) => cmd.command.toJSON()));
-    const guildCommands = res.filter((cmd) => this.slashCommands.get(cmd.name)?.onlyAdmin);
-    console.log(guildCommands.map((cmd) => cmd.name));
-    if (!this.admins.length) {
-      return;
-    }
-    const tokenRes = await axios.post(
-      'https://discord.com/api/oauth2/token',
-      new URLSearchParams({
-        grant_type: 'client_credentials',
-        scope: 'applications.commands.permissions.update',
-        client_id: process.env.DISCORD_APP_ID!,
-        client_secret: process.env.DISCORD_CLIENT_SECRET!
-      }),
-      {
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded'
-        }
-      }
-    );
-    const token = tokenRes.data.access_token;
+    const clientId = process.env.DISCORD_APP_ID!;
+    const guildId = process.env.DEVELOPMENT_GUILD_ID!;
+    const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_BOT_TOKEN!);
+    const res = await rest.put(Routes.applicationGuildCommands(clientId, guildId), {
+      body: commands.map((cmd) => cmd.command.toJSON())
+    });
+    console.log({ res });
 
-    await Promise.all(
-      guildCommands.map(async (cmd) => {
-        await guild.commands.permissions.set({
-          command: cmd,
-          permissions: this.admins.map((id) => ({
-            id,
-            type: 2,
-            permission: true
-          })),
-          token
-        });
-        console.log(`${cmd.name} has been set as an admin command`);
-      })
-    );
+    // const res = await guild.commands.set(commands.map((cmd) => cmd.command.toJSON()));
+    // const guildCommands = res.filter((cmd) => this.slashCommands.get(cmd.name)?.onlyAdmin);
+    // console.log(guildCommands.map((cmd) => cmd.name));
+    // if (!this.admins.length) {
+    //   return;
+    // }
+    // const tokenRes = await axios.post(
+    //   'https://discord.com/api/oauth2/token',
+    //   new URLSearchParams({
+    //     grant_type: 'client_credentials',
+    //     scope: 'applications.commands.permissions.update',
+    //     client_id: process.env.DISCORD_APP_ID!,
+    //     client_secret: process.env.DISCORD_CLIENT_SECRET!
+    //   }),
+    //   {
+    //     headers: {
+    //       'Content-Type': 'application/x-www-form-urlencoded'
+    //     }
+    //   }
+    // );
+    // const token = tokenRes.data.access_token;
 
-    console.log(`Migrated ${commands.length} commands`);
+    // await Promise.all(
+    //   guildCommands.map(async (cmd) => {
+    //     await guild.commands.permissions.set({
+    //       command: cmd,
+    //       permissions: this.admins.map((id) => ({
+    //         id,
+    //         type: 2,
+    //         permission: true
+    //       })),
+    //       token
+    //     });
+    //     console.log(`${cmd.name} has been set as an admin command`);
+    //   })
+    // );
+
+    // console.log(`Migrated ${commands.length} commands`);
   }
 }

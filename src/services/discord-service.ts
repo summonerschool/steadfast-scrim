@@ -1,22 +1,13 @@
-import Discord, { ChannelType, VoiceChannel } from 'discord.js';
-import { discordService } from '.';
+import Discord, { ChannelType, MessageCreateOptions, VoiceChannel } from 'discord.js';
 
 export interface DiscordService {
-  sendMatchDirectMessage: (userIDs: string[], message: Discord.MessageOptions) => Promise<number>;
+  sendMatchDirectMessage: (userIDs: string[], message: MessageCreateOptions) => Promise<number>;
   createVoiceChannels: (guildID: string, teamNames: [string, string]) => Promise<[VoiceChannel, VoiceChannel]>;
   deleteVoiceChannels: (guildID: string, ids: string[]) => Promise<boolean>;
   sendMessageInChannel: (msg: string) => void;
 }
 
 export const activeVoiceIDs = new Map<string, string[]>();
-
-process.on('exit', async () => {
-  const promises: Promise<boolean>[] = [];
-  for (const [guildID, voiceIDs] of activeVoiceIDs) {
-    promises.push(discordService.deleteVoiceChannels(guildID, voiceIDs));
-  }
-  await Promise.all(promises);
-});
 
 export const initDiscordService = (discordClient: Discord.Client) => {
   const voiceCategoryID = process.env.VOICE_CATEGORY_ID || '';
@@ -74,11 +65,11 @@ export const initDiscordService = (discordClient: Discord.Client) => {
         const res = await discordClient.channels.fetch(commandChannelID);
         if (res) channel = res;
         else {
-          throw new Error("Could not send message")
+          throw new Error('Could not send message');
         }
       }
-      const commandChannel = channel as Discord.TextChannel
-      await commandChannel.send(msg)
+      const commandChannel = channel as Discord.TextChannel;
+      await commandChannel.send(msg);
     }
   };
   return service;

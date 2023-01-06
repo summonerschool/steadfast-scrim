@@ -15,6 +15,7 @@ export const retrieveOptions = <T extends ZodRawShape>(
 ) => {
   const input: Record<string, unknown> = {};
   for (const cmdArgs of inter) {
+    input[cmdArgs.name] = cmdArgs.value;
     for (const opt of cmdArgs.options || []) {
       input[opt.name] = opt.value;
     }

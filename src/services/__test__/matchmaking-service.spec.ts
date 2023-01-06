@@ -1,4 +1,4 @@
-import { Role, User, userSchema } from '../../entities/user';
+import { Rank, Region, Role, User } from '@prisma/client';
 import { chance } from '../../lib/chance';
 import { initMatchmakingService } from '../matchmaking-service';
 
@@ -9,7 +9,7 @@ describe('MatchmakingService', () => {
     const matchup = matchups[0];
     expect(matchup.eloDifference).toEqual(37);
     const players = matchmakingService.matchupToPlayers(matchup, twoOfEach);
-    const ids = players.map((p) => p.userID);
+    const ids = players.map((p) => p.userId);
     // No duplicate users
     expect(ids.length).toEqual(new Set(ids).size);
   });
@@ -18,13 +18,13 @@ describe('MatchmakingService', () => {
     const matchup = matchups[0];
     expect(matchup.eloDifference).toEqual(19);
     const players = matchmakingService.matchupToPlayers(matchup, notTwoOfEach);
-    const ids = players.map((p) => p.userID);
+    const ids = players.map((p) => p.userId);
     // No duplicate users
     expect(ids.length).toEqual(new Set(ids).size);
   });
 
   test('No matchups possible', () => {
-    const users = matchmakingService.attemptFill(fail)
+    const { users } = matchmakingService.attemptFill(fail);
     expect(users.length).toEqual(10);
   });
 });
@@ -40,7 +40,8 @@ const fail: User[] = [
     wins: 2,
     losses: 0,
     elo: 2086,
-    external_elo: 2000,
+    registeredAt: new Date(),
+    externalElo: 2000,
     autofillProtected: true
   },
   {
@@ -53,7 +54,9 @@ const fail: User[] = [
     wins: 8,
     losses: 4,
     elo: 2157,
-    external_elo: 2000
+    registeredAt: new Date(),
+    externalElo: 2000,
+    autofillProtected: false
   },
   {
     id: '717686953524330587',
@@ -65,7 +68,9 @@ const fail: User[] = [
     wins: 0,
     losses: 1,
     elo: 1605,
-    external_elo: 1663
+    registeredAt: new Date(),
+    externalElo: 1663,
+    autofillProtected: false
   },
   {
     id: '134168788718452736',
@@ -77,7 +82,9 @@ const fail: User[] = [
     rank: 'GOLD',
     region: 'EUW',
     elo: 2042,
-    external_elo: 2208
+    registeredAt: new Date(),
+    externalElo: 2208,
+    autofillProtected: false
   },
   {
     id: '270437177186320385',
@@ -89,7 +96,8 @@ const fail: User[] = [
     elo: 2592,
     rank: 'GOLD',
     region: 'EUW',
-    external_elo: 2400,
+    externalElo: 2400,
+    registeredAt: new Date(),
     autofillProtected: true
   },
   {
@@ -102,7 +110,9 @@ const fail: User[] = [
     region: 'EUW',
     losses: 5,
     elo: 1914,
-    external_elo: 2000
+    registeredAt: new Date(),
+    externalElo: 2000,
+    autofillProtected: false
   },
   {
     id: '396669041655152650',
@@ -114,7 +124,9 @@ const fail: User[] = [
     region: 'EUW',
     losses: 3,
     elo: 1270,
-    external_elo: 1200
+    registeredAt: new Date(),
+    externalElo: 1200,
+    autofillProtected: false
   },
   {
     id: '766404374766288926',
@@ -126,7 +138,9 @@ const fail: User[] = [
     region: 'EUW',
     losses: 0,
     elo: 2088,
-    external_elo: 2000
+    registeredAt: new Date(),
+    externalElo: 2000,
+    autofillProtected: false
   },
   {
     id: '199898480024485888',
@@ -138,7 +152,9 @@ const fail: User[] = [
     elo: 2007,
     rank: 'GOLD',
     region: 'EUW',
-    external_elo: 2070
+    registeredAt: new Date(),
+    externalElo: 2070,
+    autofillProtected: false
   },
   {
     id: '105780609393139712',
@@ -150,20 +166,26 @@ const fail: User[] = [
     elo: 2072,
     rank: 'GOLD',
     region: 'EUW',
-    external_elo: 2098
+    registeredAt: new Date(),
+    externalElo: 2098,
+    autofillProtected: false
   }
 ];
 
-const createTestUser = (role?: Role, secondary?: Role, name?: string, elo?: number) =>
-  userSchema.parse({
-    id: chance.guid(),
-    leagueIGN: name || chance.name(),
-    rank: 'GOLD',
-    region: 'EUW',
-    main: role,
-    secondary: secondary ? secondary : secondary == 'MID' ? 'SUPPORT' : 'MID',
-    elo: elo
-  });
+const createTestUser = (role: Role, secondary: Role, name: string, elo: number): User => ({
+  id: chance.guid(),
+  leagueIGN: name || chance.name(),
+  rank: Rank.GOLD,
+  region: Region.EUW,
+  main: role,
+  secondary: secondary ? secondary : secondary == 'MID' ? 'SUPPORT' : 'MID',
+  elo: elo,
+  externalElo: elo,
+  autofillProtected: false,
+  losses: 0,
+  wins: 0,
+  registeredAt: new Date()
+});
 
 const notTwoOfEach: User[] = [
   createTestUser('TOP', 'MID', 'huzzle', 2100),
@@ -191,15 +213,15 @@ const twoOfEach: User[] = [
   createTestUser('SUPPORT', 'BOT', 'tikka', 1800)
 ];
 
-const invalid: User[] = [
-  createTestUser('TOP', 'MID', 'huzzle1', 2100),
-  createTestUser('JUNGLE', 'MID', 'huzzle2', 2100),
-  createTestUser('SUPPORT', 'MID', 'huzzle3', 2100),
-  createTestUser('TOP', 'MID', 'huzzle4', 2100),
-  createTestUser('TOP', 'MID', 'huzzle5', 2100),
-  createTestUser('MID', 'JUNGLE', 'rayann1', 1821),
-  createTestUser('MID', 'JUNGLE', 'rayann2', 1821),
-  createTestUser('MID', 'JUNGLE', 'rayann3', 1821),
-  createTestUser('MID', 'JUNGLE', 'rayann4', 1821),
-  createTestUser('MID', 'JUNGLE', 'rayann5', 1821)
-];
+// const invalid: User[] = [
+//   createTestUser('TOP', 'MID', 'huzzle1', 2100),
+//   createTestUser('JUNGLE', 'MID', 'huzzle2', 2100),
+//   createTestUser('SUPPORT', 'MID', 'huzzle3', 2100),
+//   createTestUser('TOP', 'MID', 'huzzle4', 2100),
+//   createTestUser('TOP', 'MID', 'huzzle5', 2100),
+//   createTestUser('MID', 'JUNGLE', 'rayann1', 1821),
+//   createTestUser('MID', 'JUNGLE', 'rayann2', 1821),
+//   createTestUser('MID', 'JUNGLE', 'rayann3', 1821),
+//   createTestUser('MID', 'JUNGLE', 'rayann4', 1821),
+//   createTestUser('MID', 'JUNGLE', 'rayann5', 1821)
+// ];

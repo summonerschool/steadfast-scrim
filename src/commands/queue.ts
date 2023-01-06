@@ -1,9 +1,10 @@
 import { SlashCommandBuilder, SlashCommandSubcommandGroupBuilder } from 'discord.js';
-import { queueService, userService } from '../services';
 import { SlashCommand } from '../types';
 import { queueEmbed as QueueEmbed } from '../components/queue';
 import { MatchmakingStatus } from '../services/queue-service';
 import { MatchAlreadyCreatedError, NoMatchupPossibleError } from '../errors/errors';
+import { Region } from '@prisma/client';
+import { queueService, userService } from '..';
 
 const queueCommand = (subGroup: SlashCommandSubcommandGroupBuilder) =>
   subGroup
@@ -28,13 +29,17 @@ const queue: SlashCommand = {
     .setDescription('A queue for joining in-house games'),
   execute: async (interaction) => {
     // const [commandGroup, command] = ctx.subcommands;
-    const region = 'EUW';
+    const subCommandGroup = interaction.options.getSubcommandGroup();
     const subCommand = interaction.options.getSubcommand();
     const guildId = interaction.guildId;
     const userId = interaction.user.id;
     if (!guildId) {
-      return { content: 'Could not retrieve discord server id', ephemeral: true };
+      throw new Error('Could not retrieve discord server id');
     }
+    if (!subCommandGroup) {
+      throw new Error('Could not determine region');
+    }
+    const region = Region[subCommandGroup.toUpperCase() as keyof typeof Region];
 
     try {
       if (subCommand === 'show') {

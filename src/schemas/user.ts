@@ -12,8 +12,8 @@ export const SetupCommandInputSchema = z.object({
 export type SetupInput = z.infer<typeof SetupCommandInputSchema>;
 
 export const MatchCommandInputSchema = z.object({
-  match_id: z.number(),
-  status: z.enum(['BLUE', 'RED', 'REMAKE'])
+  id: z.number(),
+  status: z.enum(['WIN', 'LOSS', 'REMAKE'])
 });
 
 export type MatchInput = z.infer<typeof MatchCommandInputSchema>;

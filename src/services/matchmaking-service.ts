@@ -1,13 +1,12 @@
-import { Matchup, Pool, Team } from '../entities/matchmaking';
-import { GameSide, Player } from '../entities/scrim';
-import { Role, roleEnum, ROLE_ORDER, User } from '../entities/user';
+import { Player, User, Side, Role } from '@prisma/client';
 import { NoMatchupPossibleError } from '../errors/errors';
 import { chance } from '../lib/chance';
+import { GameSide, Matchup, Pool, ROLE_ORDER, ROLE_ORDER_TO_ROLE, Team } from '../models/matchmaking';
 
 export interface MatchmakingService {
   startMatchmaking: (users: User[], prioritizeElo?: boolean) => [Matchup, Matchup];
-  matchupToPlayers: (matchup: Matchup, users: User[], randomSide?: boolean) => Player[];
-  attemptFill: (users: User[]) => User[];
+  matchupToPlayers: (matchup: Matchup, users: User[], randomSide?: boolean) => Omit<Player, 'scrimId'>[];
+  attemptFill: (users: User[]) => { users: User[]; autoFilled: string[] };
 }
 
 export const initMatchmakingService = () => {
@@ -33,6 +32,7 @@ export const initMatchmakingService = () => {
     attemptFill: (queuers) => {
       const ROLE_COUNT = 10;
       const PLAYER_COUNT = 10;
+      const autoFilled: string[] = [];
       // Randomize, but let autofill protected people come first
       const users = chance.shuffle(queuers).sort((a, b) => {
         if (a.autofillProtected && b.autofillProtected) return 0;
@@ -62,7 +62,7 @@ export const initMatchmakingService = () => {
       }
       console.info({ result, matchRoles });
       if (result === PLAYER_COUNT) {
-        return users;
+        return { users, autoFilled };
       }
 
       const seen = [...new Array(PLAYER_COUNT)].map(() => false);
@@ -74,19 +74,23 @@ export const initMatchmakingService = () => {
           const uIndex = seen.findIndex((val) => val == false);
           matchRoles[i] = uIndex;
           seen[uIndex] = true;
-          users[uIndex] = { ...users[uIndex], secondary: ROLE_ORDER[i < 5 ? i : i - 5] as Role, isFill: true };
+          users[uIndex] = {
+            ...users[uIndex],
+            secondary: ROLE_ORDER_TO_ROLE[i < 5 ? i : i - 5]
+          };
+          autoFilled.push(users[uIndex].id);
         }
       }
-      return users;
+      return { users, autoFilled };
     }
   };
   return service;
 };
 
 const teamToPlayers = (team: Team, side: GameSide, users: User[]) => {
-  const players: Player[] = team.map((player, i) => {
+  const players = team.map((player, i) => {
     const user: User = users.find((u) => u.id == player.id)!!;
-    return { userID: user.id, role: ROLE_ORDER[i] as Role, side: side, pregameElo: user.elo };
+    return { userId: user.id, role: Role[ROLE_ORDER_TO_ROLE[i]], side: Side[side], pregameElo: user.elo };
   });
   return players;
 };

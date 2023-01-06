@@ -62,11 +62,8 @@ export const initQueueService = (scrimService: ScrimService, discordService: Dis
         startQueueUserTimeout(user, guildID, region);
         throw new Error("You're already in queue");
       }
-      const activeScrims = scrimService.getActiveScrims();
-      for (const scrim of activeScrims) {
-        if (scrim.players.some((p) => p.userID === user.id)) {
-          throw new Error("You're already in a game. Please report the match before queuing up again.");
-        }
+      if (scrimService.playerIsInMatch(user.id)) {
+        throw new Error("You're already in a game. Please report the match before queuing up again.");
       }
       queue[region] = queue[region].set(user.id, user);
       queues.set(guildID, queue);
@@ -136,8 +133,8 @@ export const initQueueService = (scrimService: ScrimService, discordService: Dis
       relevantUsers.forEach((u) => stopQueueUserTimout(u.id));
       // Users who did not get into the game gets botoed
       users.slice(10).forEach((u) => service.joinQueue(u, guildID, region));
-      const { scrim, lobbyDetails } = await scrimService.createBalancedScrim(guildID, region, relevantUsers);
-      const matchEmbed = await scrimService.sendMatchDetails(scrim, relevantUsers, lobbyDetails);
+      const { scrim, players, lobbyDetails } = await scrimService.createBalancedScrim(guildID, region, relevantUsers);
+      const matchEmbed = await scrimService.sendMatchDetails(scrim, players, relevantUsers, lobbyDetails);
       return matchEmbed;
     }
   };
