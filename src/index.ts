@@ -1,5 +1,6 @@
 import { PrismaClient } from '@prisma/client';
 import dotenv from 'dotenv';
+import { env } from './env';
 import { ApplicationClient } from './lib/client';
 import { initDiscordService } from './services/discord-service';
 import { initMatchmakingService } from './services/matchmaking-service';
@@ -16,7 +17,7 @@ const admins = [
 
 export const client = new ApplicationClient(admins);
 
-client.login(process.env.DISCORD_BOT_TOKEN);
+client.login(env.DISCORD_BOT_TOKEN);
 
 const prisma = new PrismaClient();
 

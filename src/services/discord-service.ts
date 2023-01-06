@@ -1,4 +1,5 @@
 import Discord, { ChannelType, MessageCreateOptions, VoiceChannel } from 'discord.js';
+import { env } from '../env';
 
 export interface DiscordService {
   sendMatchDirectMessage: (userIDs: string[], message: MessageCreateOptions) => Promise<number>;
@@ -11,8 +12,9 @@ export interface DiscordService {
 export const activeVoiceIDs = new Map<string, string[]>();
 
 export const initDiscordService = (discordClient: Discord.Client) => {
-  const voiceCategoryID = process.env.VOICE_CATEGORY_ID || '';
-  const commandChannelID = process.env.COMMAND_CHANNEL_ID || '';
+  const voiceCategoryID = env.DISCORD_VOICE_CATEGORY_ID;
+  const commandChannelID = env.DISCORD_COMMAND_CHANNEL_ID;
+  const feedbackChannelID = env.DISCORD_DISCUSSION_CHANNEL_ID;
 
   const service: DiscordService = {
     createVoiceChannels: async (guildID, teamNames) => {
@@ -73,7 +75,6 @@ export const initDiscordService = (discordClient: Discord.Client) => {
       await commandChannel.send(msg);
     },
     createForumThread: async (title, reason) => {
-      const feedbackChannelID = process.env.DISCORD_DISCUSSION_CHANNEL_ID || '';
       let channel = discordClient.channels.cache.get(feedbackChannelID);
       if (!channel) {
         const res = await discordClient.channels.fetch(feedbackChannelID);
@@ -87,7 +88,7 @@ export const initDiscordService = (discordClient: Discord.Client) => {
         name: title,
         autoArchiveDuration: 90,
         reason,
-        message: {}
+        message: { content: 'Remember to keep it civilized!' }
       });
       return res.id;
     }

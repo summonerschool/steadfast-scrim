@@ -1,5 +1,6 @@
 import { SlashCommandBuilder } from 'discord.js';
 import { discordService, scrimService } from '..';
+import { env } from '../env';
 import { retrieveOptions } from '../helpers/retrieveOptions';
 import { MatchCommandInputSchema } from '../schemas/user';
 import { SlashCommand } from '../types';
@@ -60,7 +61,7 @@ const match: SlashCommand = {
       content: `${capitalize(
         winner
       )} has been registered as the winner ✅.\nDiscussion thread: https://discord.com/channels/${
-        process.env.DISCORD_FORUM_CHANNEL_ID
+        env.DISCORD_DISCUSSION_CHANNEL_ID
       }/${postmatchDiscussionID}`
     };
   },
