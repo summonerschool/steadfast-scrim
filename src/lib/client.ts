@@ -1,5 +1,12 @@
-import axios from 'axios';
-import { Client, Collection, Events, GatewayIntentBits, REST, Routes } from 'discord.js';
+import {
+  Client,
+  Collection,
+  Events,
+  GatewayIntentBits,
+  REST,
+  RESTPutAPIApplicationCommandsResult,
+  Routes
+} from 'discord.js';
 import { readdirSync } from 'fs';
 import path from 'path';
 import { SlashCommand } from '../types';
@@ -77,48 +84,50 @@ export class ApplicationClient extends Client {
     const clientId = process.env.DISCORD_APP_ID!;
     const guildId = process.env.DEVELOPMENT_GUILD_ID!;
     const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_BOT_TOKEN!);
-    const res = await rest.put(Routes.applicationGuildCommands(clientId, guildId), {
-      body: commands.map((cmd) => cmd.command.toJSON())
-    });
-    console.log({ res });
+    let res;
+    if (process.env.NODE_ENV != 'development') {
+      res = (await rest.put(Routes.applicationGuildCommands(clientId, guildId), {
+        body: commands.map((cmd) => cmd.command.toJSON())
+      })) as RESTPutAPIApplicationCommandsResult;
+    } else {
+      res = (await rest.put(Routes.applicationCommands(clientId), {
+        body: commands.map((cmd) => cmd.command.toJSON())
+      })) as RESTPutAPIApplicationCommandsResult;
+      // if (!this.admins.length) {
+      //   return;
+      // }
+      // const { data } = await axios.post(
+      //   'https://discord.com/api/oauth2/token',
+      //   new URLSearchParams({
+      //     grant_type: 'client_credentials',
+      //     scope: 'applications.commands.permissions.update',
+      //     client_id: process.env.DISCORD_APP_ID!,
+      //     client_secret: process.env.DISCORD_CLIENT_SECRET!
+      //   }),
+      //   {
+      //     headers: {
+      //       'Content-Type': 'application/x-www-form-urlencoded'
+      //     }
+      //   }
+      // );
+      // console.log(res[0].name);
+      // const token = data.access_token;
+      // await Promise.all(
+      //   res.map(async (cmd) => {
+      //     await guild.commands.permissions.set({
+      //       command: cmd.id,
+      //       permissions: this.admins.map((id) => ({
+      //         id,
+      //         type: 2,
+      //         permission: true
+      //       })),
+      //       token
+      //     });
+      //     console.log(`${cmd.name} has been set as an admin command`);
+      //   })
+      // );
+    }
 
-    // const res = await guild.commands.set(commands.map((cmd) => cmd.command.toJSON()));
-    // const guildCommands = res.filter((cmd) => this.slashCommands.get(cmd.name)?.onlyAdmin);
-    // console.log(guildCommands.map((cmd) => cmd.name));
-    // if (!this.admins.length) {
-    //   return;
-    // }
-    // const tokenRes = await axios.post(
-    //   'https://discord.com/api/oauth2/token',
-    //   new URLSearchParams({
-    //     grant_type: 'client_credentials',
-    //     scope: 'applications.commands.permissions.update',
-    //     client_id: process.env.DISCORD_APP_ID!,
-    //     client_secret: process.env.DISCORD_CLIENT_SECRET!
-    //   }),
-    //   {
-    //     headers: {
-    //       'Content-Type': 'application/x-www-form-urlencoded'
-    //     }
-    //   }
-    // );
-    // const token = tokenRes.data.access_token;
-
-    // await Promise.all(
-    //   guildCommands.map(async (cmd) => {
-    //     await guild.commands.permissions.set({
-    //       command: cmd,
-    //       permissions: this.admins.map((id) => ({
-    //         id,
-    //         type: 2,
-    //         permission: true
-    //       })),
-    //       token
-    //     });
-    //     console.log(`${cmd.name} has been set as an admin command`);
-    //   })
-    // );
-
-    // console.log(`Migrated ${commands.length} commands`);
+    console.log(`Migrated ${res.length} commands`);
   }
 }
