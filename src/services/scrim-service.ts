@@ -63,14 +63,15 @@ export const initScrimService = (
       return users;
     },
     createBalancedScrim: async (guildID, region, queuers) => {
-      const { users, autoFilled } = matchmakingService.attemptFill(queuers);
+      const { users, fillers } = matchmakingService.attemptFill(queuers);
       const teamNames: [string, string] = [
         `🟦 ${capitalize(chance.pickone(adjectives))} ${chance.animal()}`,
         `🟥 ${capitalize(chance.pickone(adjectives))} ${chance.animal()}`
       ];
-      const [rolePrio, eloPrio] = matchmakingService.startMatchmaking(users);
+      const [rolePrio, eloPrio] = matchmakingService.startMatchmaking(users, fillers);
       // random number
       const matchup = rolePrio.eloDifference < 500 ? rolePrio : eloPrio;
+
       const voiceChannels = await discordService.createVoiceChannels(guildID, teamNames);
       const [blue, red] = chance.shuffle([matchup.team1, matchup.team2]);
       const createManyPlayers = [
@@ -109,7 +110,7 @@ export const initScrimService = (
         voiceChannels[0].createInvite(),
         voiceChannels[1].createInvite(),
         // autofill protect the user
-        prisma.user.updateMany({ where: { id: { in: autoFilled } }, data: { autofillProtected: true } })
+        prisma.user.updateMany({ where: { id: { in: fillers } }, data: { autofillProtected: true } })
       ]);
       console.info(`Elo difference is ${matchup.eloDifference}'`);
       for (const player of players) {
@@ -123,7 +124,7 @@ export const initScrimService = (
           voiceInvite: [inviteBlue.url, inviteRed.url],
           eloDifference: matchup.eloDifference,
           offroleCount: matchup.offroleCount,
-          autoFilledCount: autoFilled.length
+          autoFilledCount: fillers.length
         }
       };
     },

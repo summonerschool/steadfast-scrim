@@ -43,9 +43,10 @@ const queue: SlashCommand = {
 
     try {
       if (subCommand === 'show') {
+        const detailed = interaction.options.getBoolean('detailed');
         const users = [...queueService.getQueue(guildId, region).values()];
         return {
-          embeds: [QueueEmbed(users, 'show', 'EUW', region, false)]
+          embeds: [QueueEmbed(users, 'show', 'EUW', region, !!detailed)]
         };
       }
       switch (subCommand) {

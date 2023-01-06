@@ -4,18 +4,21 @@ import { chance } from '../lib/chance';
 import { GameSide, Matchup, Pool, ROLE_ORDER, ROLE_ORDER_TO_ROLE, Team } from '../models/matchmaking';
 
 export interface MatchmakingService {
-  startMatchmaking: (users: User[], prioritizeElo?: boolean) => [Matchup, Matchup];
+  startMatchmaking: (users: User[], fillers: string[]) => [Matchup, Matchup];
   matchupToPlayers: (matchup: Matchup, users: User[], randomSide?: boolean) => Omit<Player, 'scrimId'>[];
-  attemptFill: (users: User[]) => { users: User[]; autoFilled: string[] };
+  attemptFill: (users: User[]) => { users: User[]; fillers: string[] };
 }
 
+// Generate a pool
+// Calculate the possible teams
+// Find the best matchup
 export const initMatchmakingService = () => {
   const service: MatchmakingService = {
-    startMatchmaking: (users, prioritizeElo = false) => {
-      const playerPool = calculatePlayerPool(users);
+    startMatchmaking: (users, fillers) => {
+      const playerPool = calculatePlayerPool(users, fillers);
       const combinations = generateAllPossibleTeams(playerPool);
       // team vs team with elo difference. The players are sorted by their ID within the team
-      const res = findBestMatchup(combinations, users, prioritizeElo);
+      const res = findBestMatchup(combinations, users);
       if (!res.valid) {
         throw new NoMatchupPossibleError('No matchups possible with the chosen roles.');
       }
@@ -32,7 +35,7 @@ export const initMatchmakingService = () => {
     attemptFill: (queuers) => {
       const ROLE_COUNT = 10;
       const PLAYER_COUNT = 10;
-      const autoFilled: string[] = [];
+      const fillers: string[] = [];
       // Randomize, but let autofill protected people come first
       const users = chance.shuffle(queuers).sort((a, b) => {
         if (a.autofillProtected && b.autofillProtected) return 0;
@@ -62,7 +65,7 @@ export const initMatchmakingService = () => {
       }
       console.info({ result, matchRoles });
       if (result === PLAYER_COUNT) {
-        return { users, autoFilled };
+        return { users, fillers };
       }
 
       const seen = [...new Array(PLAYER_COUNT)].map(() => false);
@@ -78,10 +81,10 @@ export const initMatchmakingService = () => {
             ...users[uIndex],
             secondary: ROLE_ORDER_TO_ROLE[i < 5 ? i : i - 5]
           };
-          autoFilled.push(users[uIndex].id);
+          fillers.push(users[uIndex].id);
         }
       }
-      return { users, autoFilled };
+      return { users, fillers };
     }
   };
   return service;
@@ -109,16 +112,25 @@ export const OFFROLE_PENALTY: { [key in User['rank']]: number } = {
 };
 
 // Puts every user into a pool based on role.
-export const calculatePlayerPool = (users: User[]) => {
+export const calculatePlayerPool = (users: User[], fillers: string[]) => {
   const talentPool: Pool = [[], [], [], [], []];
   for (const user of users) {
-    talentPool[ROLE_ORDER[user.main]].push(user);
+    if (fillers.includes(user.id)) {
+      for (const pool of talentPool) {
+        pool.push(user);
+      }
+    } else {
+      talentPool[ROLE_ORDER[user.main]].push(user);
+    }
   }
   if (talentPool.some((rp) => rp.length < 2)) {
     for (const user of users) {
       const index = ROLE_ORDER[user.secondary];
       const elo = user.elo - OFFROLE_PENALTY[user.rank];
-      talentPool[index].push({ ...user, elo });
+      const pool = talentPool[index];
+      if (!pool.some((u) => u.id === user.id)) {
+        talentPool[index].push({ ...user, elo });
+      }
     }
   }
   return talentPool;
@@ -130,7 +142,7 @@ export const generateAllPossibleTeams = (pool: User[][]) => {
   // generates every team combination, very inefficent
   const combine = (lists: User[][], acum: User[]) => {
     const last = lists.length === 1;
-    for (let i in lists[0]) {
+    for (const i in lists[0]) {
       const next = lists[0][i];
       const item = [...acum, next];
       const users = item.map((u) => u.id);
@@ -145,8 +157,7 @@ export const generateAllPossibleTeams = (pool: User[][]) => {
 
 export const findBestMatchup = (
   combinations: Team[],
-  users: User[],
-  prioritizeElo?: boolean
+  users: User[]
 ): { valid: true; matchupByElo: Matchup; matchupByOffrole: Matchup } | { valid: false } => {
   let bestMatchupByOffroleCount: Matchup | undefined = undefined;
   let bestMatchupByEloDiff: Matchup | undefined = undefined;
