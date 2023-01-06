@@ -5,7 +5,7 @@ import { initMatchmakingService } from '../matchmaking-service';
 describe('MatchmakingService', () => {
   const matchmakingService = initMatchmakingService();
   test('Matchmake a valid main-role only group of players', () => {
-    const matchups = matchmakingService.startMatchmaking(twoOfEach);
+    const matchups = matchmakingService.startMatchmaking(twoOfEach, []);
     const matchup = matchups[0];
     expect(matchup.eloDifference).toEqual(37);
     const players = matchmakingService.matchupToPlayers(matchup, twoOfEach);
@@ -14,7 +14,7 @@ describe('MatchmakingService', () => {
     expect(ids.length).toEqual(new Set(ids).size);
   });
   test('Matchmake a matchup that requires secondary role', () => {
-    const matchups = matchmakingService.startMatchmaking(notTwoOfEach);
+    const matchups = matchmakingService.startMatchmaking(notTwoOfEach, []);
     const matchup = matchups[0];
     expect(matchup.eloDifference).toEqual(19);
     const players = matchmakingService.matchupToPlayers(matchup, notTwoOfEach);
@@ -24,7 +24,7 @@ describe('MatchmakingService', () => {
   });
 
   test('No matchups possible', () => {
-    const { users } = matchmakingService.attemptFill(fail);
+    const { users } = matchmakingService.attemptFill(fail, []);
     expect(users.length).toEqual(10);
   });
 });

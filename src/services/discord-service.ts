@@ -5,6 +5,7 @@ export interface DiscordService {
   createVoiceChannels: (guildID: string, teamNames: [string, string]) => Promise<[VoiceChannel, VoiceChannel]>;
   deleteVoiceChannels: (guildID: string, ids: string[]) => Promise<boolean>;
   sendMessageInChannel: (msg: string) => void;
+  createForumThread: (title: string, reason: string) => Promise<string>;
 }
 
 export const activeVoiceIDs = new Map<string, string[]>();
@@ -70,6 +71,25 @@ export const initDiscordService = (discordClient: Discord.Client) => {
       }
       const commandChannel = channel as Discord.TextChannel;
       await commandChannel.send(msg);
+    },
+    createForumThread: async (title, reason) => {
+      const feedbackChannelID = process.env.DISCORD_DISCUSSION_CHANNEL_ID || '';
+      let channel = discordClient.channels.cache.get(feedbackChannelID);
+      if (!channel) {
+        const res = await discordClient.channels.fetch(feedbackChannelID);
+        if (res) channel = res;
+        else {
+          throw new Error('Could not send message');
+        }
+      }
+      const forum = channel as Discord.ForumChannel;
+      const res = await forum.threads.create({
+        name: title,
+        autoArchiveDuration: 90,
+        reason,
+        message: {}
+      });
+      return res.id;
     }
   };
   return service;

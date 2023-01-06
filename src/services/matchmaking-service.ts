@@ -4,9 +4,9 @@ import { chance } from '../lib/chance';
 import { GameSide, Matchup, Pool, ROLE_ORDER, ROLE_ORDER_TO_ROLE, Team } from '../models/matchmaking';
 
 export interface MatchmakingService {
-  startMatchmaking: (users: User[], fillers: string[]) => [Matchup, Matchup];
+  startMatchmaking: (users: User[], fillers?: string[]) => [Matchup, Matchup];
   matchupToPlayers: (matchup: Matchup, users: User[], randomSide?: boolean) => Omit<Player, 'scrimId'>[];
-  attemptFill: (users: User[], queuedFill: string[]) => { users: User[]; fillers: string[] };
+  attemptFill: (users: User[], queuedFill?: string[]) => { users: User[]; fillers: string[] };
 }
 
 // Generate a pool
@@ -14,7 +14,7 @@ export interface MatchmakingService {
 // Find the best matchup
 export const initMatchmakingService = () => {
   const service: MatchmakingService = {
-    startMatchmaking: (users, fillers) => {
+    startMatchmaking: (users, fillers = []) => {
       const playerPool = calculatePlayerPool(users, fillers);
       const combinations = generateAllPossibleTeams(playerPool);
       // team vs team with elo difference. The players are sorted by their ID within the team
@@ -33,7 +33,7 @@ export const initMatchmakingService = () => {
       return [...blueTeam, ...redTeam];
     },
     attemptFill: (queuers, queuedFill) => {
-      const fillers = [...queuedFill];
+      const fillers = queuedFill || [];
       const ROLE_COUNT = 10;
       const PLAYER_COUNT = 10;
       // Randomize, but let autofill protected people come first

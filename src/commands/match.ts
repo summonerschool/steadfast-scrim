@@ -53,8 +53,16 @@ const match: SlashCommand = {
     if (!success) {
       return { content: 'Oops! Could not set winner of match' };
     }
+
     await discordService.deleteVoiceChannels(guildId, scrim.voiceIds);
-    return { content: `${capitalize(status)} has been registered as the winner ✅` };
+    const postmatchDiscussionID = await discordService.createForumThread(`Match #${id}: `, `${winner} won the game.`);
+    return {
+      content: `${capitalize(
+        winner
+      )} has been registered as the winner ✅.\nDiscussion thread: https://discord.com/channels/${
+        process.env.DISCORD_FORUM_CHANNEL_ID
+      }/${postmatchDiscussionID}`
+    };
   },
   autocomplete: async (interaction) => {
     const availableScrims = await scrimService.getIncompleteScrims(interaction.user.id);

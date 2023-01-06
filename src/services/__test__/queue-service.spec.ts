@@ -27,20 +27,20 @@ describe('QueueService', () => {
   });
 
   it('lets a user join the queue', () => {
-    const queue = queueService.joinQueue(user, 'guild1', 'EUW');
-    expect(queue[0]).toEqual(user);
+    const queue = queueService.joinQueue(user, 'guild1', 'EUW', false);
+    expect(queue[0]).toEqual({ ...user, queuedAsFill: false });
   });
 
   it('retrieves the correct queue size', () => {
     const pre = queueService.getQueue('guild1', 'EUW');
     expect(pre.size).toEqual(0);
-    const joined = queueService.joinQueue(user, 'guild1', 'EUW');
+    const joined = queueService.joinQueue(user, 'guild1', 'EUW', false);
     const post = queueService.getQueue('guild1', 'EUW');
     expect(joined).toEqual([...post.values()]);
   });
 
   it('lets a user leave queue', () => {
-    const queue = queueService.joinQueue(user, 'guild1', 'EUW');
+    const queue = queueService.joinQueue(user, 'guild1', 'EUW', false);
     const leaves = queueService.leaveQueue(user.id, 'guild1', 'EUW');
     expect(queue.length).toEqual(1);
     expect(leaves.length).toEqual(0);
