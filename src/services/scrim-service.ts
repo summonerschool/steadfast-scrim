@@ -1,6 +1,6 @@
 import { chance } from '../lib/chance';
 import { MatchmakingService, OFFROLE_PENALTY } from './matchmaking-service';
-import { Player, PrismaClient, Region, Scrim, Status, User, Role, Side } from '@prisma/client';
+import { Player, PrismaClient, Region, Scrim, Status, User, Role, Side, Prisma } from '@prisma/client';
 import { NotFoundError } from '../errors/errors';
 import { EmbedBuilder } from 'discord.js';
 import { lobbyDetailsEmbed, matchDetailsEmbed } from '../components/match-message';
@@ -33,6 +33,7 @@ export interface ScrimService {
   ) => Promise<EmbedBuilder>;
   playerIsInMatch: (userId: string) => number | undefined;
   getPlayer: (userId: string, scrimId: number) => Promise<Player | null>;
+  revertGame: (id: number) => Promise<boolean>;
 }
 
 interface RoomCreatedResult {
@@ -288,6 +289,48 @@ export const initScrimService = (
         where: { userId_scrimId: { userId, scrimId } }
       });
       return player;
+    },
+    revertGame: async (id) => {
+      const scrim = await prisma.scrim.findUnique({
+        where: { id },
+        include: { players: true }
+      });
+      if (!scrim || scrim.status === 'STARTED') {
+        throw new Error('This is not a valid match to revert');
+      }
+      // Check if any games has been played after the reverting one
+      const gamesPlayedAfterRevertingGame = await prisma.scrim.count({
+        skip: id,
+        where: { region: scrim.region }
+      });
+      if (gamesPlayedAfterRevertingGame > 0) {
+        return false;
+      }
+
+      const updateScrim = prisma.scrim.update({
+        where: { id },
+        data: { winner: null, status: 'STARTED' }
+      });
+      if (scrim.status === 'REMAKE') {
+        const { status } = await updateScrim;
+        return status === 'STARTED';
+      } else {
+        const promises = scrim.players.map((player) => {
+          if (player.side === scrim.winner) {
+            return prisma.user.update({
+              where: { id: player.userId },
+              data: { elo: player.pregameElo, wins: { decrement: 1 } }
+            });
+          } else {
+            return prisma.user.update({
+              where: { id: player.userId },
+              data: { elo: player.pregameElo, losses: { decrement: 1 } }
+            });
+          }
+        });
+        const [res, ...users] = await prisma.$transaction([updateScrim, ...promises]);
+        return res.status === 'STARTED' && users.length === 10;
+      }
     }
   };
   return service;

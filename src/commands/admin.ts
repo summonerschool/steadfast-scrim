@@ -1,6 +1,6 @@
 import { PrismaClient, Rank, Region, Role, User } from '@prisma/client';
 import { GuildMember, SlashCommandBuilder } from 'discord.js';
-import { queueService, userService } from '..';
+import { queueService, scrimService, userService } from '..';
 import { ProfileEmbed } from '../components/setup-feedback';
 import { chance } from '../lib/chance';
 import { SlashCommand } from '../types';
@@ -50,43 +50,64 @@ const admin: SlashCommand = {
         .setName('remove-user')
         .setDescription('Removes a user from a queue')
         .addMentionableOption((opt) => opt.setName('user').setDescription('User to remove').setRequired(true))
+    )
+    .addSubcommand((cmd) =>
+      cmd
+        .setName('revert-game')
+        .setDescription('Reverts the result of the last game')
+        .addIntegerOption((opt) => opt.setName('match_id').setDescription('The game to revert').setRequired(true))
     ),
   onlyAdmin: true,
   execute: async (interaction) => {
     const subCommand = interaction.options.getSubcommand();
-    if (subCommand === 'add-dummy-users') {
-      const prisma = new PrismaClient();
-      let users = await prisma.user.findMany({
-        where: { leagueIGN: { startsWith: 'test' } }
-      });
-      console.log(users);
-      if (users.length === 0) {
-        await prisma.user.createMany({
-          data: notTwoOfEach
+    switch (subCommand) {
+      case 'add-dummy-users': {
+        const prisma = new PrismaClient();
+        let users = await prisma.user.findMany({
+          where: { leagueIGN: { startsWith: 'test' } }
         });
-        users = notTwoOfEach;
+        console.log(users);
+        if (users.length === 0) {
+          await prisma.user.createMany({
+            data: notTwoOfEach
+          });
+          users = notTwoOfEach;
+        }
+        for (const user of users) {
+          await queueService.joinQueue(user, interaction.guildId!!, user.region, false);
+        }
+        console.log(queueService.getQueue(interaction.guildId!!, 'EUW').size);
+        return { content: 'added' };
       }
-      for (const user of users) {
-        await queueService.joinQueue(user, interaction.guildId!!, user.region, false);
+      case 'remove-user': {
+        const mentionable = interaction.options.getMentionable('user') as GuildMember | null;
+        if (!mentionable) return { content: 'Not a real user ID' };
+        const { user } = mentionable;
+        queueService.removeUserFromQueue(interaction.guildId!!, 'EUW', [user.id]);
+        queueService.removeUserFromQueue(interaction.guildId!!, 'NA', [user.id]);
+        return { content: `<@${user.id}> removed from queue` };
       }
-      console.log(queueService.getQueue(interaction.guildId!!, 'EUW').size);
-      return { content: 'added' };
-    } else if (subCommand === 'remove-user') {
-      const mentionable = interaction.options.getMentionable('user') as GuildMember | null;
-      if (!mentionable) return { content: 'Not a real user ID' };
-      const { user } = mentionable;
-      queueService.removeUserFromQueue(interaction.guildId!!, 'EUW', [user.id]);
-      queueService.removeUserFromQueue(interaction.guildId!!, 'NA', [user.id]);
-      return { content: `<@${user.id}> removed from queue` };
-    } else {
-      const mentionable = interaction.options.getMentionable('user');
-      const elo = interaction.options.getInteger('elo');
-      const externalElo = interaction.options.getInteger('external_elo');
-      if (!mentionable) return { content: 'Not a real user ID' };
-      const member = mentionable as GuildMember;
-      const user = await userService.updateElo(member.user.id, elo || undefined, externalElo || undefined);
+      case 'update-elo': {
+        const mentionable = interaction.options.getMentionable('user');
+        const elo = interaction.options.getInteger('elo');
+        const externalElo = interaction.options.getInteger('external_elo');
+        if (!mentionable) return { content: 'Not a real user ID' };
+        const member = mentionable as GuildMember;
+        const user = await userService.updateElo(member.user.id, elo || undefined, externalElo || undefined);
 
-      return { embeds: [ProfileEmbed(user)] };
+        return { embeds: [ProfileEmbed(user)] };
+      }
+      case 'revert-game': {
+        const id = interaction.options.getInteger('match_id', true);
+        const latestMatch = await scrimService.revertGame(id);
+        return {
+          content: latestMatch
+            ? `Match #${id} has been reverted`
+            : `Match #${id} is not the latest played game. You can only revert the latest game played`
+        };
+      }
+      default:
+        return { content: 'no such command found' };
     }
   }
 };

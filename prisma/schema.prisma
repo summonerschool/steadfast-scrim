@@ -51,6 +51,7 @@ model Scrim {
   guildID  String
   region   Region
   winner   Side?
+  createdAt DateTime @default(now()) @map("created_at")
 }
 
 enum Status {
