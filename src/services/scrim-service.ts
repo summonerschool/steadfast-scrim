@@ -259,7 +259,6 @@ export const initScrimService = (
       console.log(teams);
 
       const [draftURLs, opggBlue, opggRed] = promises;
-      const lobbyName = `${chance.word({ length: 5 })}${chance.integer({ min: 10, max: 20 })}`;
       const password = chance.integer({ min: 1000, max: 9999 });
 
       const matchEmbed = matchDetailsEmbed(scrim, players, lobbyDetails);
@@ -269,7 +268,7 @@ export const initScrimService = (
         teams.BLUE,
         teams.RED,
         draftURLs.BLUE,
-        lobbyName,
+        `ss${scrim.id}`,
         password,
         opggBlue,
         opggRed
