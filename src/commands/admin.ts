@@ -67,7 +67,7 @@ const admin: SlashCommand = {
         users = notTwoOfEach;
       }
       for (const user of users) {
-        await queueService.joinQueue(user, interaction.guildId!!, user.region);
+        await queueService.joinQueue(user, interaction.guildId!!, user.region, false);
       }
       console.log(queueService.getQueue(interaction.guildId!!, 'EUW').size);
       return { content: 'added' };
