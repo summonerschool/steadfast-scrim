@@ -59,7 +59,9 @@ export class ApplicationClient extends Client {
 
     super.once(Events.ClientReady, async (c) => {
       await this.resolveModules();
-      await this.migrate();
+      if (process.env.NODE_ENV === 'development') {
+        await this.migrate();
+      }
       console.log(`Ready! Logged in as ${c.user.tag}`);
     });
   }
@@ -85,6 +87,7 @@ export class ApplicationClient extends Client {
     const commands = [...this.slashCommands.values()];
     const clientId = env.DISCORD_APP_ID;
     const guildId = env.DISCORD_DEVELOPMENT_GUILD_ID;
+    await this.application?.commands.set([]);
     const rest = new REST({ version: '10' }).setToken(env.DISCORD_BOT_TOKEN);
     let res;
     if (process.env.NODE_ENV != 'development' && guildId) {
