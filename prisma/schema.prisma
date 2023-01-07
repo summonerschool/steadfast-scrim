@@ -33,7 +33,7 @@ enum Side {
 
 model Player {
   user       User   @relation(fields: [userId], references: [id])
-  scrim      Scrim  @relation(fields: [scrimId], references: [id])
+  scrim      Scrim  @relation(fields: [scrimId], references: [id], onDelete: Cascade)
   userId     String @map("user_id")
   scrimId    Int    @map("scrim_id")
   role       Role
@@ -59,11 +59,11 @@ model Draft {
   id Int @id @default(sequence())
 
   draftRoomId String   @map("draft_room_id")
-  bluePicks   String[] @default([])
-  redPicks    String[] @default([])
-  blueBans    String[] @default([])
-  redBans     String[] @default([])
-  scrim       Scrim    @relation(fields: [scrimId], references: [id])
+  bluePicks   String[] @default([]) @map("blue_picks")
+  redPicks    String[] @default([]) @map("red_picks")
+  blueBans    String[] @default([]) @map("blue_bans")
+  redBans     String[] @default([]) @map("red_bans")
+  scrim       Scrim    @relation(fields: [scrimId], references: [id], onDelete: Cascade)
   scrimId     Int      @unique @map("scrim_id")
 }
 
