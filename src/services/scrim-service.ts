@@ -1,6 +1,6 @@
 import { chance } from '../lib/chance';
 import { MatchmakingService, OFFROLE_PENALTY } from './matchmaking-service';
-import { Player, PrismaClient, Region, Scrim, Status, User, Role, Side, Prisma } from '@prisma/client';
+import { Player, PrismaClient, Region, Scrim, Status, User, Role, Side, Draft } from '@prisma/client';
 import { NotFoundError } from '../errors/errors';
 import { EmbedBuilder } from 'discord.js';
 import { lobbyDetailsEmbed, matchDetailsEmbed } from '../components/match-message';
@@ -168,6 +168,31 @@ export const initScrimService = (
         });
       });
       const res = await prisma.$transaction(updatedUsers);
+      const draft = await prisma.draft.findUnique({
+        where: { id: scrim.id }
+      });
+      if (draft) {
+        // Store the draft
+        const { blueBans, bluePicks, redBans, redPicks } = await new Promise<Partial<Draft>>((resolve, reject) => {
+          const ws = new WebSocket('wss://draftlol.dawe.gg/');
+          ws.onopen = () => {
+            ws.send(JSON.stringify({ type: 'joinroom', roomId: draft.draftRoomId }));
+          };
+          ws.onmessage = (msg) => {
+            ws.close();
+            const data = JSON.parse(msg.data.toString());
+            if (data.type === 'statechange') {
+              const { bluePicks, redPicks, blueBans, redBans } = data.newState;
+              resolve({ bluePicks, redPicks, blueBans, redBans });
+            } else if (data.type === 'error') {
+              reject(data.reason);
+            } else {
+              reject('unknown event');
+            }
+          };
+        });
+        await prisma.draft.update({ where: { id: draft.id }, data: { blueBans, bluePicks, redBans, redPicks } });
+      }
       console.info(text);
       return res.length > 0;
     },
@@ -196,6 +221,7 @@ export const initScrimService = (
 
               const DRAFTLOL_URL = `https://draftlol.dawe.gg/${room.roomId}`;
               resolve({
+                roomId: room.roomId,
                 BLUE: `${DRAFTLOL_URL}/${room.bluePassword}`,
                 RED: `${DRAFTLOL_URL}/${room.redPassword}`,
                 SPECTATOR: DRAFTLOL_URL
@@ -264,7 +290,7 @@ export const initScrimService = (
       const blueIDs = filteredPlayers.filter((p) => p.side === 'BLUE').map((p) => p.userId);
       const redIDs = filteredPlayers.filter((p) => p.side === 'RED').map((p) => p.userId);
 
-      const directMsg = await Promise.all([
+      const [dm1, dm2] = await Promise.all([
         discordService.sendMatchDirectMessage(blueIDs, {
           embeds: [matchEmbed, blueEmbed],
           content: voiceInvite[0]
@@ -272,9 +298,10 @@ export const initScrimService = (
         discordService.sendMatchDirectMessage(redIDs, {
           embeds: [matchEmbed, redEmbed],
           content: voiceInvite[1]
-        })
+        }),
+        prisma.draft.create({ data: { scrimId: scrim.id, draftRoomId: draftURLs.roomId } })
       ]);
-      `${directMsg[0] + directMsg[1]} DMs have been sent`;
+      `${dm1 + dm2} DMs have been sent`;
       const publicEmbed = matchEmbed.addFields({
         name: 'Draft',
         value: `[Spectate Draft](${draftURLs.SPECTATOR})`

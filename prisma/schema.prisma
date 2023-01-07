@@ -44,14 +44,27 @@ model Player {
 }
 
 model Scrim {
-  id       Int      @id @default(sequence())
-  status   Status   @default(STARTED)
-  voiceIds String[] @map("voice_ids")
-  players  Player[]
-  guildID  String
-  region   Region
-  winner   Side?
+  id        Int      @id @default(sequence())
+  status    Status   @default(STARTED)
+  voiceIds  String[] @map("voice_ids")
+  players   Player[]
+  guildID   String
+  region    Region
+  winner    Side?
   createdAt DateTime @default(now()) @map("created_at")
+  Draft     Draft?
+}
+
+model Draft {
+  id Int @id @default(sequence())
+
+  draftRoomId String   @map("draft_room_id")
+  bluePicks   String[] @default([])
+  redPicks    String[] @default([])
+  blueBans    String[] @default([])
+  redBans     String[] @default([])
+  scrim       Scrim    @relation(fields: [scrimId], references: [id])
+  scrimId     Int      @unique @map("scrim_id")
 }
 
 enum Status {
