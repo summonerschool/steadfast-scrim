@@ -62,6 +62,7 @@ const admin: SlashCommand = {
     const subCommand = interaction.options.getSubcommand();
     switch (subCommand) {
       case 'add-dummy-users': {
+        await interaction.deferReply();
         const prisma = new PrismaClient();
         let users = await prisma.user.findMany({
           where: { leagueIGN: { startsWith: 'test' } }
@@ -77,7 +78,7 @@ const admin: SlashCommand = {
           await queueService.joinQueue(user, interaction.guildId!!, user.region, false);
         }
         console.log(queueService.getQueue(interaction.guildId!!, 'EUW').size);
-        return { content: 'added' };
+        return { content: `Added ${users.length} to the queue` };
       }
       case 'remove-user': {
         const mentionable = interaction.options.getMentionable('user') as GuildMember | null;
@@ -98,6 +99,7 @@ const admin: SlashCommand = {
         return { embeds: [ProfileEmbed(user)] };
       }
       case 'revert-game': {
+        await interaction.deferReply();
         const id = interaction.options.getInteger('match_id', true);
         const latestMatch = await scrimService.revertGame(id);
         return {

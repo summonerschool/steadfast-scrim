@@ -1,12 +1,13 @@
 import Discord, { ChannelType, MessageCreateOptions, VoiceChannel } from 'discord.js';
 import { env } from '../env';
+import { GameSide } from '../models/matchmaking';
 
 export interface DiscordService {
   sendMatchDirectMessage: (userIDs: string[], message: MessageCreateOptions) => Promise<number>;
   createVoiceChannels: (guildID: string, teamNames: [string, string]) => Promise<[VoiceChannel, VoiceChannel]>;
-  deleteVoiceChannels: (guildID: string, ids: string[]) => Promise<boolean>;
+  deleteVoiceChannels: (guildID: string, ids: string[]) => Promise<[string, string] | null>;
   sendMessageInChannel: (msg: string) => void;
-  createForumThread: (title: string, reason: string) => Promise<string>;
+  createPostDiscussionThread: (matchId: number, winner: GameSide, teamNames: [string, string]) => Promise<string>;
 }
 
 export const activeVoiceIDs = new Map<string, string[]>();
@@ -47,7 +48,7 @@ export const initDiscordService = (discordClient: Discord.Client) => {
       const guild = await discordClient.guilds.fetch({ guild: guildID });
       const current = activeVoiceIDs.get(guildID) || [];
       if (!current.some((id) => ids.includes(id))) {
-        return false;
+        return null;
       }
       const channels = await Promise.all(ids.map((id) => guild.channels.fetch(id)));
 
@@ -59,8 +60,8 @@ export const initDiscordService = (discordClient: Discord.Client) => {
         guildID,
         current.filter((id) => !deletedIDs.includes(id))
       );
-      console.log({ activeVoiceIDs, deleted });
-      return true;
+      console.log({ activeVoiceIDs });
+      return [deleted[0].name, deleted[1].name];
     },
     sendMessageInChannel: async (msg) => {
       let channel = discordClient.channels.cache.get(commandChannelID);
@@ -74,7 +75,7 @@ export const initDiscordService = (discordClient: Discord.Client) => {
       const commandChannel = channel as Discord.TextChannel;
       await commandChannel.send(msg);
     },
-    createForumThread: async (title, reason) => {
+    createPostDiscussionThread: async (matchId, winner, teamNames) => {
       let channel = discordClient.channels.cache.get(feedbackChannelID);
       if (!channel) {
         const res = await discordClient.channels.fetch(feedbackChannelID);
@@ -84,11 +85,12 @@ export const initDiscordService = (discordClient: Discord.Client) => {
         }
       }
       const forum = channel as Discord.ForumChannel;
+      const [blue, red] = teamNames;
       const res = await forum.threads.create({
-        name: title,
-        autoArchiveDuration: 90,
-        reason,
-        message: { content: 'Remember to keep it civilized!' }
+        name: `Match #${matchId}: ${blue} vs ${red}`,
+        autoArchiveDuration: 1440,
+        reason: `Feedback channel for match #${matchId}`,
+        message: { content: `${winner === 'BLUE' ? blue : red} won the game.\nRemember to keep it civilized.` }
       });
       return res.id;
     }

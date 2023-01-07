@@ -66,6 +66,7 @@ const queue: SlashCommand = {
             };
           }
           if (MatchmakingStatus.VALID_MATCH) {
+            await interaction.deferReply();
             const embed = await queueService.createMatch(guildId, region);
             return { embeds: [embed] };
           }

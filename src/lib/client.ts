@@ -35,17 +35,23 @@ export class ApplicationClient extends Client {
         if (!command) {
           return;
         }
-        await interaction.deferReply();
         try {
           const res = await command.execute(interaction);
           if (res) {
-            await interaction.editReply(res);
+            if (interaction.deferred) {
+              await interaction.editReply(res);
+            } else {
+              await interaction.reply(res);
+            }
           }
         } catch (err) {
           if (err instanceof Error) {
             console.log(err);
-            await interaction.editReply({ content: 'An error occurred while executing this command' });
-            await interaction.reply({ ephemeral: true, content: err.message });
+            if (!interaction.replied) {
+              await interaction.reply({ content: err.message, ephemeral: true });
+            } else if (interaction.deferred) {
+              await interaction.editReply({ content: err.message });
+            }
           }
         }
       } else if (interaction.isAutocomplete()) {
@@ -59,9 +65,7 @@ export class ApplicationClient extends Client {
 
     super.once(Events.ClientReady, async (c) => {
       await this.resolveModules();
-      if (process.env.NODE_ENV === 'development') {
-        await this.migrate();
-      }
+      // await this.migrate();
       console.log(`Ready! Logged in as ${c.user.tag}`);
     });
   }
@@ -88,17 +92,17 @@ export class ApplicationClient extends Client {
     const clientId = env.DISCORD_APP_ID;
     const guildId = env.DISCORD_DEVELOPMENT_GUILD_ID;
     await this.application?.commands.set([]);
+    await this.guilds.cache.get(guildId!)?.commands.set([]);
     const rest = new REST({ version: '10' }).setToken(env.DISCORD_BOT_TOKEN);
-    let res;
-    if (process.env.NODE_ENV != 'development' && guildId) {
-      res = (await rest.put(Routes.applicationGuildCommands(clientId, guildId), {
-        body: commands.map((cmd) => cmd.command.toJSON())
-      })) as RESTPutAPIApplicationCommandsResult;
-    } else {
-      res = (await rest.put(Routes.applicationCommands(clientId), {
-        body: commands.map((cmd) => cmd.command.toJSON())
-      })) as RESTPutAPIApplicationCommandsResult;
-    }
+    // if (guildId) {
+    //   await rest.put(Routes.applicationGuildCommands(clientId, guildId), {
+    //     body: commands.map((cmd) => cmd.command.toJSON())
+    //   });
+    // }
+    const res = (await rest.put(Routes.applicationCommands(clientId), {
+      body: commands.map((cmd) => cmd.command.toJSON())
+    })) as RESTPutAPIApplicationCommandsResult;
+
     if (!this.admins.length) {
       return;
     }
