@@ -11,19 +11,20 @@ datasource db {
 }
 
 model User {
-  id                String   @id
-  leagueIGN         String   @unique @map("league_ign")
+  id                String        @id
+  leagueIGN         String        @unique @map("league_ign")
   region            Region
   rank              Rank
   main              Role
   secondary         Role
-  wins              Int      @default(0)
-  losses            Int      @default(0)
-  elo               Int      @default(0)
-  externalElo       Int      @default(0) @map("external_elo")
-  autofillProtected Boolean  @default(false) @map("autofill_protected")
-  registeredAt      DateTime @default(now()) @map("registered_at")
+  wins              Int           @default(0)
+  losses            Int           @default(0)
+  elo               Int           @default(0)
+  externalElo       Int           @default(0) @map("external_elo")
+  autofillProtected Boolean       @default(false) @map("autofill_protected")
+  registeredAt      DateTime      @default(now()) @map("registered_at")
   player            Player[]
+  seasonStats       SeasonStats[]
 }
 
 enum Side {
@@ -32,13 +33,18 @@ enum Side {
 }
 
 model Player {
-  user       User   @relation(fields: [userId], references: [id])
-  scrim      Scrim  @relation(fields: [scrimId], references: [id], onDelete: Cascade)
-  userId     String @map("user_id")
-  scrimId    Int    @map("scrim_id")
-  role       Role
-  side       Side
-  pregameElo Int    @default(0) @map("pre_game_elo")
+  user    User   @relation(fields: [userId], references: [id])
+  scrim   Scrim  @relation(fields: [scrimId], references: [id], onDelete: Cascade)
+  userId  String @map("user_id")
+  scrimId Int    @map("scrim_id")
+  role    Role
+  side    Side
+
+  pregameElo Int     @default(0) @map("pre_game_elo")
+  isOffRole  Boolean @default(false) @map("is_off_role")
+  isAutoFill Boolean @default(false) @map("is_auto_fill")
+
+  createdAt DateTime @default(now()) @map("created_at")
 
   @@id([userId, scrimId])
 }
@@ -53,6 +59,19 @@ model Scrim {
   winner    Side?
   createdAt DateTime @default(now()) @map("created_at")
   Draft     Draft?
+  season    Int      @default(0)
+}
+
+model SeasonStats {
+  user   User   @relation(fields: [userId], references: [id])
+  userId String @unique @map("user_id")
+  season Int
+
+  wins   Int
+  losses Int
+  elo    Int
+
+  @@id([userId, season])
 }
 
 model Draft {

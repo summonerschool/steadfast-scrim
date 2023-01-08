@@ -1,6 +1,6 @@
 import { chance } from '../lib/chance';
 import { MatchmakingService, OFFROLE_PENALTY } from './matchmaking-service';
-import { Player, PrismaClient, Region, Scrim, Status, User, Role, Side, Draft } from '@prisma/client';
+import { Player, PrismaClient, Region, Scrim, Status, User, Role, Side, Draft, Prisma } from '@prisma/client';
 import { NotFoundError } from '../errors/errors';
 import { EmbedBuilder } from 'discord.js';
 import { lobbyDetailsEmbed, matchDetailsEmbed } from '../components/match-message';
@@ -10,6 +10,7 @@ import { adjectives } from '../lib/adjectives';
 import { capitalize } from '../utils/utils';
 import { GameSide, LobbyDetails, ROLE_ORDER, ROLE_ORDER_TO_ROLE, Team } from '../models/matchmaking';
 import { DraftURLs } from '../models/external';
+import { env } from '../env';
 
 export interface ScrimService {
   generateScoutingLink: (users: User[], region: Region) => string;
@@ -76,20 +77,18 @@ export const initScrimService = (
 
       const voiceChannels = await discordService.createVoiceChannels(guildID, teamNames);
       const [blue, red] = chance.shuffle([matchup.team1, matchup.team2]);
-      const createManyPlayers = [
-        ...blue.map((user, i) => ({
+      const userToPlayer = (user: User, i: number): Omit<Prisma.PlayerCreateManyInput, 'scrimId'> => {
+        const role = Role[ROLE_ORDER_TO_ROLE[i]];
+        return {
           userId: user.id,
           side: Side.BLUE,
-          role: Role[ROLE_ORDER_TO_ROLE[i]],
-          pregameElo: user.elo
-        })),
-        ...red.map((user, i) => ({
-          userId: user.id,
-          side: Side.RED,
-          role: Role[ROLE_ORDER_TO_ROLE[i]],
-          pregameElo: user.elo
-        }))
-      ];
+          role,
+          pregameElo: user.elo,
+          isOffRole: user.secondary === role,
+          isAutoFill: fillers.includes(user.id)
+        };
+      };
+      const createManyPlayers = [...blue.map(userToPlayer), ...red.map(userToPlayer)];
 
       const [{ players, ...scrim }, inviteBlue, inviteRed] = await Promise.all([
         prisma.scrim.create({
@@ -103,7 +102,8 @@ export const initScrimService = (
               }
             },
             status: Status.STARTED,
-            voiceIds: voiceChannels.map((vc) => vc.id)
+            voiceIds: voiceChannels.map((vc) => vc.id),
+            season: env.CURRENT_SEASON
           },
           include: {
             players: true

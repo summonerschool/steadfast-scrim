@@ -8,7 +8,8 @@ const envSchema = z.object({
   DISCORD_DEVELOPMENT_GUILD_ID: z.string().optional(),
   DISCORD_VOICE_CATEGORY_ID: z.string(),
   DISCORD_COMMAND_CHANNEL_ID: z.string(),
-  DISCORD_DISCUSSION_CHANNEL_ID: z.string()
+  DISCORD_DISCUSSION_CHANNEL_ID: z.string(),
+  CURRENT_SEASON: z.coerce.number()
 });
 
 const res = envSchema.safeParse({
@@ -18,7 +19,8 @@ const res = envSchema.safeParse({
   DISCORD_DEVELOPMENT_GUILD_ID: process.env.DISCORD_DEVELOPMENT_GUILD_ID,
   DISCORD_VOICE_CATEGORY_ID: process.env.DISCORD_VOICE_CATEGORY_ID,
   DISCORD_COMMAND_CHANNEL_ID: process.env.DISCORD_COMMAND_CHANNEL_ID,
-  DISCORD_DISCUSSION_CHANNEL_ID: process.env.DISCORD_DISCUSSION_CHANNEL_ID
+  DISCORD_DISCUSSION_CHANNEL_ID: process.env.DISCORD_DISCUSSION_CHANNEL_ID,
+  CURRENT_SEASON: process.env.CURRENT_SEASON
 });
 if (!res.success) {
   throw new Error(`Invalid input❌\n${formatErrors(res.error.format())}`);
