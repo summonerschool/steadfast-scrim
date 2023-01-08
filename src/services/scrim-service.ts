@@ -12,7 +12,7 @@ import { GameSide, LobbyDetails, ROLE_ORDER, ROLE_ORDER_TO_ROLE, Team } from '..
 import { DraftURLs } from '../models/external';
 
 export interface ScrimService {
-  generateScoutingLink: (users: User[]) => string;
+  generateScoutingLink: (users: User[], region: Region) => string;
   createBalancedScrim: (
     guildID: string,
     region: Region,
@@ -52,9 +52,9 @@ export const initScrimService = (
   const ingame = new Map<string, number>();
   const service: ScrimService = {
     // Generates an opgg link for scouting purposes
-    generateScoutingLink: (users) => {
+    generateScoutingLink: (users, region) => {
       const summoners = users.map((user) => encodeURIComponent(user.leagueIGN)).join(',');
-      const server = users[0].region.toLocaleLowerCase();
+      const server = region.toLocaleLowerCase();
       const link = `https://u.gg/multisearch?summoners=${summoners}&region=${server}1`;
       return link;
     },
@@ -253,8 +253,8 @@ export const initScrimService = (
       const teams = sortUsersByTeam(users, players);
       const promises = await Promise.all([
         service.createDraftLobby(teamNames),
-        service.generateScoutingLink(teams.BLUE),
-        service.generateScoutingLink(teams.RED)
+        service.generateScoutingLink(teams.BLUE, scrim.region),
+        service.generateScoutingLink(teams.RED, scrim.region)
       ]);
       console.log(teams);
 
