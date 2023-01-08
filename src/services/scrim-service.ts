@@ -279,7 +279,7 @@ export const initScrimService = (
         teams.RED,
         teams.BLUE,
         draftURLs.RED,
-        lobbyName,
+        `ss${scrim.id}`,
         password,
         opggRed,
         opggBlue

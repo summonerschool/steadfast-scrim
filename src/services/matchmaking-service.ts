@@ -81,6 +81,7 @@ export const initMatchmakingService = () => {
             ...users[uIndex],
             secondary: ROLE_ORDER_TO_ROLE[i < 5 ? i : i - 5]
           };
+          console.log(`User(${users[uIndex].leagueIGN}) has been autofilled`);
           fillers.push(users[uIndex].id);
         }
       }
@@ -115,24 +116,28 @@ export const OFFROLE_PENALTY: { [key in User['rank']]: number } = {
 export const calculatePlayerPool = (users: User[], fillers: string[]) => {
   const talentPool: Pool = [[], [], [], [], []];
   for (const user of users) {
-    if (fillers.includes(user.id)) {
-      for (const pool of talentPool) {
-        pool.push(user);
-      }
-    } else {
-      talentPool[ROLE_ORDER[user.main]].push(user);
-    }
+    talentPool[ROLE_ORDER[user.main]].push(user);
   }
+  console.log(talentPool.map((p) => p.map((u) => u.leagueIGN)));
   if (talentPool.some((rp) => rp.length < 2)) {
     for (const user of users) {
-      const index = ROLE_ORDER[user.secondary];
       const elo = user.elo - OFFROLE_PENALTY[user.rank];
-      const pool = talentPool[index];
-      if (!pool.some((u) => u.id === user.id)) {
-        talentPool[index].push({ ...user, elo });
+      if (fillers.includes(user.id)) {
+        talentPool.forEach((p) => {
+          if (!p.some((u) => u.id === user.id)) {
+            p.push({ ...user, elo });
+          }
+        });
+      } else {
+        const index = ROLE_ORDER[user.secondary];
+        const pool = talentPool[index];
+        if (!pool.some((u) => u.id === user.id)) {
+          pool.push({ ...user, elo });
+        }
       }
     }
   }
+  console.log(talentPool.map((p) => p.map((u) => u.leagueIGN)));
   return talentPool;
 };
 
