@@ -77,10 +77,6 @@ export const initMatchmakingService = () => {
           const uIndex = seen.findIndex((val) => val == false);
           matchRoles[i] = uIndex;
           seen[uIndex] = true;
-          users[uIndex] = {
-            ...users[uIndex],
-            secondary: ROLE_ORDER_TO_ROLE[i < 5 ? i : i - 5]
-          };
           console.log(`User(${users[uIndex].leagueIGN}) has been autofilled`);
           fillers.push(users[uIndex].id);
         }
