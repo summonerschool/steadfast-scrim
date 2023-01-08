@@ -3,7 +3,6 @@ import { EmbedBuilder } from 'discord.js';
 import { POSITION_EMOJI_TRANSLATION, RANK_IMAGE_TRANSLATION } from '../utils/utils';
 
 export const ProfileEmbed = (user: User) => {
-  console.log(user);
   const roles_to_image = [user.main, user.secondary].map((x) => {
     // return `![${x}](${POSITION_IMAGE_TRANSLATION[x]})`;
     return `${POSITION_EMOJI_TRANSLATION[x]}`;

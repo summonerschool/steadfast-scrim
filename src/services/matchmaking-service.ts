@@ -1,11 +1,11 @@
-import { Player, User, Side, Role } from '@prisma/client';
+import { User, Side, Role, Prisma } from '@prisma/client';
 import { NoMatchupPossibleError } from '../errors/errors';
 import { chance } from '../lib/chance';
-import { GameSide, Matchup, Pool, ROLE_ORDER, ROLE_ORDER_TO_ROLE, Team } from '../models/matchmaking';
+import { Matchup, Pool, ROLE_ORDER, ROLE_ORDER_TO_ROLE, Team } from '../models/matchmaking';
 
 export interface MatchmakingService {
   startMatchmaking: (users: User[], fillers?: string[]) => [Matchup, Matchup];
-  matchupToPlayers: (matchup: Matchup, users: User[], randomSide?: boolean) => Omit<Player, 'scrimId'>[];
+  matchupToPlayers: (matchup: Matchup, fillers: string[]) => Omit<Prisma.PlayerCreateManyInput, 'scrimId'>[];
   attemptFill: (users: User[], queuedFill?: string[]) => { users: User[]; fillers: string[] };
 }
 
@@ -24,13 +24,25 @@ export const initMatchmakingService = () => {
       }
       return [res.matchupByOffrole, res.matchupByElo];
     },
-    matchupToPlayers: (matchup, users, randomSide = true) => {
+    matchupToPlayers: (matchup, fillers) => {
       const { team1, team2 } = matchup;
       // // Randomly assign ingame side to the teams
-      const teams = randomSide ? chance.shuffle([team1, team2]) : [team1, team2];
-      const blueTeam = teamToPlayers(teams[0], 'BLUE', users);
-      const redTeam = teamToPlayers(teams[1], 'RED', users);
-      return [...blueTeam, ...redTeam];
+      const teams = chance.shuffle([team1, team2]);
+      const userToPlayer =
+        (side: Side) =>
+        (user: User, i: number): Omit<Prisma.PlayerCreateManyInput, 'scrimId'> => {
+          const role = Role[ROLE_ORDER_TO_ROLE[i]];
+          return {
+            userId: user.id,
+            side: side,
+            role,
+            pregameElo: user.elo,
+            isOffRole: user.secondary === role,
+            isAutoFill: fillers.includes(user.id)
+          };
+        };
+
+      return [...teams[0].map(userToPlayer('BLUE')), ...teams[1].map(userToPlayer('RED'))];
     },
     attemptFill: (queuers, queuedFill) => {
       const fillers = queuedFill || [];
@@ -85,14 +97,6 @@ export const initMatchmakingService = () => {
     }
   };
   return service;
-};
-
-const teamToPlayers = (team: Team, side: GameSide, users: User[]) => {
-  const players = team.map((player, i) => {
-    const user: User = users.find((u) => u.id == player.id)!!;
-    return { userId: user.id, role: Role[ROLE_ORDER_TO_ROLE[i]], side: Side[side], pregameElo: user.elo };
-  });
-  return players;
 };
 
 // Probably needs adjustments
@@ -201,10 +205,11 @@ export const findBestMatchup = (
   if (!bestMatchupByOffroleCount || !bestMatchupByEloDiff) {
     return { valid: false };
   }
-  console.info({
-    offroleCountMatchup: matchupToString(bestMatchupByOffroleCount),
-    elodiffMatchup: matchupToString(bestMatchupByEloDiff)
-  });
+  console.info(
+    `Matchup by offrole: ${matchupToString(bestMatchupByOffroleCount)}\nMatchup by elo: ${matchupToString(
+      bestMatchupByEloDiff
+    )}`
+  );
 
   return { valid: true, matchupByOffrole: bestMatchupByOffroleCount, matchupByElo: bestMatchupByEloDiff };
 };

@@ -67,7 +67,6 @@ const admin: SlashCommand = {
         let users = await prisma.user.findMany({
           where: { leagueIGN: { startsWith: 'test' } }
         });
-        console.log(users);
         if (users.length === 0) {
           await prisma.user.createMany({
             data: notTwoOfEach
@@ -77,7 +76,6 @@ const admin: SlashCommand = {
         for (const user of users) {
           await queueService.joinQueue(user, interaction.guildId!!, user.region, false);
         }
-        console.log(queueService.getQueue(interaction.guildId!!, 'EUW').size);
         return { content: `Added ${users.length} to the queue` };
       }
       case 'remove-user': {
@@ -95,6 +93,11 @@ const admin: SlashCommand = {
         if (!mentionable) return { content: 'Not a real user ID' };
         const member = mentionable as GuildMember;
         const user = await userService.updateElo(member.user.id, elo || undefined, externalElo || undefined);
+        const queue = queueService.getQueue(interaction.guildId!!, user.region);
+        const inQueue = queue.get(user.id);
+        if (inQueue) {
+          queue.set(user.id, user);
+        }
 
         return { embeds: [ProfileEmbed(user)] };
       }

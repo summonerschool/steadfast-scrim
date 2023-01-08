@@ -75,15 +75,16 @@ model SeasonStats {
 }
 
 model Draft {
-  id Int @id @default(sequence())
+  scrim       Scrim  @relation(fields: [scrimId], references: [id], onDelete: Cascade)
+  scrimId     Int    @unique @map("scrim_id")
+  draftRoomId String @map("draft_room_id")
 
-  draftRoomId String   @map("draft_room_id")
-  bluePicks   String[] @default([]) @map("blue_picks")
-  redPicks    String[] @default([]) @map("red_picks")
-  blueBans    String[] @default([]) @map("blue_bans")
-  redBans     String[] @default([]) @map("red_bans")
-  scrim       Scrim    @relation(fields: [scrimId], references: [id], onDelete: Cascade)
-  scrimId     Int      @unique @map("scrim_id")
+  bluePicks String[] @default([]) @map("blue_picks")
+  redPicks  String[] @default([]) @map("red_picks")
+  blueBans  String[] @default([]) @map("blue_bans")
+  redBans   String[] @default([]) @map("red_bans")
+
+  @@id([scrimId, draftRoomId])
 }
 
 enum Status {

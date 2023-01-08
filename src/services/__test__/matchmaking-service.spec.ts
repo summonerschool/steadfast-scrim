@@ -8,7 +8,7 @@ describe('MatchmakingService', () => {
     const matchups = matchmakingService.startMatchmaking(twoOfEach, []);
     const matchup = matchups[0];
     expect(matchup.eloDifference).toEqual(37);
-    const players = matchmakingService.matchupToPlayers(matchup, twoOfEach);
+    const players = matchmakingService.matchupToPlayers(matchup, []);
     const ids = players.map((p) => p.userId);
     // No duplicate users
     expect(ids.length).toEqual(new Set(ids).size);
@@ -17,7 +17,7 @@ describe('MatchmakingService', () => {
     const matchups = matchmakingService.startMatchmaking(notTwoOfEach, []);
     const matchup = matchups[0];
     expect(matchup.eloDifference).toEqual(19);
-    const players = matchmakingService.matchupToPlayers(matchup, notTwoOfEach);
+    const players = matchmakingService.matchupToPlayers(matchup, []);
     const ids = players.map((p) => p.userId);
     // No duplicate users
     expect(ids.length).toEqual(new Set(ids).size);

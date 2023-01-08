@@ -76,19 +76,6 @@ export const initScrimService = (
       const matchup = rolePrio.eloDifference < 500 ? rolePrio : eloPrio;
 
       const voiceChannels = await discordService.createVoiceChannels(guildID, teamNames);
-      const [blue, red] = chance.shuffle([matchup.team1, matchup.team2]);
-      const userToPlayer = (user: User, i: number): Omit<Prisma.PlayerCreateManyInput, 'scrimId'> => {
-        const role = Role[ROLE_ORDER_TO_ROLE[i]];
-        return {
-          userId: user.id,
-          side: Side.BLUE,
-          role,
-          pregameElo: user.elo,
-          isOffRole: user.secondary === role,
-          isAutoFill: fillers.includes(user.id)
-        };
-      };
-      const createManyPlayers = [...blue.map(userToPlayer), ...red.map(userToPlayer)];
 
       const [{ players, ...scrim }, inviteBlue, inviteRed] = await Promise.all([
         prisma.scrim.create({
@@ -97,7 +84,7 @@ export const initScrimService = (
             region,
             players: {
               createMany: {
-                data: createManyPlayers,
+                data: matchmakingService.matchupToPlayers(matchup, fillers),
                 skipDuplicates: true
               }
             },
@@ -169,7 +156,7 @@ export const initScrimService = (
       });
       const res = await prisma.$transaction(updatedUsers);
       const draft = await prisma.draft.findUnique({
-        where: { id: scrim.id }
+        where: { scrimId: scrim.id }
       });
       if (draft) {
         // Store the draft
@@ -191,7 +178,10 @@ export const initScrimService = (
             }
           };
         });
-        await prisma.draft.update({ where: { id: draft.id }, data: { blueBans, bluePicks, redBans, redPicks } });
+        await prisma.draft.update({
+          where: { scrimId_draftRoomId: { scrimId: scrim.id, draftRoomId: draft.draftRoomId } },
+          data: { blueBans, bluePicks, redBans, redPicks }
+        });
       }
       console.info(text);
       return res.length > 0;
@@ -216,7 +206,6 @@ export const initScrimService = (
             const data = JSON.parse(msg.data.toString());
             if (data.type === 'roomcreated') {
               const room: RoomCreatedResult = data;
-              console.log({ room });
               ws.close();
 
               const DRAFTLOL_URL = `https://draftlol.dawe.gg/${room.roomId}`;
@@ -251,12 +240,12 @@ export const initScrimService = (
     sendMatchDetails: async (scrim, players, users, lobbyDetails) => {
       const { teamNames, voiceInvite } = lobbyDetails;
       const teams = sortUsersByTeam(users, players);
+      console.log(teams);
       const promises = await Promise.all([
         service.createDraftLobby(teamNames),
         service.generateScoutingLink(teams.BLUE, scrim.region),
         service.generateScoutingLink(teams.RED, scrim.region)
       ]);
-      console.log(teams);
 
       const [draftURLs, opggBlue, opggRed] = promises;
       const password = chance.integer({ min: 1000, max: 9999 });
