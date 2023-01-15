@@ -9,7 +9,6 @@ import {
   Routes
 } from 'discord.js';
 import { readdirSync } from 'fs';
-import path from 'path';
 import { env } from '../env';
 import { SlashCommand } from '../types';
 
@@ -65,18 +64,17 @@ export class ApplicationClient extends Client {
 
     super.once(Events.ClientReady, async (c) => {
       await this.resolveModules();
-      if (process.env.NODE_ENV === 'PRODUCTION') {
-        await this.migrate();
-      }
+      await this.migrate();
+
       console.log(`Ready! Logged in as ${c.user.tag}`);
     });
   }
 
   private async resolveModules() {
-    const commandsDir = path.join(__dirname, '../commands');
+    const dir = new URL('../commands', import.meta.url);
     await Promise.all(
-      readdirSync(commandsDir).map(async (file) => {
-        const command: SlashCommand = (await import(`${commandsDir}/${file}`)).default;
+      readdirSync(dir).map(async (file) => {
+        const command: SlashCommand = (await import(`${dir}/${file}`)).default;
         if (command.command) {
           const name = command.command.name;
           this.slashCommands.set(name, command);
@@ -96,51 +94,18 @@ export class ApplicationClient extends Client {
     await this.application?.commands.set([]);
     await this.guilds.cache.get(guildId!)?.commands.set([]);
     const rest = new REST({ version: '10' }).setToken(env.DISCORD_BOT_TOKEN);
-    // if (guildId) {
-    //   await rest.put(Routes.applicationGuildCommands(clientId, guildId), {
-    //     body: commands.map((cmd) => cmd.command.toJSON())
-    //   });
-    // }
-    const res = (await rest.put(Routes.applicationCommands(clientId), {
-      body: commands.map((cmd) => cmd.command.toJSON())
-    })) as RESTPutAPIApplicationCommandsResult;
 
-    if (!this.admins.length) {
-      return;
+    let res;
+    if (process.env.NODE_ENV === 'development' && guildId) {
+      res = (await rest.put(Routes.applicationGuildCommands(clientId, guildId), {
+        body: commands.map((cmd) => cmd.command.toJSON())
+      })) as RESTPutAPIApplicationCommandsResult;
+      console.log(res);
+    } else {
+      res = (await rest.put(Routes.applicationCommands(clientId), {
+        body: commands.map((cmd) => cmd.command.toJSON())
+      })) as RESTPutAPIApplicationCommandsResult;
     }
-    const { data } = await axios.post(
-      'https://discord.com/api/oauth2/token',
-      new URLSearchParams({
-        grant_type: 'client_credentials',
-        scope: 'applications.commands.permissions.update',
-        client_id: clientId,
-        client_secret: env.DISCORD_CLIENT_SECRET
-      }),
-      {
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded'
-        }
-      }
-    );
-    const token = data.access_token;
-    const guild = await this.guilds.fetch(guildId!);
-    await Promise.all(
-      res
-        .filter((cmd) => this.slashCommands.get(cmd.name)?.onlyAdmin)
-        .map(async (cmd) => {
-          await guild.commands.permissions.set({
-            command: cmd.id,
-            permissions: this.admins.map((id) => ({
-              id,
-              type: 2,
-              permission: true
-            })),
-            token
-          });
-          console.log(`${cmd.name} has been set as an admin command`);
-        })
-    );
-
     console.log(`Migrated ${res.length} commands`);
   }
 }
