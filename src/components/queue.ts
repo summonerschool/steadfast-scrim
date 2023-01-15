@@ -1,5 +1,5 @@
-import { EmbedBuilder } from '@discordjs/builders';
-import { Region, Role, User } from '../entities/user';
+import { Region, Role, User } from '@prisma/client';
+import { EmbedBuilder } from 'discord.js';
 import { capitalize, POSITION_EMOJI_TRANSLATION } from '../utils/utils';
 
 type QueueCommand = 'show' | 'leave' | 'join';

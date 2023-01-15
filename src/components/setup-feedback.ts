@@ -1,5 +1,5 @@
-import { EmbedBuilder } from '@discordjs/builders';
-import { User } from '../entities/user';
+import { User } from '@prisma/client';
+import { EmbedBuilder } from 'discord.js';
 import { POSITION_EMOJI_TRANSLATION, RANK_IMAGE_TRANSLATION } from '../utils/utils';
 
 export const ProfileEmbed = (user: User) => {
@@ -41,11 +41,6 @@ export const ProfileEmbed = (user: User) => {
         value: `${user.elo}`,
         inline: true
       }
-      // {
-      //   name: `OP.GG`,
-      //   value: `[OP.GG](https://op.gg/summoners/${this.server}/${encodeURI(this.ign)})`,
-      //   inline: true
-      // }
     ]
   });
 };

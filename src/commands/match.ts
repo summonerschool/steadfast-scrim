@@ -1,76 +1,74 @@
-import {
-  SlashCommand,
-  CommandOptionType,
-  CommandContext,
-  SlashCreator,
-  AutocompleteContext,
-  AutocompleteChoice
-} from 'slash-create';
-import { discordService, scrimService } from '../services';
+import { SlashCommandBuilder } from 'discord.js';
+import { discordService, scrimService } from '..';
+import { env } from '../env';
+import { retrieveOptions } from '../helpers/retrieveOptions';
+import { MatchCommandInputSchema } from '../schemas/user';
+import { SlashCommand } from '../types';
 import { capitalize } from '../utils/utils';
 
-class MatchCommand extends SlashCommand {
-  constructor(creator: SlashCreator) {
-    super(creator, {
-      name: 'match',
-      description: 'Says hello to you.',
-      options: [
-        {
-          type: CommandOptionType.INTEGER,
-          name: 'match_id',
-          description: 'The current match number',
-          required: true,
-          autocomplete: true
-        },
-        {
-          type: CommandOptionType.STRING,
-          name: 'status',
-          description: 'Report if your team won or loss.',
-          required: true,
-          choices: [
-            { name: 'win', value: 'WIN' },
-            { name: 'loss', value: 'LOSS' },
-            { name: 'remake', value: 'REMAKE' }
-          ]
-        }
-      ]
-    });
-
-    this.filePath = __filename;
-  }
-
-  async run(ctx: CommandContext) {
-    const { match_id, status } = ctx.options;
-    const scrim = await scrimService.findScrim(match_id);
-    const player = scrim.players.find((p) => p.userID === ctx.user.id);
-    if (!player) {
-      return { content: `You did not play in match #${match_id}❌`, ephemeral: true };
+const match: SlashCommand = {
+  command: new SlashCommandBuilder()
+    .setName('match')
+    .addIntegerOption((opt) =>
+      opt.setName('id').setDescription('The id of the game played').setRequired(true).setAutocomplete(true)
+    )
+    .addStringOption((opt) =>
+      opt
+        .setName('status')
+        .setDescription('The result of the match')
+        .setRequired(true)
+        .setChoices({ name: 'win', value: 'WIN' }, { name: 'loss', value: 'LOSS' }, { name: 'remake', value: 'REMAKE' })
+    )
+    .setDescription('Reports the status of a match'),
+  execute: async (interaction) => {
+    const options = retrieveOptions(interaction.options.data, MatchCommandInputSchema);
+    const { id, status } = options;
+    const guildId = interaction.guildId;
+    if (!guildId) {
+      return { content: 'Could not retrieve the discord server id' };
     }
-    if (scrim.status === 'COMPLETED') {
+    const scrim = await scrimService.findScrim(id);
+    const player = await scrimService.getPlayer(interaction.user.id, id);
+    if (!player) {
+      return { content: `You did not play in match #${id}❌`, ephemeral: true };
+    }
+    const alreadyReported = scrim.status === 'COMPLETED';
+    if (alreadyReported) {
       return { content: `Match has already been reported`, ephemeral: true };
     }
+    await interaction.deferReply();
     if (status === 'REMAKE') {
-      // TODO REMAKE LOGIC
       const res = await scrimService.remakeScrim(scrim);
-      await discordService.deleteVoiceChannels(ctx.guildID!!, scrim.voiceIDs);
-      return res
-        ? `Match #${match_id} has been reported as a remake`
-        : 'Could not remake match. Please contact a moderator';
+      await discordService.deleteVoiceChannels(guildId, scrim.voiceIds);
+      return {
+        content: res
+          ? `Match #${id} has been reported as a remake`
+          : 'Could not remake match. Please contact a moderator'
+      };
     }
-    const enemy = player.side == 'BLUE' ? 'RED' : 'BLUE';
-    const winner = status == 'WIN' ? player.side : enemy;
+    const winner = status === 'WIN' ? player.side : player.side === 'BLUE' ? 'RED' : 'BLUE';
     const success = await scrimService.reportWinner(scrim, winner);
     if (!success) {
-      return 'Oops! Could not set winner of match';
+      return { content: 'Oops! Could not set winner of match' };
     }
-    await discordService.deleteVoiceChannels(ctx.guildID!!, scrim.voiceIDs);
-    return `${capitalize(winner)} has been registered as the winner ✅`;
+    const teamNames = await discordService.deleteVoiceChannels(guildId, scrim.voiceIds);
+    let postmatchDiscussionID: string | null = null;
+    if (teamNames) {
+      postmatchDiscussionID = await discordService.createPostDiscussionThread(id, winner, teamNames);
+    }
+    return {
+      content: `${capitalize(winner)} has been registered as the winner ✅.\n${
+        postmatchDiscussionID
+          ? `Discussion thread: https://discord.com/channels/${env.DISCORD_DEVELOPMENT_GUILD_ID}/${postmatchDiscussionID}`
+          : ''
+      }`
+    };
+  },
+  autocomplete: async (interaction) => {
+    const availableScrims = await scrimService.getIncompleteScrims(interaction.user.id);
+    const choices = availableScrims.map((scrim) => ({ name: `#${scrim.id}`, value: scrim.id }));
+    await interaction.respond(choices);
   }
+};
 
-  async autocomplete(ctx: AutocompleteContext): Promise<AutocompleteChoice[]> {
-    const availableScrims = await scrimService.getIncompleteScrims(ctx.user.id);
-    return availableScrims.map((scrim) => ({ name: `#${scrim.id}`, value: scrim.id }));
-  }
-}
-
-export default MatchCommand;
+export default match;

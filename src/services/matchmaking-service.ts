@@ -1,36 +1,51 @@
-import { Matchup, Pool, Team } from '../entities/matchmaking';
-import { GameSide, Player } from '../entities/scrim';
-import { Role, roleEnum, ROLE_ORDER, User } from '../entities/user';
+import { User, Side, Role, Prisma } from '@prisma/client';
 import { NoMatchupPossibleError } from '../errors/errors';
 import { chance } from '../lib/chance';
+import { Matchup, Pool, ROLE_ORDER, ROLE_ORDER_TO_ROLE, Team } from '../models/matchmaking';
 
 export interface MatchmakingService {
-  startMatchmaking: (users: User[], prioritizeElo?: boolean) => [Matchup, Matchup];
-  matchupToPlayers: (matchup: Matchup, users: User[], randomSide?: boolean) => Player[];
-  attemptFill: (users: User[]) => User[];
+  startMatchmaking: (users: User[], fillers?: string[]) => [Matchup, Matchup];
+  matchupToPlayers: (matchup: Matchup, fillers: string[]) => Omit<Prisma.PlayerCreateManyInput, 'scrimId'>[];
+  attemptFill: (users: User[], queuedFill?: string[]) => { users: User[]; fillers: string[] };
 }
 
+// Generate a pool
+// Calculate the possible teams
+// Find the best matchup
 export const initMatchmakingService = () => {
   const service: MatchmakingService = {
-    startMatchmaking: (users, prioritizeElo = false) => {
-      const playerPool = calculatePlayerPool(users);
+    startMatchmaking: (users, fillers = []) => {
+      const playerPool = calculatePlayerPool(users, fillers);
       const combinations = generateAllPossibleTeams(playerPool);
       // team vs team with elo difference. The players are sorted by their ID within the team
-      const res = findBestMatchup(combinations, users, prioritizeElo);
+      const res = findBestMatchup(combinations, users);
       if (!res.valid) {
         throw new NoMatchupPossibleError('No matchups possible with the chosen roles.');
       }
       return [res.matchupByOffrole, res.matchupByElo];
     },
-    matchupToPlayers: (matchup, users, randomSide = true) => {
+    matchupToPlayers: (matchup, fillers) => {
       const { team1, team2 } = matchup;
       // // Randomly assign ingame side to the teams
-      const teams = randomSide ? chance.shuffle([team1, team2]) : [team1, team2];
-      const blueTeam = teamToPlayers(teams[0], 'BLUE', users);
-      const redTeam = teamToPlayers(teams[1], 'RED', users);
-      return [...blueTeam, ...redTeam];
+      const teams = chance.shuffle([team1, team2]);
+      const userToPlayer =
+        (side: Side) =>
+        (user: User, i: number): Omit<Prisma.PlayerCreateManyInput, 'scrimId'> => {
+          const role = Role[ROLE_ORDER_TO_ROLE[i]];
+          return {
+            userId: user.id,
+            side: side,
+            role,
+            pregameElo: user.elo,
+            isOffRole: user.secondary === role,
+            isAutoFill: fillers.includes(user.id)
+          };
+        };
+
+      return [...teams[0].map(userToPlayer('BLUE')), ...teams[1].map(userToPlayer('RED'))];
     },
-    attemptFill: (queuers) => {
+    attemptFill: (queuers, queuedFill) => {
+      const fillers = queuedFill || [];
       const ROLE_COUNT = 10;
       const PLAYER_COUNT = 10;
       // Randomize, but let autofill protected people come first
@@ -62,7 +77,7 @@ export const initMatchmakingService = () => {
       }
       console.info({ result, matchRoles });
       if (result === PLAYER_COUNT) {
-        return users;
+        return { users, fillers };
       }
 
       const seen = [...new Array(PLAYER_COUNT)].map(() => false);
@@ -74,21 +89,14 @@ export const initMatchmakingService = () => {
           const uIndex = seen.findIndex((val) => val == false);
           matchRoles[i] = uIndex;
           seen[uIndex] = true;
-          users[uIndex] = { ...users[uIndex], secondary: ROLE_ORDER[i < 5 ? i : i - 5] as Role, isFill: true };
+          console.log(`User(${users[uIndex].leagueIGN}) has been autofilled`);
+          fillers.push(users[uIndex].id);
         }
       }
-      return users;
+      return { users, fillers };
     }
   };
   return service;
-};
-
-const teamToPlayers = (team: Team, side: GameSide, users: User[]) => {
-  const players: Player[] = team.map((player, i) => {
-    const user: User = users.find((u) => u.id == player.id)!!;
-    return { userID: user.id, role: ROLE_ORDER[i] as Role, side: side, pregameElo: user.elo };
-  });
-  return players;
 };
 
 // Probably needs adjustments
@@ -105,18 +113,31 @@ export const OFFROLE_PENALTY: { [key in User['rank']]: number } = {
 };
 
 // Puts every user into a pool based on role.
-export const calculatePlayerPool = (users: User[]) => {
+export const calculatePlayerPool = (users: User[], fillers: string[]) => {
   const talentPool: Pool = [[], [], [], [], []];
   for (const user of users) {
     talentPool[ROLE_ORDER[user.main]].push(user);
   }
+  console.log(talentPool.map((p) => p.map((u) => u.leagueIGN)));
   if (talentPool.some((rp) => rp.length < 2)) {
     for (const user of users) {
-      const index = ROLE_ORDER[user.secondary];
       const elo = user.elo - OFFROLE_PENALTY[user.rank];
-      talentPool[index].push({ ...user, elo });
+      if (fillers.includes(user.id)) {
+        talentPool.forEach((p) => {
+          if (!p.some((u) => u.id === user.id)) {
+            p.push({ ...user, elo });
+          }
+        });
+      } else {
+        const index = ROLE_ORDER[user.secondary];
+        const pool = talentPool[index];
+        if (!pool.some((u) => u.id === user.id)) {
+          pool.push({ ...user, elo });
+        }
+      }
     }
   }
+  console.log(talentPool.map((p) => p.map((u) => u.leagueIGN)));
   return talentPool;
 };
 
@@ -126,7 +147,7 @@ export const generateAllPossibleTeams = (pool: User[][]) => {
   // generates every team combination, very inefficent
   const combine = (lists: User[][], acum: User[]) => {
     const last = lists.length === 1;
-    for (let i in lists[0]) {
+    for (const i in lists[0]) {
       const next = lists[0][i];
       const item = [...acum, next];
       const users = item.map((u) => u.id);
@@ -141,8 +162,7 @@ export const generateAllPossibleTeams = (pool: User[][]) => {
 
 export const findBestMatchup = (
   combinations: Team[],
-  users: User[],
-  prioritizeElo?: boolean
+  users: User[]
 ): { valid: true; matchupByElo: Matchup; matchupByOffrole: Matchup } | { valid: false } => {
   let bestMatchupByOffroleCount: Matchup | undefined = undefined;
   let bestMatchupByEloDiff: Matchup | undefined = undefined;
@@ -185,10 +205,11 @@ export const findBestMatchup = (
   if (!bestMatchupByOffroleCount || !bestMatchupByEloDiff) {
     return { valid: false };
   }
-  console.info({
-    offroleCountMatchup: matchupToString(bestMatchupByOffroleCount),
-    elodiffMatchup: matchupToString(bestMatchupByEloDiff)
-  });
+  console.info(
+    `Matchup by offrole: ${matchupToString(bestMatchupByOffroleCount)}\nMatchup by elo: ${matchupToString(
+      bestMatchupByEloDiff
+    )}`
+  );
 
   return { valid: true, matchupByOffrole: bestMatchupByOffroleCount, matchupByElo: bestMatchupByEloDiff };
 };

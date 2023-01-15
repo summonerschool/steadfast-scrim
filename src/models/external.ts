@@ -7,6 +7,7 @@ export interface ProdraftResponse {
 }
 
 export interface DraftURLs {
+  roomId: string;
   RED: string;
   BLUE: string;
   SPECTATOR: string;

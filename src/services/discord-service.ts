@@ -1,26 +1,21 @@
-import Discord, { ChannelType, VoiceChannel } from 'discord.js';
-import { discordService } from '.';
+import Discord, { ChannelType, MessageCreateOptions, VoiceChannel } from 'discord.js';
+import { env } from '../env';
+import { GameSide } from '../models/matchmaking';
 
 export interface DiscordService {
-  sendMatchDirectMessage: (userIDs: string[], message: Discord.MessageOptions) => Promise<number>;
+  sendMatchDirectMessage: (userIDs: string[], message: MessageCreateOptions) => Promise<number>;
   createVoiceChannels: (guildID: string, teamNames: [string, string]) => Promise<[VoiceChannel, VoiceChannel]>;
-  deleteVoiceChannels: (guildID: string, ids: string[]) => Promise<boolean>;
+  deleteVoiceChannels: (guildID: string, ids: string[]) => Promise<[string, string] | null>;
   sendMessageInChannel: (msg: string) => void;
+  createPostDiscussionThread: (matchId: number, winner: GameSide, teamNames: [string, string]) => Promise<string>;
 }
 
 export const activeVoiceIDs = new Map<string, string[]>();
 
-process.on('exit', async () => {
-  const promises: Promise<boolean>[] = [];
-  for (const [guildID, voiceIDs] of activeVoiceIDs) {
-    promises.push(discordService.deleteVoiceChannels(guildID, voiceIDs));
-  }
-  await Promise.all(promises);
-});
-
 export const initDiscordService = (discordClient: Discord.Client) => {
-  const voiceCategoryID = process.env.VOICE_CATEGORY_ID || '';
-  const commandChannelID = process.env.COMMAND_CHANNEL_ID || '';
+  const voiceCategoryID = env.DISCORD_VOICE_CATEGORY_ID;
+  const commandChannelID = env.DISCORD_COMMAND_CHANNEL_ID;
+  const feedbackChannelID = env.DISCORD_DISCUSSION_CHANNEL_ID;
 
   const service: DiscordService = {
     createVoiceChannels: async (guildID, teamNames) => {
@@ -53,7 +48,7 @@ export const initDiscordService = (discordClient: Discord.Client) => {
       const guild = await discordClient.guilds.fetch({ guild: guildID });
       const current = activeVoiceIDs.get(guildID) || [];
       if (!current.some((id) => ids.includes(id))) {
-        return false;
+        return null;
       }
       const channels = await Promise.all(ids.map((id) => guild.channels.fetch(id)));
 
@@ -65,8 +60,8 @@ export const initDiscordService = (discordClient: Discord.Client) => {
         guildID,
         current.filter((id) => !deletedIDs.includes(id))
       );
-      console.log({ activeVoiceIDs, deleted });
-      return true;
+      console.log({ activeVoiceIDs });
+      return [deleted[0].name, deleted[1].name];
     },
     sendMessageInChannel: async (msg) => {
       let channel = discordClient.channels.cache.get(commandChannelID);
@@ -74,11 +69,30 @@ export const initDiscordService = (discordClient: Discord.Client) => {
         const res = await discordClient.channels.fetch(commandChannelID);
         if (res) channel = res;
         else {
-          throw new Error("Could not send message")
+          throw new Error('Could not send message');
         }
       }
-      const commandChannel = channel as Discord.TextChannel
-      await commandChannel.send(msg)
+      const commandChannel = channel as Discord.TextChannel;
+      await commandChannel.send(msg);
+    },
+    createPostDiscussionThread: async (matchId, winner, teamNames) => {
+      let channel = discordClient.channels.cache.get(feedbackChannelID);
+      if (!channel) {
+        const res = await discordClient.channels.fetch(feedbackChannelID);
+        if (res) channel = res;
+        else {
+          throw new Error('Could not send message');
+        }
+      }
+      const forum = channel as Discord.ForumChannel;
+      const [blue, red] = teamNames;
+      const res = await forum.threads.create({
+        name: `Match #${matchId}: ${blue} vs ${red}`,
+        autoArchiveDuration: 1440,
+        reason: `Feedback channel for match #${matchId}`,
+        message: { content: `${winner === 'BLUE' ? blue : red} won the game.\nRemember to keep it civilized.` }
+      });
+      return res.id;
     }
   };
   return service;

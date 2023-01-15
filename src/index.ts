@@ -1,35 +1,29 @@
+import { PrismaClient } from '@prisma/client';
 import dotenv from 'dotenv';
-import path from 'path';
-import { FastifyServer, SlashCreator } from 'slash-create';
-import Discord, { GatewayIntentBits } from 'discord.js';
-import CatLoggr from 'cat-loggr/ts';
-import './services';
+import { env } from './env';
+import { ApplicationClient } from './lib/client';
+import { initDiscordService } from './services/discord-service';
+import { initMatchmakingService } from './services/matchmaking-service';
+import { initQueueService } from './services/queue-service';
+import { initScrimService } from './services/scrim-service';
+import { initUserService } from './services/user-service';
 
-let dotenvPath = path.join(process.cwd(), '.env');
-if (path.parse(process.cwd()).name === 'dist') dotenvPath = path.join(process.cwd(), '..', '.env');
+dotenv.config();
 
-dotenv.config({ path: dotenvPath });
+const admins = [
+  '183908254210981888', // kharann,
+  '164357764020305920' // Tikka
+];
 
-const logger = new CatLoggr().setLevel(process.env.COMMANDS_DEBUG === 'true' ? 'debug' : 'info');
-const creator = new SlashCreator({
-  applicationID: process.env.DISCORD_APP_ID!!,
-  publicKey: process.env.DISCORD_PUBLIC_KEY,
-  token: process.env.DISCORD_BOT_TOKEN,
-  serverPort: parseInt(process.env.PORT!!, 10) || 8020,
-  serverHost: '0.0.0.0'
-});
+export const client = new ApplicationClient(admins);
 
-creator.on('debug', (message) => logger.log(message));
-creator.on('warn', (message) => logger.warn(message));
-creator.on('error', (error) => logger.error(error));
-creator.on('synced', () => logger.info('Commands synced!'));
-creator.on('commandRun', (command, _, ctx) => {
-  logger.info(`${ctx.user.username}#${ctx.user.discriminator} (${ctx.user.id}) ran command ${command.commandName}`);
-});
-creator.on('commandRegister', (command) => logger.info(`Registered command ${command.commandName}`));
-creator.on('commandError', (command, error) => logger.error(`Command ${command.commandName}:`, error));
+client.login(env.DISCORD_BOT_TOKEN);
 
-const server = creator.withServer(new FastifyServer()).registerCommandsIn(path.join(__dirname, 'commands'), ['.ts']);
-server.startServer().then(() => {});
+const prisma = new PrismaClient();
 
-console.log(`Starting server at "localhost:${creator.options.serverPort}/interactions"`);
+// Services
+export const userService = initUserService(prisma);
+const matchmakingService = initMatchmakingService();
+export const discordService = initDiscordService(client);
+export const scrimService = initScrimService(prisma, matchmakingService, discordService);
+export const queueService = initQueueService(scrimService, discordService);

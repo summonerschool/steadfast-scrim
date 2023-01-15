@@ -1,48 +1,39 @@
-import { User, userSchema } from '../entities/user';
 import { NotFoundError } from '../errors/errors';
-import { UserRepository } from './repo/user-repository';
-import dotenv from 'dotenv';
-import { WhatIsMyMMRResponse } from '../entities/external';
+import { WhatIsMyMMRResponse } from '../models/external';
 import axios from 'axios';
 import { ELO_TRANSLATION } from '../utils/utils';
-dotenv.config();
+import { SetupInput } from '../schemas/user';
+import { PrismaClient, User } from '@prisma/client';
 
 export interface UserService {
-  setUserProfile: (
-    id: string,
-    leagueIGN: string,
-    rank: string,
-    server: string,
-    main: string,
-    secondary: string,
-    elo?: number,
-    external_elo?: number
-  ) => Promise<User>;
-  setUserElo: (id: string, elo: number, external_elo?: number | undefined) => Promise<User>;
+  setUserProfile: (id: string, input: SetupInput, elo: number) => Promise<User>;
+  updateElo: (id: string, elo?: number, externalElo?: number) => Promise<User>;
   getUserProfile: (id: string) => Promise<User>;
   fetchMyMMR: (server: string, leagueIGN: string) => Promise<{ elo: number; rank: string | null }>;
   getUsers: (ids: string[]) => Promise<User[]>;
 }
 
-export const initUserService = (userRepo: UserRepository): UserService => {
+export const initUserService = (prisma: PrismaClient): UserService => {
   const service: UserService = {
-    setUserProfile: async (id, leagueIGN, rank, region, main, secondary, elo?: number, external_elo?: number) => {
-      const data = { id, leagueIGN, rank, region, main, secondary, elo, external_elo };
-      const user = userSchema.parse(data);
-      return userRepo.upsertUser(user);
+    setUserProfile: async (id, input, elo) => {
+      const { ign, ...user } = input;
+      const res = await prisma.user.upsert({
+        where: { id: id },
+        create: { id, elo, externalElo: elo, leagueIGN: ign, ...user },
+        update: { leagueIGN: input.ign, ...user }
+      });
+      return res;
     },
-    setUserElo: async (id, elo, external_elo) => {
-      const data = { id, elo, external_elo };
-
-      if (!external_elo) {
-        delete data.external_elo;
-      }
-
-      const user = userSchema.parse(data);
-      return userRepo.upsertUser(user);
+    updateElo: async (id, elo, externalElo) => {
+      if (!elo && !externalElo) throw new Error('You must provide at least one type of elo');
+      const user = await prisma.user.update({
+        where: { id },
+        data: { elo, externalElo: externalElo }
+      });
+      return user;
     },
     getUserProfile: async (id) => {
-      const user = await userRepo.getUserByID(id);
+      const user = await prisma.user.findUnique({ where: { id } });
       if (!user) throw new NotFoundError(`User(<@${id}>) does not have a profile. Please use /setup`);
       return user;
     },
@@ -57,7 +48,7 @@ export const initUserService = (userRepo: UserRepository): UserService => {
       const mymmr = res.data;
 
       const rank = mymmr.ranked.closestRank.split(' ')[0].toUpperCase();
-      const elo = mymmr.ranked.avg || ELO_TRANSLATION[rank]; // TODO: set some defaults ???
+      const elo = mymmr.ranked.avg || ELO_TRANSLATION[rank];
 
       return {
         rank: rank,
@@ -65,7 +56,7 @@ export const initUserService = (userRepo: UserRepository): UserService => {
       };
     },
     getUsers: async (ids) => {
-      return userRepo.getUsers({ id: { in: ids } });
+      return await prisma.user.findMany({ where: { id: { in: ids } } });
     }
   };
   return service;

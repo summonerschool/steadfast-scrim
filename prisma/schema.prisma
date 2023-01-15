@@ -11,19 +11,20 @@ datasource db {
 }
 
 model User {
-  id                 String   @id
-  league_ign         String   @unique
-  region             Region
-  rank               Rank
-  main               Role
-  secondary          Role
-  wins               Int      @default(0)
-  losses             Int      @default(0)
-  elo                Int      @default(0)
-  external_elo       Int      @default(0)
-  autofill_protected Boolean  @default(false)
-  registered_at      DateTime @default(now())
-  player             Player[]
+  id                String        @id
+  leagueIGN         String        @unique @map("league_ign")
+  region            Region
+  rank              Rank
+  main              Role
+  secondary         Role
+  wins              Int           @default(0)
+  losses            Int           @default(0)
+  elo               Int           @default(0)
+  externalElo       Int           @default(0) @map("external_elo")
+  autofillProtected Boolean       @default(false) @map("autofill_protected")
+  registeredAt      DateTime      @default(now()) @map("registered_at")
+  player            Player[]
+  seasonStats       SeasonStats[]
 }
 
 enum Side {
@@ -32,25 +33,58 @@ enum Side {
 }
 
 model Player {
-  user       User   @relation(fields: [user_id], references: [id])
-  scrim      Scrim  @relation(fields: [scrim_id], references: [id])
-  user_id    String
-  scrim_id   Int
-  role       Role
-  side       Side
-  pregameElo Int    @default(0) @map("pre_game_elo")
+  user    User   @relation(fields: [userId], references: [id])
+  scrim   Scrim  @relation(fields: [scrimId], references: [id], onDelete: Cascade)
+  userId  String @map("user_id")
+  scrimId Int    @map("scrim_id")
+  role    Role
+  side    Side
 
-  @@id([user_id, scrim_id])
+  pregameElo Int     @default(0) @map("pre_game_elo")
+  isOffRole  Boolean @default(false) @map("is_off_role")
+  isAutoFill Boolean @default(false) @map("is_auto_fill")
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@id([userId, scrimId])
 }
 
 model Scrim {
   id        Int      @id @default(sequence())
   status    Status   @default(STARTED)
-  voice_ids String[]
+  voiceIds  String[] @map("voice_ids")
   players   Player[]
   guildID   String
   region    Region
   winner    Side?
+  createdAt DateTime @default(now()) @map("created_at")
+  Draft     Draft?
+  season    Int      @default(0)
+}
+
+model SeasonStats {
+  user   User   @relation(fields: [userId], references: [id])
+  userId String @unique @map("user_id")
+  season Int
+
+  wins   Int
+  losses Int
+  elo    Int
+
+  @@id([userId, season])
+}
+
+model Draft {
+  scrim       Scrim  @relation(fields: [scrimId], references: [id], onDelete: Cascade)
+  scrimId     Int    @unique @map("scrim_id")
+  draftRoomId String @map("draft_room_id")
+
+  bluePicks String[] @default([]) @map("blue_picks")
+  redPicks  String[] @default([]) @map("red_picks")
+  blueBans  String[] @default([]) @map("blue_bans")
+  redBans   String[] @default([]) @map("red_bans")
+
+  @@id([scrimId, draftRoomId])
 }
 
 enum Status {
