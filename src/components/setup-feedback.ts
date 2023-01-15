@@ -14,7 +14,7 @@ export const ProfileEmbed = (user: User) => {
     description: `<@${user.id}>`,
     color: 0x000,
     thumbnail: {
-      url: `${RANK_IMAGE_TRANSLATION[user.rank]}`
+      url: `${RANK_IMAGE_TRANSLATION[estimatedRank]}`
     },
     fields: [
       {
