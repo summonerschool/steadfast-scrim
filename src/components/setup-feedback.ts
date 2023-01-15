@@ -1,12 +1,13 @@
 import { User } from '@prisma/client';
 import { EmbedBuilder } from 'discord.js';
-import { POSITION_EMOJI_TRANSLATION, RANK_IMAGE_TRANSLATION } from '../utils/utils';
+import { ELO_TRANSLATION, getEstimatedRank, POSITION_EMOJI_TRANSLATION, RANK_IMAGE_TRANSLATION } from '../utils/utils';
 
 export const ProfileEmbed = (user: User) => {
   const roles_to_image = [user.main, user.secondary].map((x) => {
     // return `![${x}](${POSITION_IMAGE_TRANSLATION[x]})`;
     return `${POSITION_EMOJI_TRANSLATION[x]}`;
   });
+  const estimatedRank = getEstimatedRank(user.elo);
 
   return new EmbedBuilder({
     title: `Scrim Player Setup`,
@@ -27,7 +28,7 @@ export const ProfileEmbed = (user: User) => {
         inline: true
       },
       {
-        name: `Rank`,
+        name: `SoloQ Rank`,
         value: `${user.rank}`,
         inline: true
       },
@@ -39,6 +40,11 @@ export const ProfileEmbed = (user: User) => {
       {
         name: `Estimated Elo`,
         value: `${user.elo}`,
+        inline: true
+      },
+      {
+        name: `Estimated Rank`,
+        value: estimatedRank,
         inline: true
       }
     ]

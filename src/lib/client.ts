@@ -64,7 +64,9 @@ export class ApplicationClient extends Client {
 
     super.once(Events.ClientReady, async (c) => {
       await this.resolveModules();
-      await this.migrate();
+      if (process.env.NODE_ENV === 'production') {
+        await this.migrate();
+      }
 
       console.log(`Ready! Logged in as ${c.user.tag}`);
     });

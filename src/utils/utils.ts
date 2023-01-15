@@ -10,6 +10,17 @@ export const ELO_TRANSLATION: { [key: string]: number } = {
   CHALLENGER: 3000
 };
 
+export const getEstimatedRank = (elo: number) => {
+  const ranks = Object.entries(ELO_TRANSLATION);
+  let closestRank = ranks[0][0]; // Starts at Iron
+  for (const [rank, rankElo] of ranks) {
+    if (elo > rankElo) {
+      closestRank = rank;
+    }
+  }
+  return closestRank;
+};
+
 export const RANK_IMAGE_TRANSLATION: { [key: string]: string } = {
   IRON: 'https://static.wikia.nocookie.net/leagueoflegends/images/f/fe/Season_2022_-_Iron.png',
   BRONZE: 'https://static.wikia.nocookie.net/leagueoflegends/images/e/e9/Season_2022_-_Bronze.png',
