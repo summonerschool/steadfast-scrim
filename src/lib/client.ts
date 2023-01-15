@@ -1,4 +1,3 @@
-import axios from 'axios';
 import {
   Client,
   Collection,
@@ -73,7 +72,7 @@ export class ApplicationClient extends Client {
   }
 
   private async resolveModules() {
-    const dir = new URL('../commands', import.meta.url);
+    const dir = new URL('../commands', __dirname);
     await Promise.all(
       readdirSync(dir).map(async (file) => {
         const command: SlashCommand = (await import(`${dir}/${file}`)).default;
