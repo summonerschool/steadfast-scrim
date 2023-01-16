@@ -52,7 +52,6 @@ model Player {
 model Scrim {
   id        Int      @id @default(sequence())
   status    Status   @default(STARTED)
-  voiceIds  String[] @map("voice_ids")
   players   Player[]
   guildID   String
   region    Region

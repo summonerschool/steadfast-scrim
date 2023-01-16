@@ -5,13 +5,19 @@ import { chance } from '../lib/chance';
 import { LobbyDetailsEmbed, MatchDetailsEmbed } from '../components/match-message';
 import type { DraftURLs } from '../models/external';
 import type { DiscordService } from './discord-service';
+import WebSocket from 'ws';
+import type { Redis } from 'ioredis';
 
 export interface MatchDetailService {
   sendMatchDetails(scrim: Scrim, users: User[], players: Player[], lobbyDetails: LobbyDetails): Promise<void>;
   storeDraft(scrimId: number, roomId: string): Promise<Draft>;
 }
 export class MatchDetailServiceImpl implements MatchDetailService {
-  constructor(private readonly prisma: PrismaClient, private readonly discordService: DiscordService) {}
+  constructor(
+    private readonly prisma: PrismaClient,
+    private readonly redis: Redis,
+    private readonly discordService: DiscordService
+  ) {}
 
   public async sendMatchDetails(
     scrim: Scrim,
@@ -21,14 +27,13 @@ export class MatchDetailServiceImpl implements MatchDetailService {
   ): Promise<void> {
     const { BLUE, RED } = this.sortUsersByTeam(users, players);
     const [voiceChannels, draftLobby, blueScoutingLink, redScoutingLink] = await Promise.all([
-      this.discordService.createVoiceChannels(scrim.guildID, lobbyDetails.teamNames),
+      this.discordService.createVoiceChannels(scrim),
       this.createDraftLobby(lobbyDetails.teamNames),
       this.generateScoutingLink(BLUE, scrim.region),
       this.generateScoutingLink(RED, scrim.region)
     ]);
-
+    await this.redis.sadd(`${scrim.guildID}:scrim#${scrim.id}:voiceChannels`, ...voiceChannels.map((vc) => vc.id));
     const password = chance.integer({ min: 1000, max: 9999 });
-
     const matchEmbed = MatchDetailsEmbed(scrim, players, lobbyDetails);
     const blueEmbed = LobbyDetailsEmbed(
       lobbyDetails.teamNames[0],

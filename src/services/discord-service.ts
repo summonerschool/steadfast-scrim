@@ -1,3 +1,4 @@
+import { prisma, Scrim } from '@prisma/client';
 import type { MessageCreateOptions, VoiceChannel } from 'discord.js';
 import type Discord from 'discord.js';
 import { ChannelType } from 'discord.js';
@@ -6,7 +7,7 @@ import type { GameSide } from '../models/matchmaking';
 
 export interface DiscordService {
   sendMatchDirectMessage: (userIDs: string[], message: MessageCreateOptions) => Promise<number>;
-  createVoiceChannels: (guildID: string, teamNames: [string, string]) => Promise<[VoiceChannel, VoiceChannel]>;
+  createVoiceChannels: (scrim: Scrim) => Promise<[VoiceChannel, VoiceChannel]>;
   deleteVoiceChannels: (guildID: string, ids: string[]) => Promise<[string, string] | null>;
   sendMessageInChannel: (message: MessageCreateOptions) => void;
   createPostDiscussionThread: (matchId: number, winner: GameSide, teamNames: [string, string]) => Promise<string>;
@@ -18,19 +19,19 @@ export const initDiscordService = (discordClient: Discord.Client) => {
   const feedbackChannelID = env.DISCORD_DISCUSSION_CHANNEL_ID;
 
   const service: DiscordService = {
-    createVoiceChannels: async (guildID, teamNames) => {
-      const guild = await discordClient.guilds.fetch({ guild: guildID });
+    createVoiceChannels: async (scrim) => {
+      const guild = await discordClient.guilds.fetch({ guild: scrim.guildID });
 
       const channels = await Promise.all([
         guild.channels.create({
           type: ChannelType.GuildVoice,
-          name: teamNames[0],
+          name: scrim.blueTeamName,
           userLimit: 5,
           parent: voiceCategoryID
         }),
         guild.channels.create({
           type: ChannelType.GuildVoice,
-          name: teamNames[1],
+          name: scrim.redTeamName,
           userLimit: 5,
           parent: voiceCategoryID
         })
