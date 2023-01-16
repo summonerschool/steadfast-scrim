@@ -1,19 +1,16 @@
 import { chance } from '../lib/chance';
-import { MatchmakingService, OFFROLE_PENALTY } from './matchmaking-service';
-import { Player, PrismaClient, Region, Scrim, Status, User, Role, Side, Draft, Prisma } from '@prisma/client';
+import type { MatchmakingService } from './matchmaking-service';
+import { OFFROLE_PENALTY } from './matchmaking-service';
+import type { Player, PrismaClient, Region, Scrim, User } from '@prisma/client';
+import { Status } from '@prisma/client';
 import { NotFoundError } from '../errors/errors';
-import { EmbedBuilder } from 'discord.js';
-import { lobbyDetailsEmbed, matchDetailsEmbed } from '../components/match-message';
-import { DiscordService } from './discord-service';
-import WebSocket from 'ws';
 import { adjectives } from '../lib/adjectives';
 import { capitalize } from '../utils/utils';
-import { GameSide, LobbyDetails, ROLE_ORDER, ROLE_ORDER_TO_ROLE, Team } from '../models/matchmaking';
-import { DraftURLs } from '../models/external';
+import type { GameSide, LobbyDetails } from '../models/matchmaking';
 import { env } from '../env';
+import { matchDetailService } from '..';
 
 export interface ScrimService {
-  generateScoutingLink: (users: User[], region: Region) => string;
   createBalancedScrim: (
     guildID: string,
     region: Region,
@@ -22,43 +19,17 @@ export interface ScrimService {
   ) => Promise<{ scrim: Scrim; players: Player[]; lobbyDetails: LobbyDetails }>;
   getUserProfilesInScrim: (scrimID: number, side: GameSide) => Promise<User[]>;
   reportWinner: (scrim: Scrim, winner: GameSide) => Promise<boolean>;
-  createDraftLobby: (teamNames: [string, string]) => Promise<DraftURLs>;
   getIncompleteScrims: (userID: string) => Promise<Scrim[]>;
   findScrim: (scrimID: number) => Promise<Scrim>;
   remakeScrim: (scrim: Scrim) => Promise<boolean>;
-  sendMatchDetails: (
-    scrim: Scrim,
-    players: Player[],
-    users: User[],
-    lobbyDetails: LobbyDetails
-  ) => Promise<EmbedBuilder>;
-  playerIsInMatch: (userId: string) => number | undefined;
   getPlayer: (userId: string, scrimId: number) => Promise<Player | null>;
   revertGame: (id: number) => Promise<boolean>;
 }
 
-interface RoomCreatedResult {
-  type: string;
-  roomId: string;
-  bluePassword: string;
-  redPassword: string;
-  adminPassword: string;
-}
-
-export const initScrimService = (
-  prisma: PrismaClient,
-  matchmakingService: MatchmakingService,
-  discordService: DiscordService
-) => {
+export const initScrimService = (prisma: PrismaClient, matchmakingService: MatchmakingService): ScrimService => {
   const ingame = new Map<string, number>();
   const service: ScrimService = {
     // Generates an opgg link for scouting purposes
-    generateScoutingLink: (users, region) => {
-      const summoners = users.map((user) => encodeURIComponent(user.leagueIGN)).join(',');
-      const server = region.toLocaleLowerCase();
-      const link = `https://u.gg/multisearch?summoners=${summoners}&region=${server}1`;
-      return link;
-    },
     getUserProfilesInScrim: async (scrimID: number, side: GameSide) => {
       const users = await prisma.user.findMany({
         where: { player: { some: { scrimId: scrimID, side: side } } }
@@ -75,9 +46,7 @@ export const initScrimService = (
       // random number
       const matchup = rolePrio.eloDifference < 500 ? rolePrio : eloPrio;
 
-      const voiceChannels = await discordService.createVoiceChannels(guildID, teamNames);
-
-      const [{ players, ...scrim }, inviteBlue, inviteRed] = await Promise.all([
+      const [{ players, ...scrim }] = await prisma.$transaction([
         prisma.scrim.create({
           data: {
             guildID: guildID,
@@ -89,19 +58,17 @@ export const initScrimService = (
               }
             },
             status: Status.STARTED,
-            voiceIds: voiceChannels.map((vc) => vc.id),
-            season: env.CURRENT_SEASON
+            season: env.CURRENT_SEASON,
+            blueTeamName: teamNames[0],
+            redTeamName: teamNames[1]
           },
           include: {
             players: true
           }
         }),
-        voiceChannels[0].createInvite(),
-        voiceChannels[1].createInvite(),
         // autofill protect the user
         prisma.user.updateMany({ where: { id: { in: fillers } }, data: { autofillProtected: true } })
       ]);
-      console.info(`Elo difference is ${matchup.eloDifference}'`);
       for (const player of players) {
         ingame.set(player.userId, scrim.id);
       }
@@ -110,7 +77,6 @@ export const initScrimService = (
         players,
         lobbyDetails: {
           teamNames,
-          voiceInvite: [inviteBlue.url, inviteRed.url],
           eloDifference: matchup.eloDifference,
           offroleCount: matchup.offroleCount,
           autoFilledCount: fillers.length
@@ -159,69 +125,10 @@ export const initScrimService = (
         where: { scrimId: scrim.id }
       });
       if (draft) {
-        // Store the draft
-        const { blueBans, bluePicks, redBans, redPicks } = await new Promise<Partial<Draft>>((resolve, reject) => {
-          const ws = new WebSocket('wss://draftlol.dawe.gg/');
-          ws.onopen = () => {
-            ws.send(JSON.stringify({ type: 'joinroom', roomId: draft.draftRoomId }));
-          };
-          ws.onmessage = (msg) => {
-            ws.close();
-            const data = JSON.parse(msg.data.toString());
-            if (data.type === 'statechange') {
-              const { bluePicks, redPicks, blueBans, redBans } = data.newState;
-              resolve({ bluePicks, redPicks, blueBans, redBans });
-            } else if (data.type === 'error') {
-              reject(data.reason);
-            } else {
-              reject('unknown event');
-            }
-          };
-        });
-        await prisma.draft.update({
-          where: { scrimId_draftRoomId: { scrimId: scrim.id, draftRoomId: draft.draftRoomId } },
-          data: { blueBans, bluePicks, redBans, redPicks }
-        });
+        await matchDetailService.storeDraft(scrim.id, draft.draftRoomId);
       }
       console.info(text);
       return res.length > 0;
-    },
-    createDraftLobby: async (teamNames) => {
-      const payload = {
-        type: 'createroom',
-        blueName: teamNames[0],
-        redName: teamNames[1],
-        disabledTurns: [],
-        disabledChamps: [],
-        timePerPick: 60,
-        timePerBan: 60
-      };
-
-      return new Promise((resolve, reject) => {
-        const ws = new WebSocket('wss://draftlol.dawe.gg/');
-        ws.onopen = () => {
-          ws.send(JSON.stringify(payload));
-          ws.onclose = () => console.log('CLOSED');
-          ws.onmessage = (msg) => {
-            const data = JSON.parse(msg.data.toString());
-            if (data.type === 'roomcreated') {
-              const room: RoomCreatedResult = data;
-              ws.close();
-
-              const DRAFTLOL_URL = `https://draftlol.dawe.gg/${room.roomId}`;
-              resolve({
-                roomId: room.roomId,
-                BLUE: `${DRAFTLOL_URL}/${room.bluePassword}`,
-                RED: `${DRAFTLOL_URL}/${room.redPassword}`,
-                SPECTATOR: DRAFTLOL_URL
-              });
-            }
-          };
-        };
-        ws.onerror = (err) => {
-          reject(err);
-        };
-      });
     },
     getIncompleteScrims: async (userId) => {
       return await prisma.scrim.findMany({ where: { players: { some: { userId } }, status: 'STARTED' } });
@@ -236,68 +143,6 @@ export const initScrimService = (
     remakeScrim: async (scrim) => {
       const success = await prisma.scrim.update({ where: { id: scrim.id }, data: { status: 'REMAKE' } });
       return success.status === 'REMAKE';
-    },
-    sendMatchDetails: async (scrim, players, users, lobbyDetails) => {
-      const { teamNames, voiceInvite } = lobbyDetails;
-      const teams = sortUsersByTeam(users, players);
-      console.log(teams);
-      const promises = await Promise.all([
-        service.createDraftLobby(teamNames),
-        service.generateScoutingLink(teams.BLUE, scrim.region),
-        service.generateScoutingLink(teams.RED, scrim.region)
-      ]);
-
-      const [draftURLs, opggBlue, opggRed] = promises;
-      const password = chance.integer({ min: 1000, max: 9999 });
-
-      const matchEmbed = matchDetailsEmbed(scrim, players, lobbyDetails);
-      const blueEmbed = lobbyDetailsEmbed(
-        teamNames[0],
-        scrim.id,
-        teams.BLUE,
-        teams.RED,
-        draftURLs.BLUE,
-        `ss${scrim.id}`,
-        password,
-        opggBlue,
-        opggRed
-      );
-      const redEmbed = lobbyDetailsEmbed(
-        teamNames[1],
-        scrim.id,
-        teams.RED,
-        teams.BLUE,
-        draftURLs.RED,
-        `ss${scrim.id}`,
-        password,
-        opggRed,
-        opggBlue
-      );
-
-      const filteredPlayers = players.filter((p) => !p.userId.includes('-'));
-      const blueIDs = filteredPlayers.filter((p) => p.side === 'BLUE').map((p) => p.userId);
-      const redIDs = filteredPlayers.filter((p) => p.side === 'RED').map((p) => p.userId);
-
-      const [dm1, dm2] = await Promise.all([
-        discordService.sendMatchDirectMessage(blueIDs, {
-          embeds: [matchEmbed, blueEmbed],
-          content: voiceInvite[0]
-        }),
-        discordService.sendMatchDirectMessage(redIDs, {
-          embeds: [matchEmbed, redEmbed],
-          content: voiceInvite[1]
-        }),
-        prisma.draft.create({ data: { scrimId: scrim.id, draftRoomId: draftURLs.roomId } })
-      ]);
-      `${dm1 + dm2} DMs have been sent`;
-      const publicEmbed = matchEmbed.addFields({
-        name: 'Draft',
-        value: `[Spectate Draft](${draftURLs.SPECTATOR})`
-      });
-      return publicEmbed;
-    },
-    playerIsInMatch: (userId) => {
-      return ingame.get(userId);
     },
     getPlayer: async (userId, scrimId) => {
       const player = await prisma.player.findUnique({
@@ -351,23 +196,11 @@ export const initScrimService = (
   return service;
 };
 
-const sortUsersByTeam = (users: User[], players: Player[]) => {
-  const red: (User | undefined)[] = [undefined, undefined, undefined, undefined, undefined];
-  const blue: (User | undefined)[] = [undefined, undefined, undefined, undefined, undefined];
-  for (const player of players) {
-    const user = users.find((u) => u.id === player.userId);
-    if (!user) continue;
-    if (player.side === 'BLUE') blue[ROLE_ORDER[player.role]] = user;
-    if (player.side === 'RED') red[ROLE_ORDER[player.role]] = user;
-  }
-  return { RED: red, BLUE: blue } as { RED: Team; BLUE: Team };
-};
-
 const getTeamTotalElo = (team: User[], players: Map<string, Player>): number =>
   team.reduce((prev, curr) => {
     let elo = prev + curr.elo;
-    const player = players.get(curr.id)!!;
-    if (curr.main != player.role) {
+    const player = players.get(curr.id);
+    if (curr.main != player?.role) {
       elo -= OFFROLE_PENALTY[curr.rank];
     }
     return elo;

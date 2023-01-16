@@ -1,7 +1,8 @@
 import { EmbedBuilder } from 'discord.js';
-import { ScrimService } from './scrim-service';
-import { DiscordService } from './discord-service';
-import { Region, User } from '@prisma/client';
+import type { ScrimService } from './scrim-service';
+import type { DiscordService } from './discord-service';
+import type { Region, User } from '@prisma/client';
+import type { MatchDetailService } from './matchdetail-service';
 
 interface QueueService {
   joinQueue: (user: User, guildID: string, region: Region, isFill: boolean) => User[];
@@ -27,9 +28,14 @@ type Queues = {
 const HOUR = 3600000;
 const REMOVE_DURATION = HOUR * 8;
 
-export const initQueueService = (scrimService: ScrimService, discordService: DiscordService) => {
+export const initQueueService = (
+  scrimService: ScrimService,
+  discordService: DiscordService,
+  matchDetailService: MatchDetailService
+) => {
   const queues = new Map<string, Queues>();
   const resetTimer = new Map<string, NodeJS.Timeout>();
+  const ingame = new Map<string, number>();
 
   const startQueueUserTimeout = (user: User, guildID: string, region: Region) => {
     const now = new Date().toISOString();
@@ -39,9 +45,9 @@ export const initQueueService = (scrimService: ScrimService, discordService: Dis
         try {
           service.leaveQueue(user.id, guildID, region);
           console.info(`${user.leagueIGN} joined at ${now} and was removed at ${new Date().toISOString()}`);
-          discordService.sendMessageInChannel(
-            `<@${user.id}> has been in queue for 8 hours, and been removed due to inactivity.`
-          );
+          discordService.sendMessageInChannel({
+            content: `<@${user.id}> has been in queue for 8 hours, and been removed due to inactivity.`
+          });
         } catch (err) {
           console.log(`${user.leagueIGN} already left queue.`);
         }
@@ -62,8 +68,10 @@ export const initQueueService = (scrimService: ScrimService, discordService: Dis
         startQueueUserTimeout(user, guildID, region);
         throw new Error("You're already in queue");
       }
-      if (scrimService.playerIsInMatch(user.id)) {
-        throw new Error("You're already in a game. Please report the match before queuing up again.");
+      if (ingame.get(user.id)) {
+        throw new Error(
+          `You're already in Match #${ingame.get(user.id)}. Please report the match before queuing up again.`
+        );
       }
       queue[region] = queue[region].set(user.id, { ...user, queuedAsFill: isFill });
       queues.set(guildID, queue);
@@ -83,15 +91,6 @@ export const initQueueService = (scrimService: ScrimService, discordService: Dis
     attemptMatchCreation: (guildID, region) => {
       const queue = queues.get(guildID);
       if (!queue || queue[region].size < 10) return MatchmakingStatus.NOT_ENOUGH_PLAYERS;
-      // INACTIVE
-      // const users = [...queue[region].values()];
-      // const averageElo = users.reduce((prev, curr) => prev + curr.elo, 0) / users.length;
-      // console.info(`Average elo is ${averageElo}`);
-      // const filtered = users.filter((u) => Math.abs(averageElo - u.elo) < 800);
-      // if (filtered.length >= 10) {
-      //   return MatchmakingStatus.VALID_MATCH;
-      // }
-      // return MatchmakingStatus.UNEVEN_RANK_DISTRIBUTION;
       return MatchmakingStatus.VALID_MATCH;
     },
     getQueue: (guildID, region) => {
@@ -130,7 +129,6 @@ export const initQueueService = (scrimService: ScrimService, discordService: Dis
         .sort((a, b) => Math.abs(averageElo - a.elo) - Math.abs(averageElo - b.elo))
         .slice(0, 10);
       // reset remove timer
-      relevantUsers.forEach((u) => stopQueueUserTimout(u.id));
       // Users who did not get into the game gets botoed
       users.slice(10).forEach((u) => service.joinQueue(u, guildID, region, u.queuedAsFill));
       const { scrim, players, lobbyDetails } = await scrimService.createBalancedScrim(
@@ -139,8 +137,17 @@ export const initQueueService = (scrimService: ScrimService, discordService: Dis
         relevantUsers,
         relevantUsers.filter((u) => u.queuedAsFill).map((u) => u.id)
       );
-      const matchEmbed = await scrimService.sendMatchDetails(scrim, players, relevantUsers, lobbyDetails);
-      return matchEmbed;
+      relevantUsers.forEach((u) => {
+        stopQueueUserTimout(u.id);
+        ingame.set(u.id, scrim.id);
+      });
+
+      matchDetailService
+        .sendMatchDetails(scrim, relevantUsers, players, lobbyDetails)
+        .then(() => console.log('All post-match creation actions completed'));
+      return new EmbedBuilder().setTitle(
+        `Match #${scrim.id} has been created! Send matching details to the players...`
+      );
     }
   };
   return service;

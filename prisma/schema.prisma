@@ -60,6 +60,9 @@ model Scrim {
   createdAt DateTime @default(now()) @map("created_at")
   Draft     Draft?
   season    Int      @default(0)
+
+  blueTeamName String @map("blue_team_name")
+  redTeamName  String @map("red_team_name")
 }
 
 model SeasonStats {
