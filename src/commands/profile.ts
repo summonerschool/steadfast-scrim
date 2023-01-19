@@ -56,6 +56,7 @@ const profile: SlashCommand = {
     ),
   execute: async (interaction) => {
     const subCmd = interaction.options.getSubcommand();
+    await interaction.deferReply();
     switch (subCmd) {
       case 'show': {
         const user = await userService.getUserProfile(interaction.user.id);

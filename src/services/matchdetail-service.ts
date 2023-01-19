@@ -12,6 +12,7 @@ export interface MatchDetailService {
   sendMatchDetails(scrim: Scrim, users: User[], players: Player[], lobbyDetails: LobbyDetails): Promise<void>;
   storeDraft(scrimId: number, roomId: string): Promise<Draft>;
 }
+
 export class MatchDetailServiceImpl implements MatchDetailService {
   constructor(
     private readonly prisma: PrismaClient,

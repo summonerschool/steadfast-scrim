@@ -8,6 +8,7 @@ import {
   Routes
 } from 'discord.js';
 import { readdirSync } from 'fs';
+import path from 'path';
 import { env } from '../env';
 import { SlashCommand } from '../types';
 
@@ -72,10 +73,10 @@ export class ApplicationClient extends Client {
   }
 
   private async resolveModules() {
-    const dir = new URL('../commands', __dirname);
+    const dir = path.join(__dirname, '../commands');
     await Promise.all(
       readdirSync(dir).map(async (file) => {
-        const command: SlashCommand = (await import(`${dir}/${file}`)).default;
+        const command: SlashCommand = (await import(`file:${dir}/${file}`)).default;
         if (command.command) {
           const name = command.command.name;
           this.slashCommands.set(name, command);

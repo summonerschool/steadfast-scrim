@@ -65,7 +65,8 @@ const admin: SlashCommand = {
         await interaction.deferReply();
         const prisma = new PrismaClient();
         let users = await prisma.user.findMany({
-          where: { leagueIGN: { startsWith: 'test' } }
+          where: { leagueIGN: { startsWith: 'test' } },
+          take: 9
         });
         if (users.length === 0) {
           await prisma.user.createMany({

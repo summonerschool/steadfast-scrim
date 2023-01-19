@@ -34,6 +34,7 @@ const queue: SlashCommand = {
     .setDescription('A queue for joining in-house games'),
   execute: async (interaction) => {
     // const [commandGroup, command] = ctx.subcommands;
+    await interaction.deferReply();
     const subCommandGroup = interaction.options.getSubcommandGroup();
     const subCommand = interaction.options.getSubcommand();
     const guildId = interaction.guildId;
@@ -66,7 +67,6 @@ const queue: SlashCommand = {
             };
           }
           if (MatchmakingStatus.VALID_MATCH) {
-            await interaction.deferReply();
             const embed = await queueService.createMatch(guildId, region);
             return { embeds: [embed] };
           }
