@@ -1,5 +1,6 @@
-import { SlashCommandBuilder, SlashCommandSubcommandGroupBuilder } from 'discord.js';
-import { SlashCommand } from '../types';
+import type { SlashCommandSubcommandGroupBuilder } from 'discord.js';
+import { SlashCommandBuilder } from 'discord.js';
+import type { SlashCommand } from '../types';
 import { queueEmbed as QueueEmbed } from '../components/queue';
 import { MatchmakingStatus } from '../services/queue-service';
 import { MatchAlreadyCreatedError, NoMatchupPossibleError } from '../errors/errors';

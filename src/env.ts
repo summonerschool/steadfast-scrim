@@ -9,7 +9,8 @@ const envSchema = z.object({
   DISCORD_VOICE_CATEGORY_ID: z.string(),
   DISCORD_COMMAND_CHANNEL_ID: z.string(),
   DISCORD_DISCUSSION_CHANNEL_ID: z.string(),
-  CURRENT_SEASON: z.coerce.number()
+  CURRENT_SEASON: z.coerce.number(),
+  REDIS_URL: z.string()
 });
 
 const res = envSchema.safeParse({
@@ -20,7 +21,8 @@ const res = envSchema.safeParse({
   DISCORD_VOICE_CATEGORY_ID: process.env.DISCORD_VOICE_CATEGORY_ID,
   DISCORD_COMMAND_CHANNEL_ID: process.env.DISCORD_COMMAND_CHANNEL_ID,
   DISCORD_DISCUSSION_CHANNEL_ID: process.env.DISCORD_DISCUSSION_CHANNEL_ID,
-  CURRENT_SEASON: process.env.CURRENT_SEASON
+  CURRENT_SEASON: process.env.CURRENT_SEASON,
+  REDIS_URL: process.env.REDIS_URL
 });
 if (!res.success) {
   throw new Error(`Invalid input❌\n${formatErrors(res.error.format())}`);

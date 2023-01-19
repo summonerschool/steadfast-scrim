@@ -17,7 +17,7 @@ const sortByRole = (p1: Player, p2: Player) => {
 };
 const teamToString = (player: Player) => `${player.role}: <@${player.userId}> (${player.pregameElo})`;
 
-export const matchDetailsEmbed = (scrim: Scrim, players: Player[], lobbyDetails: LobbyDetails) => {
+export const MatchDetailsEmbed = (scrim: Scrim, players: Player[], lobbyDetails: LobbyDetails) => {
   const { teamNames, eloDifference, offroleCount, autoFilledCount } = lobbyDetails;
   const lobbyCreator = chance.pickone(players);
   // Sort the teams by side
@@ -49,7 +49,7 @@ export const matchDetailsEmbed = (scrim: Scrim, players: Player[], lobbyDetails:
   return embed;
 };
 
-export const lobbyDetailsEmbed = (
+export const LobbyDetailsEmbed = (
   teamName: string,
   scrimID: number,
   teammates: User[],
@@ -57,8 +57,8 @@ export const lobbyDetailsEmbed = (
   draftURL: string,
   lobbyName: string,
   password: number,
-  opggTeam: string,
-  opggEnemy: string
+  scoutingLinkTeam: string,
+  scoutingLinkEnemy: string
 ) => {
   const detailsText = `
       Lobby name: ${lobbyName}
@@ -67,8 +67,8 @@ export const lobbyDetailsEmbed = (
       [**Spectate draft**](${draftURL.split('/').slice(0, -1).join('/')})
       `;
   const scoutingLinksMsg = `
-    [**Team Profiles**](${opggTeam})
-    [**Enemy Profiles**](${opggEnemy})
+    [**Team Profiles**](${scoutingLinkTeam}})
+    [**Enemy Profiles**](${scoutingLinkEnemy})
   `;
 
   const embed = new EmbedBuilder()

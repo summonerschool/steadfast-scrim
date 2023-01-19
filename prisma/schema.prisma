@@ -52,7 +52,6 @@ model Player {
 model Scrim {
   id        Int      @id @default(sequence())
   status    Status   @default(STARTED)
-  voiceIds  String[] @map("voice_ids")
   players   Player[]
   guildID   String
   region    Region
@@ -60,6 +59,9 @@ model Scrim {
   createdAt DateTime @default(now()) @map("created_at")
   Draft     Draft?
   season    Int      @default(0)
+
+  blueTeamName String @map("blue_team_name")
+  redTeamName  String @map("red_team_name")
 }
 
 model SeasonStats {

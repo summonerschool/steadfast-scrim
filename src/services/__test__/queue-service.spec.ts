@@ -1,13 +1,15 @@
-import { User } from '@prisma/client';
+import type { User } from '@prisma/client';
 import { mockDeep } from 'jest-mock-extended';
-import { DiscordService } from '../discord-service';
+import type { DiscordService } from '../discord-service';
+import type { MatchDetailService } from '../matchdetail-service';
 import { initQueueService } from '../queue-service';
-import { ScrimService } from '../scrim-service';
+import type { ScrimService } from '../scrim-service';
 
 describe('QueueService', () => {
   const scrimService = mockDeep<ScrimService>();
   const discordService = mockDeep<DiscordService>();
-  const queueService = initQueueService(scrimService, discordService);
+  const matchDetailService = mockDeep<MatchDetailService>();
+  const queueService = initQueueService(scrimService, discordService, matchDetailService);
   const user: User = {
     id: '202f86f2-778a-481e-922c-b7bb0022bde0',
     leagueIGN: 'DaKing',

@@ -1,9 +1,11 @@
-import { PrismaClient, Rank, Region, Role, User } from '@prisma/client';
-import { GuildMember, SlashCommandBuilder } from 'discord.js';
+import type { Role, User } from '@prisma/client';
+import { PrismaClient, Rank, Region } from '@prisma/client';
+import type { GuildMember } from 'discord.js';
+import { SlashCommandBuilder } from 'discord.js';
 import { queueService, scrimService, userService } from '..';
 import { ProfileEmbed } from '../components/setup-feedback';
 import { chance } from '../lib/chance';
-import { SlashCommand } from '../types';
+import type { SlashCommand } from '../types';
 
 const createTestUser = (role: Role, secondary: Role, name: string, elo: number): User => ({
   id: chance.guid(),
@@ -65,7 +67,8 @@ const admin: SlashCommand = {
         await interaction.deferReply();
         const prisma = new PrismaClient();
         let users = await prisma.user.findMany({
-          where: { leagueIGN: { startsWith: 'test' } }
+          where: { leagueIGN: { startsWith: 'test' } },
+          take: 9
         });
         if (users.length === 0) {
           await prisma.user.createMany({
@@ -74,7 +77,7 @@ const admin: SlashCommand = {
           users = notTwoOfEach;
         }
         for (const user of users) {
-          await queueService.joinQueue(user, interaction.guildId!!, user.region, false);
+          await queueService.joinQueue(user, interaction.guildId!, user.region, false);
         }
         return { content: `Added ${users.length} to the queue` };
       }
@@ -82,8 +85,8 @@ const admin: SlashCommand = {
         const mentionable = interaction.options.getMentionable('user') as GuildMember | null;
         if (!mentionable) return { content: 'Not a real user ID' };
         const { user } = mentionable;
-        queueService.removeUserFromQueue(interaction.guildId!!, 'EUW', [user.id]);
-        queueService.removeUserFromQueue(interaction.guildId!!, 'NA', [user.id]);
+        queueService.removeUserFromQueue(interaction.guildId!, 'EUW', [user.id]);
+        queueService.removeUserFromQueue(interaction.guildId!, 'NA', [user.id]);
         return { content: `<@${user.id}> removed from queue` };
       }
       case 'update-elo': {
@@ -93,7 +96,7 @@ const admin: SlashCommand = {
         if (!mentionable) return { content: 'Not a real user ID' };
         const member = mentionable as GuildMember;
         const user = await userService.updateElo(member.user.id, elo || undefined, externalElo || undefined);
-        const queue = queueService.getQueue(interaction.guildId!!, user.region);
+        const queue = queueService.getQueue(interaction.guildId!, user.region);
         const inQueue = queue.get(user.id);
         if (inQueue) {
           queue.set(user.id, user);

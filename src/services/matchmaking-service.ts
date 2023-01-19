@@ -1,7 +1,9 @@
-import { User, Side, Role, Prisma } from '@prisma/client';
+import type { User, Side, Prisma } from '@prisma/client';
+import { Role } from '@prisma/client';
 import { NoMatchupPossibleError } from '../errors/errors';
 import { chance } from '../lib/chance';
-import { Matchup, Pool, ROLE_ORDER, ROLE_ORDER_TO_ROLE, Team } from '../models/matchmaking';
+import type { Matchup, Pool, Team } from '../models/matchmaking';
+import { ROLE_ORDER, ROLE_ORDER_TO_ROLE } from '../models/matchmaking';
 
 export interface MatchmakingService {
   startMatchmaking: (users: User[], fillers?: string[]) => [Matchup, Matchup];

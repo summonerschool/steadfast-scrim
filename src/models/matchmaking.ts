@@ -1,4 +1,4 @@
-import { User } from '@prisma/client';
+import type { User } from '@prisma/client';
 
 export type RolePool = User[];
 export type Team = [User, User, User, User, User];
@@ -26,7 +26,6 @@ export type GameSide = 'BLUE' | 'RED';
 
 export type LobbyDetails = {
   teamNames: [string, string];
-  voiceInvite: [string, string];
   eloDifference: number;
   offroleCount: number;
   autoFilledCount: number;

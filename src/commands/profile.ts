@@ -1,5 +1,5 @@
 import { SlashCommandBuilder } from 'discord.js';
-import { SlashCommand } from '../types';
+import type { SlashCommand } from '../types';
 import { ProfileEmbed } from '../components/setup-feedback';
 import { Rank, Role } from '@prisma/client';
 import { capitalize, ELO_TRANSLATION } from '../utils/utils';
@@ -64,6 +64,7 @@ const profile: SlashCommand = {
         };
       }
       case 'setup': {
+        await interaction.deferReply();
         const options = retrieveOptions(interaction.options.data, SetupCommandInputSchema);
         const { ign, region, rank, main, secondary } = options;
         if (main === secondary) {

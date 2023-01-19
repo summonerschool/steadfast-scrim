@@ -1,12 +1,14 @@
 import { PrismaClient } from '@prisma/client';
 import dotenv from 'dotenv';
+import Redis from 'ioredis';
 import { env } from './env';
 import { ApplicationClient } from './lib/client';
 import { initDiscordService } from './services/discord-service';
+import { MatchDetailServiceImpl } from './services/matchdetail-service';
 import { initMatchmakingService } from './services/matchmaking-service';
 import { initQueueService } from './services/queue-service';
 import { initScrimService } from './services/scrim-service';
-import { initUserService } from './services/user-service';
+import { UserServiceImpl } from './services/user-service';
 
 dotenv.config();
 
@@ -20,10 +22,12 @@ export const client = new ApplicationClient(admins);
 client.login(env.DISCORD_BOT_TOKEN);
 
 const prisma = new PrismaClient();
+export const redis = new Redis(env.REDIS_URL);
 
 // Services
-export const userService = initUserService(prisma);
+export const userService = new UserServiceImpl(prisma);
 const matchmakingService = initMatchmakingService();
 export const discordService = initDiscordService(client);
-export const scrimService = initScrimService(prisma, matchmakingService, discordService);
-export const queueService = initQueueService(scrimService, discordService);
+export const matchDetailService = new MatchDetailServiceImpl(prisma, redis, discordService);
+export const scrimService = initScrimService(prisma, matchmakingService);
+export const queueService = initQueueService(scrimService, discordService, matchDetailService);

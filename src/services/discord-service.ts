@@ -1,16 +1,17 @@
-import Discord, { ChannelType, MessageCreateOptions, VoiceChannel } from 'discord.js';
+import { prisma, Scrim } from '@prisma/client';
+import type { MessageCreateOptions, VoiceChannel } from 'discord.js';
+import type Discord from 'discord.js';
+import { ChannelType } from 'discord.js';
 import { env } from '../env';
-import { GameSide } from '../models/matchmaking';
+import type { GameSide } from '../models/matchmaking';
 
 export interface DiscordService {
   sendMatchDirectMessage: (userIDs: string[], message: MessageCreateOptions) => Promise<number>;
-  createVoiceChannels: (guildID: string, teamNames: [string, string]) => Promise<[VoiceChannel, VoiceChannel]>;
+  createVoiceChannels: (scrim: Scrim) => Promise<[VoiceChannel, VoiceChannel]>;
   deleteVoiceChannels: (guildID: string, ids: string[]) => Promise<[string, string] | null>;
-  sendMessageInChannel: (msg: string) => void;
+  sendMessageInChannel: (message: MessageCreateOptions) => void;
   createPostDiscussionThread: (matchId: number, winner: GameSide, teamNames: [string, string]) => Promise<string>;
 }
-
-export const activeVoiceIDs = new Map<string, string[]>();
 
 export const initDiscordService = (discordClient: Discord.Client) => {
   const voiceCategoryID = env.DISCORD_VOICE_CATEGORY_ID;
@@ -18,25 +19,23 @@ export const initDiscordService = (discordClient: Discord.Client) => {
   const feedbackChannelID = env.DISCORD_DISCUSSION_CHANNEL_ID;
 
   const service: DiscordService = {
-    createVoiceChannels: async (guildID, teamNames) => {
-      const guild = await discordClient.guilds.fetch({ guild: guildID });
+    createVoiceChannels: async (scrim) => {
+      const guild = await discordClient.guilds.fetch({ guild: scrim.guildID });
 
       const channels = await Promise.all([
         guild.channels.create({
           type: ChannelType.GuildVoice,
-          name: teamNames[0],
+          name: scrim.blueTeamName,
           userLimit: 5,
           parent: voiceCategoryID
         }),
         guild.channels.create({
           type: ChannelType.GuildVoice,
-          name: teamNames[1],
+          name: scrim.redTeamName,
           userLimit: 5,
           parent: voiceCategoryID
         })
       ]);
-      const curr = activeVoiceIDs.get(guildID) || [];
-      activeVoiceIDs.set(guildID, [...curr, channels[0].id, channels[1].id]);
       return [channels[0], channels[1]];
     },
     sendMatchDirectMessage: async (userIDs: string[], message) => {
@@ -46,24 +45,14 @@ export const initDiscordService = (discordClient: Discord.Client) => {
     },
     deleteVoiceChannels: async (guildID, ids) => {
       const guild = await discordClient.guilds.fetch({ guild: guildID });
-      const current = activeVoiceIDs.get(guildID) || [];
-      if (!current.some((id) => ids.includes(id))) {
-        return null;
-      }
       const channels = await Promise.all(ids.map((id) => guild.channels.fetch(id)));
 
       const teamVCs = channels.filter((vc): vc is VoiceChannel => vc != null && vc.parent?.id === voiceCategoryID);
-      // Delete voice channels and remove them from active voice ids list
       const deleted = await Promise.all(teamVCs.map((vc) => vc.delete()));
-      const deletedIDs = deleted.map((vc) => vc.id);
-      activeVoiceIDs.set(
-        guildID,
-        current.filter((id) => !deletedIDs.includes(id))
-      );
-      console.log({ activeVoiceIDs });
+
       return [deleted[0].name, deleted[1].name];
     },
-    sendMessageInChannel: async (msg) => {
+    sendMessageInChannel: async (message) => {
       let channel = discordClient.channels.cache.get(commandChannelID);
       if (!channel) {
         const res = await discordClient.channels.fetch(commandChannelID);
@@ -73,7 +62,7 @@ export const initDiscordService = (discordClient: Discord.Client) => {
         }
       }
       const commandChannel = channel as Discord.TextChannel;
-      await commandChannel.send(msg);
+      await commandChannel.send(message);
     },
     createPostDiscussionThread: async (matchId, winner, teamNames) => {
       let channel = discordClient.channels.cache.get(feedbackChannelID);

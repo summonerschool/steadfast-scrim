@@ -1,5 +1,5 @@
 import { SlashCommandBuilder } from 'discord.js';
-import { discordService, scrimService } from '..';
+import { discordService, redis, scrimService } from '..';
 import { env } from '../env';
 import { retrieveOptions } from '../helpers/retrieveOptions';
 import { MatchCommandInputSchema } from '../schemas/user';
@@ -27,6 +27,7 @@ const match: SlashCommand = {
     if (!guildId) {
       return { content: 'Could not retrieve the discord server id' };
     }
+    await interaction.deferReply();
     const scrim = await scrimService.findScrim(id);
     const player = await scrimService.getPlayer(interaction.user.id, id);
     if (!player) {
@@ -36,10 +37,12 @@ const match: SlashCommand = {
     if (alreadyReported) {
       return { content: `Match has already been reported`, ephemeral: true };
     }
-    await interaction.deferReply();
+    // Delete voice channels
+    const voiceIDs = await redis.spop(`${scrim.guildID}:scrim#${scrim.id}:voiceChannels`, 2);
+
     if (status === 'REMAKE') {
       const res = await scrimService.remakeScrim(scrim);
-      await discordService.deleteVoiceChannels(guildId, scrim.voiceIds);
+      await discordService.deleteVoiceChannels(guildId, voiceIDs);
       return {
         content: res
           ? `Match #${id} has been reported as a remake`
@@ -51,7 +54,8 @@ const match: SlashCommand = {
     if (!success) {
       return { content: 'Oops! Could not set winner of match' };
     }
-    const teamNames = await discordService.deleteVoiceChannels(guildId, scrim.voiceIds);
+    const teamNames = await discordService.deleteVoiceChannels(guildId, voiceIDs);
+    console.log('Attempting to delete:', voiceIDs.join(','));
     let postmatchDiscussionID: string | null = null;
     if (teamNames) {
       postmatchDiscussionID = await discordService.createPostDiscussionThread(id, winner, teamNames);
