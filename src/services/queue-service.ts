@@ -35,7 +35,6 @@ export const initQueueService = (
 ) => {
   const queues = new Map<string, Queues>();
   const resetTimer = new Map<string, NodeJS.Timeout>();
-  const ingame = new Map<string, number>();
 
   const startQueueUserTimeout = (user: User, guildID: string, region: Region) => {
     const now = new Date().toISOString();
@@ -68,10 +67,9 @@ export const initQueueService = (
         startQueueUserTimeout(user, guildID, region);
         throw new Error("You're already in queue");
       }
-      if (ingame.get(user.id)) {
-        throw new Error(
-          `You're already in Match #${ingame.get(user.id)}. Please report the match before queuing up again.`
-        );
+      const ingameIn = scrimService.getUserInGame(user.id);
+      if (ingameIn) {
+        throw new Error(`You're already in Match #${ingameIn}. Please report the match before queuing up again.`);
       }
       queue[region] = queue[region].set(user.id, { ...user, queuedAsFill: isFill });
       queues.set(guildID, queue);
@@ -129,6 +127,9 @@ export const initQueueService = (
         .sort((a, b) => Math.abs(averageElo - a.elo) - Math.abs(averageElo - b.elo))
         .slice(0, 10);
       // reset remove timer
+      relevantUsers.forEach((u) => {
+        stopQueueUserTimout(u.id);
+      });
       // Users who did not get into the game gets botoed
       users.slice(10).forEach((u) => service.joinQueue(u, guildID, region, u.queuedAsFill));
       const { scrim, players, lobbyDetails } = await scrimService.createBalancedScrim(
@@ -137,10 +138,6 @@ export const initQueueService = (
         relevantUsers,
         relevantUsers.filter((u) => u.queuedAsFill).map((u) => u.id)
       );
-      relevantUsers.forEach((u) => {
-        stopQueueUserTimout(u.id);
-        ingame.set(u.id, scrim.id);
-      });
 
       matchDetailService
         .sendMatchDetails(scrim, relevantUsers, players, lobbyDetails)

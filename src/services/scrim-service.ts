@@ -23,6 +23,7 @@ export interface ScrimService {
   findScrim: (scrimID: number) => Promise<Scrim>;
   remakeScrim: (scrim: Scrim) => Promise<boolean>;
   getPlayer: (userId: string, scrimId: number) => Promise<Player | null>;
+  getUserInGame: (userId: string) => number | undefined;
   revertGame: (id: number) => Promise<boolean>;
 }
 
@@ -98,6 +99,7 @@ export const initScrimService = (prisma: PrismaClient, matchmakingService: Match
         if (player.side === 'BLUE') blue.push(player.user);
         if (player.side === 'RED') red.push(player.user);
         playerMap.set(player.user.id, player);
+        ingame.delete(player.userId);
       }
       // Get the average elo for the teams
       const totalBlueElo = getTeamTotalElo(blue, playerMap);
@@ -142,7 +144,15 @@ export const initScrimService = (prisma: PrismaClient, matchmakingService: Match
     },
     remakeScrim: async (scrim) => {
       const success = await prisma.scrim.update({ where: { id: scrim.id }, data: { status: 'REMAKE' } });
+      for (const [userId, scrimId] of ingame) {
+        if (scrimId === scrim.id) {
+          ingame.delete(userId);
+        }
+      }
       return success.status === 'REMAKE';
+    },
+    getUserInGame: (userId: string) => {
+      return ingame.get(userId);
     },
     getPlayer: async (userId, scrimId) => {
       const player = await prisma.player.findUnique({
