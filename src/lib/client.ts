@@ -98,7 +98,7 @@ export class ApplicationClient extends Client {
     const rest = new REST({ version: '10' }).setToken(env.DISCORD_BOT_TOKEN);
 
     let res;
-    if (process.env.NODE_ENV === 'development' && guildId) {
+    if (guildId) {
       res = (await rest.put(Routes.applicationGuildCommands(clientId, guildId), {
         body: commands.map((cmd) => cmd.command.toJSON())
       })) as RESTPutAPIApplicationCommandsResult;
