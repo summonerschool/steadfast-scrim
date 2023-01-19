@@ -38,6 +38,7 @@ const admin: SlashCommand = {
   command: new SlashCommandBuilder()
     .setName('admin')
     .setDescription('A group of admin only commands')
+    .setDefaultMemberPermissions(0)
     .addSubcommand((cmd) =>
       cmd
         .setName('update-elo')
