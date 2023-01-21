@@ -38,7 +38,6 @@ const admin: SlashCommand = {
   command: new SlashCommandBuilder()
     .setName('admin')
     .setDescription('A group of admin only commands')
-    .setDefaultMemberPermissions(0)
     .addSubcommand((cmd) =>
       cmd
         .setName('update-elo')
@@ -59,7 +58,8 @@ const admin: SlashCommand = {
         .setName('revert-game')
         .setDescription('Reverts the result of the last game')
         .addIntegerOption((opt) => opt.setName('match_id').setDescription('The game to revert').setRequired(true))
-    ),
+    )
+    .setDefaultMemberPermissions('0'),
   onlyAdmin: true,
   execute: async (interaction) => {
     const subCommand = interaction.options.getSubcommand();
