@@ -12,6 +12,9 @@ logs/
 .vscode/**/*
 !.vscode/extensions.json
 .env
+.env.dev
+.env.old
+.env.prod
 dist/
 
 .yarn/*
