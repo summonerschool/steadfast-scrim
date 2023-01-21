@@ -37,7 +37,7 @@ export class ApplicationClient extends Client {
         try {
           const res = await command.execute(interaction);
           if (res) {
-            if (interaction.deferred) {
+            if (interaction.replied) {
               await interaction.editReply(res);
             } else {
               await interaction.reply(res);
@@ -48,7 +48,7 @@ export class ApplicationClient extends Client {
             console.log(err);
             if (!interaction.replied) {
               await interaction.reply({ content: err.message, ephemeral: true });
-            } else if (interaction.deferred) {
+            } else {
               await interaction.editReply({ content: err.message });
             }
           }
@@ -90,7 +90,7 @@ export class ApplicationClient extends Client {
   }
 
   public async migrate() {
-    const commands = [...this.slashCommands.values()];
+    const commands = [...this.slashCommands.values()].filter((cmd) => cmd.command.name != 'admin');
     const clientId = env.DISCORD_APP_ID;
     const guildId = env.DISCORD_DEVELOPMENT_GUILD_ID;
     await this.application?.commands.set([]);
