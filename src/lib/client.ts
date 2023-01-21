@@ -37,19 +37,25 @@ export class ApplicationClient extends Client {
         try {
           const res = await command.execute(interaction);
           if (res) {
-            if (interaction.replied) {
+            if (interaction.deferred) {
               await interaction.editReply(res);
-            } else {
+            } else if (!interaction.replied) {
               await interaction.reply(res);
+            } else {
+              const reply = await interaction.fetchReply();
+              reply.reply({ content: res.content, embeds: res.embeds });
             }
           }
         } catch (err) {
           if (err instanceof Error) {
-            console.log(err);
-            if (!interaction.replied) {
+            console.log(err.message);
+            if (interaction.deferred) {
+              await interaction.editReply({ content: err.message });
+            } else if (!interaction.replied) {
               await interaction.reply({ content: err.message, ephemeral: true });
             } else {
-              await interaction.editReply({ content: err.message });
+              const reply = await interaction.fetchReply();
+              reply.reply({ content: err.message });
             }
           }
         }
@@ -90,24 +96,18 @@ export class ApplicationClient extends Client {
   }
 
   public async migrate() {
-    const commands = [...this.slashCommands.values()].filter((cmd) => cmd.command.name != 'admin');
+    const commands = [...this.slashCommands.values()];
     const clientId = env.DISCORD_APP_ID;
     const guildId = env.DISCORD_DEVELOPMENT_GUILD_ID;
-    await this.application?.commands.set([]);
-    await this.guilds.cache.get(guildId!)?.commands.set([]);
+    // await this.application?.commands.set([]);
+    // await this.guilds.cache.get(guildId!)?.commands.set([]);
     const rest = new REST({ version: '10' }).setToken(env.DISCORD_BOT_TOKEN);
 
-    let res;
-    if (guildId) {
-      res = (await rest.put(Routes.applicationGuildCommands(clientId, guildId), {
-        body: commands.map((cmd) => cmd.command.toJSON())
-      })) as RESTPutAPIApplicationCommandsResult;
-      console.log(res);
-    } else {
-      res = (await rest.put(Routes.applicationCommands(clientId), {
-        body: commands.map((cmd) => cmd.command.toJSON())
-      })) as RESTPutAPIApplicationCommandsResult;
-    }
+    const res = (await rest.put(Routes.applicationGuildCommands(clientId, guildId!), {
+      body: commands.map((cmd) => cmd.command.toJSON())
+    })) as RESTPutAPIApplicationCommandsResult;
+    console.log(res);
+
     console.log(`Migrated ${res.length} commands`);
   }
 }

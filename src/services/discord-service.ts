@@ -1,13 +1,13 @@
 import { prisma, Scrim } from '@prisma/client';
-import type { MessageCreateOptions, VoiceChannel } from 'discord.js';
-import type Discord from 'discord.js';
+import { MessageCreateOptions, OverwriteType, VoiceChannel } from 'discord.js';
+import Discord from 'discord.js';
 import { ChannelType } from 'discord.js';
 import { env } from '../env';
-import type { GameSide } from '../models/matchmaking';
+import type { GameSide, Team } from '../models/matchmaking';
 
 export interface DiscordService {
   sendMatchDirectMessage: (userIDs: string[], message: MessageCreateOptions) => Promise<number>;
-  createVoiceChannels: (scrim: Scrim) => Promise<[VoiceChannel, VoiceChannel]>;
+  createVoiceChannels: (scrim: Scrim, blue: Team, red: Team) => Promise<[VoiceChannel, VoiceChannel]>;
   deleteVoiceChannels: (guildID: string, ids: string[]) => Promise<[string, string] | null>;
   sendMessageInChannel: (message: MessageCreateOptions) => void;
   createPostDiscussionThread: (matchId: number, winner: GameSide, teamNames: [string, string]) => Promise<string>;
@@ -19,21 +19,43 @@ export const initDiscordService = (discordClient: Discord.Client) => {
   const feedbackChannelID = env.DISCORD_DISCUSSION_CHANNEL_ID;
 
   const service: DiscordService = {
-    createVoiceChannels: async (scrim) => {
+    createVoiceChannels: async (scrim, blue, red) => {
       const guild = await discordClient.guilds.fetch({ guild: scrim.guildID });
 
       const channels = await Promise.all([
         guild.channels.create({
           type: ChannelType.GuildVoice,
           name: scrim.blueTeamName,
-          userLimit: 5,
-          parent: voiceCategoryID
+          parent: voiceCategoryID,
+          permissionOverwrites: [
+            ...blue
+              .filter((p) => !p.id.includes('-')) // filters away test users. TODO: remove this
+              .map((p) => {
+                return {
+                  id: p.id,
+                  type: OverwriteType.Member,
+                  allow: ['Speak', 'Stream']
+                } satisfies Discord.OverwriteResolvable;
+              }),
+            { id: guild.roles.everyone, type: OverwriteType.Role, deny: ['Speak'] }
+          ]
         }),
         guild.channels.create({
           type: ChannelType.GuildVoice,
           name: scrim.redTeamName,
-          userLimit: 5,
-          parent: voiceCategoryID
+          parent: voiceCategoryID,
+          permissionOverwrites: [
+            ...red
+              .filter((p) => !p.id.includes('-')) // filters away test users TODO: Remove this
+              .map((p) => {
+                return {
+                  id: p.id,
+                  type: OverwriteType.Member,
+                  allow: ['Speak']
+                } satisfies Discord.OverwriteResolvable;
+              }),
+            { id: guild.roles.everyone, type: OverwriteType.Role, deny: ['Speak'] }
+          ]
         })
       ]);
       return [channels[0], channels[1]];
@@ -44,6 +66,9 @@ export const initDiscordService = (discordClient: Discord.Client) => {
       return sent.filter((p) => p.status === 'fulfilled').length;
     },
     deleteVoiceChannels: async (guildID, ids) => {
+      if (ids.length === 0) {
+        return null;
+      }
       const guild = await discordClient.guilds.fetch({ guild: guildID });
       const channels = await Promise.all(ids.map((id) => guild.channels.fetch(id)));
 

@@ -59,7 +59,7 @@ const admin: SlashCommand = {
         .setDescription('Reverts the result of the last game')
         .addIntegerOption((opt) => opt.setName('match_id').setDescription('The game to revert').setRequired(true))
     )
-    .setDefaultMemberPermissions('0'),
+    .setDefaultMemberPermissions(0),
   onlyAdmin: true,
   execute: async (interaction) => {
     const subCommand = interaction.options.getSubcommand();

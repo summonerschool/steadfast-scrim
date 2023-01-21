@@ -28,7 +28,7 @@ export class MatchDetailServiceImpl implements MatchDetailService {
   ): Promise<void> {
     const { BLUE, RED } = this.sortUsersByTeam(users, players);
     const [voiceChannels, draftLobby, blueScoutingLink, redScoutingLink] = await Promise.all([
-      this.discordService.createVoiceChannels(scrim),
+      this.discordService.createVoiceChannels(scrim, BLUE, RED),
       this.createDraftLobby(lobbyDetails.teamNames),
       this.generateScoutingLink(BLUE, scrim.region),
       this.generateScoutingLink(RED, scrim.region)

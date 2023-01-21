@@ -33,16 +33,16 @@ const match: SlashCommand = {
     if (!player) {
       return { content: `You did not play in match #${id}❌`, ephemeral: true };
     }
-    const alreadyReported = scrim.status === 'COMPLETED';
+    const alreadyReported = scrim.status === 'COMPLETED' || scrim.status === 'REMAKE';
     if (alreadyReported) {
-      return { content: `Match has already been reported`, ephemeral: true };
+      return { content: `Match ${id} has already been reported`, ephemeral: true };
     }
     // Delete voice channels
     const voiceIDs = await redis.spop(`${scrim.guildID}:scrim#${scrim.id}:voiceChannels`, 2);
 
     if (status === 'REMAKE') {
       const res = await scrimService.remakeScrim(scrim);
-      await discordService.deleteVoiceChannels(guildId, voiceIDs);
+      await discordService.deleteVoiceChannels(guildId, voiceIDs || []);
       return {
         content: res
           ? `Match #${id} has been reported as a remake`
