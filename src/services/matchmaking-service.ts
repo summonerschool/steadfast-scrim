@@ -39,7 +39,7 @@ export const initMatchmakingService = () => {
             side: side,
             role,
             pregameElo: user.elo,
-            isOffRole: user.secondary === role,
+            isOffRole: user.secondary === Role[role],
             isAutoFill: fillers.includes(user.id)
           };
         };
@@ -101,19 +101,6 @@ export const initMatchmakingService = () => {
   return service;
 };
 
-// Probably needs adjustments
-export const OFFROLE_PENALTY: { [key in User['rank']]: number } = {
-  IRON: 100,
-  BRONZE: 200,
-  SILVER: 250,
-  GOLD: 300,
-  PLATINUM: 350,
-  DIAMOND: 300,
-  MASTER: 250,
-  GRANDMASTER: 200,
-  CHALLENGER: 150
-};
-
 // Puts every user into a pool based on role.
 export const calculatePlayerPool = (users: User[], fillers: string[]) => {
   const talentPool: Pool = [[], [], [], [], []];
@@ -123,18 +110,17 @@ export const calculatePlayerPool = (users: User[], fillers: string[]) => {
   console.log(talentPool.map((p) => p.map((u) => u.leagueIGN)));
   if (talentPool.some((rp) => rp.length < 2)) {
     for (const user of users) {
-      const elo = user.elo - OFFROLE_PENALTY[user.rank];
       if (fillers.includes(user.id)) {
         talentPool.forEach((p) => {
           if (!p.some((u) => u.id === user.id)) {
-            p.push({ ...user, elo });
+            p.push({ ...user });
           }
         });
       } else {
         const index = ROLE_ORDER[user.secondary];
         const pool = talentPool[index];
         if (!pool.some((u) => u.id === user.id)) {
-          pool.push({ ...user, elo });
+          pool.push({ ...user });
         }
       }
     }

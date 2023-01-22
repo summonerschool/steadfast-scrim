@@ -1,12 +1,11 @@
 import { chance } from '../lib/chance';
 import type { MatchmakingService } from './matchmaking-service';
-import { OFFROLE_PENALTY } from './matchmaking-service';
 import type { Player, PrismaClient, Region, Scrim, User } from '@prisma/client';
 import { Status } from '@prisma/client';
 import { NotFoundError } from '../errors/errors';
 import { adjectives } from '../lib/adjectives';
 import { capitalize } from '../utils/utils';
-import type { GameSide, LobbyDetails } from '../models/matchmaking';
+import type { GameSide, LobbyDetails, Team } from '../models/matchmaking';
 import { env } from '../env';
 import { matchDetailService } from '..';
 
@@ -102,8 +101,8 @@ export const initScrimService = (prisma: PrismaClient, matchmakingService: Match
         ingame.delete(player.userId);
       }
       // Get the average elo for the teams
-      const totalBlueElo = getTeamTotalElo(blue, playerMap);
-      const totalRedElo = getTeamTotalElo(red, playerMap);
+      const totalBlueElo = getTeamTotalElo(blue);
+      const totalRedElo = getTeamTotalElo(red);
       const blueWinChances = 1 / (1 + 10 ** ((totalRedElo - totalBlueElo) / 650));
       const redWinChances = 1 - blueWinChances;
       let text = `Game #${scrim.id}\nBlue Elo: ${totalBlueElo}\nRed Elo:${totalRedElo}\nWinner is ${winner}\n`;
@@ -206,12 +205,7 @@ export const initScrimService = (prisma: PrismaClient, matchmakingService: Match
   return service;
 };
 
-const getTeamTotalElo = (team: User[], players: Map<string, Player>): number =>
-  team.reduce((prev, curr) => {
-    let elo = prev + curr.elo;
-    const player = players.get(curr.id);
-    if (curr.main != player?.role) {
-      elo -= OFFROLE_PENALTY[curr.rank];
-    }
-    return elo;
+const getTeamTotalElo = (users: User[]): number =>
+  users.reduce((prev, curr) => {
+    return prev + curr.elo;
   }, 0);
