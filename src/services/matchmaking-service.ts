@@ -1,4 +1,4 @@
-import type { User, Side, Prisma } from '@prisma/client';
+import type { User, Side, Prisma, Rank } from '@prisma/client';
 import { Role } from '@prisma/client';
 import { NoMatchupPossibleError } from '../errors/errors';
 import { chance } from '../lib/chance';
@@ -34,12 +34,13 @@ export const initMatchmakingService = () => {
         (side: Side) =>
         (user: User, i: number): Omit<Prisma.PlayerCreateManyInput, 'scrimId'> => {
           const role = Role[ROLE_ORDER_TO_ROLE[i]];
+          const isOffRole = user.secondary === Role[role];
           return {
             userId: user.id,
             side: side,
             role,
-            pregameElo: user.elo,
-            isOffRole: user.secondary === Role[role],
+            pregameElo: isOffRole ? user.elo + OFFROLE_PENALTY[user.rank] : user.elo,
+            isOffRole,
             isAutoFill: fillers.includes(user.id)
           };
         };
@@ -101,6 +102,17 @@ export const initMatchmakingService = () => {
   return service;
 };
 
+export const OFFROLE_PENALTY: { [key in Rank]: number } = {
+  IRON: 100,
+  BRONZE: 200,
+  SILVER: 250,
+  GOLD: 300,
+  PLATINUM: 350,
+  DIAMOND: 300,
+  MASTER: 250,
+  GRANDMASTER: 200,
+  CHALLENGER: 150
+};
 // Puts every user into a pool based on role.
 export const calculatePlayerPool = (users: User[], fillers: string[]) => {
   const talentPool: Pool = [[], [], [], [], []];
@@ -110,17 +122,18 @@ export const calculatePlayerPool = (users: User[], fillers: string[]) => {
   console.log(talentPool.map((p) => p.map((u) => u.leagueIGN)));
   if (talentPool.some((rp) => rp.length < 2)) {
     for (const user of users) {
+      const elo = user.elo - OFFROLE_PENALTY[user.rank];
       if (fillers.includes(user.id)) {
         talentPool.forEach((p) => {
           if (!p.some((u) => u.id === user.id)) {
-            p.push({ ...user });
+            p.push({ ...user, elo });
           }
         });
       } else {
         const index = ROLE_ORDER[user.secondary];
         const pool = talentPool[index];
         if (!pool.some((u) => u.id === user.id)) {
-          pool.push({ ...user });
+          pool.push({ ...user, elo });
         }
       }
     }
