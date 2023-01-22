@@ -104,14 +104,14 @@ export const initMatchmakingService = () => {
 
 export const OFFROLE_PENALTY: { [key in Rank]: number } = {
   IRON: 100,
-  BRONZE: 200,
-  SILVER: 250,
-  GOLD: 300,
-  PLATINUM: 350,
-  DIAMOND: 300,
-  MASTER: 250,
-  GRANDMASTER: 200,
-  CHALLENGER: 150
+  BRONZE: 150,
+  SILVER: 200,
+  GOLD: 250,
+  PLATINUM: 300,
+  DIAMOND: 250,
+  MASTER: 200,
+  GRANDMASTER: 150,
+  CHALLENGER: 100
 };
 // Puts every user into a pool based on role.
 export const calculatePlayerPool = (users: User[], fillers: string[]) => {
