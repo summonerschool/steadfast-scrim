@@ -114,7 +114,7 @@ export const initScrimService = (prisma: PrismaClient, matchmakingService: Match
         const K = totalGames <= 14 ? 60 - 2 * totalGames : 32;
         const eloChange = Math.round(K * (scrim.winner === 'BLUE' ? 1 - blueWinChances : 1 - redWinChances));
         const hasWon = player.side === scrim.winner;
-        const elo = hasWon ? player.pregameElo + eloChange : player.pregameElo - eloChange;
+        const elo = hasWon ? user.elo + eloChange : user.elo - eloChange;
         text += `${user.leagueIGN}: ${user.elo} -> ${elo}\n`;
         return prisma.user.update({
           where: { id: user.id },
