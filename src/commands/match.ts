@@ -54,12 +54,12 @@ const match: SlashCommand = {
     if (!success) {
       return { content: 'Oops! Could not set winner of match' };
     }
-    const teamNames = await discordService.deleteVoiceChannels(guildId, voiceIDs);
+    await discordService.deleteVoiceChannels(guildId, voiceIDs);
     console.log('Attempting to delete:', voiceIDs.join(','));
-    let postmatchDiscussionID: string | null = null;
-    if (teamNames) {
-      postmatchDiscussionID = await discordService.createPostDiscussionThread(id, winner, teamNames);
-    }
+    const postmatchDiscussionID = await discordService.createPostDiscussionThread(id, winner, [
+      scrim.blueTeamName,
+      scrim.redTeamName
+    ]);
     return {
       content: `${capitalize(winner)} has been registered as the winner ✅.\n${
         postmatchDiscussionID
