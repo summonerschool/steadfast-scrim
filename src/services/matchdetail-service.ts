@@ -180,9 +180,16 @@ export class MatchDetailServiceImpl implements MatchDetailService {
         reject(err);
       };
     });
+    const removeTimedOutRounds = (val: string[] | undefined) => (val ? val.filter((x) => typeof x === 'string') : []);
+
     const res = await this.prisma.draft.update({
       where: { scrimId_draftRoomId: { scrimId, draftRoomId: roomId } },
-      data: { blueBans, bluePicks, redBans, redPicks }
+      data: {
+        blueBans: removeTimedOutRounds(blueBans),
+        bluePicks: removeTimedOutRounds(bluePicks),
+        redBans: removeTimedOutRounds(redBans),
+        redPicks: removeTimedOutRounds(redPicks)
+      }
     });
     return res;
   }
