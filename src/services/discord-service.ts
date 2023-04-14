@@ -1,4 +1,4 @@
-import { prisma, Scrim } from '@prisma/client';
+import { Scrim } from '@prisma/client';
 import { MessageCreateOptions, OverwriteType, VoiceChannel } from 'discord.js';
 import Discord from 'discord.js';
 import { ChannelType } from 'discord.js';
