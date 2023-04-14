@@ -55,8 +55,9 @@ export class MatchDetailServiceImpl implements MatchDetailService {
       draftLobby.RED,
       `ss${scrim.id}`,
       password,
-      blueScoutingLink,
-      redScoutingLink
+      redScoutingLink,
+      blueScoutingLink
+      
     );
 
     // We have some test users that we don't want to send DMs to

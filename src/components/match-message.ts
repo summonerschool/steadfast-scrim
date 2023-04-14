@@ -67,7 +67,7 @@ export const LobbyDetailsEmbed = (
       [**Spectate draft**](${draftURL.split('/').slice(0, -1).join('/')})
       `;
   const scoutingLinksMsg = `
-    [**Team Profiles**](${scoutingLinkTeam}})
+    [**Team Profiles**](${scoutingLinkTeam})
     [**Enemy Profiles**](${scoutingLinkEnemy})
   `;
 
