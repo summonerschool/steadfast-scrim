@@ -26,10 +26,11 @@ export class MatchDetailServiceImpl implements MatchDetailService {
     players: Player[],
     lobbyDetails: LobbyDetails
   ): Promise<void> {
+    // # T123456: re-add changes to add lobby draft details in the bot messages
+    // this.createDraftLobby(lobbyDetails.teamNames),
     const { BLUE, RED } = this.sortUsersByTeam(users, players);
-    const [voiceChannels, draftLobby, blueScoutingLink, redScoutingLink] = await Promise.all([
+    const [voiceChannels, blueScoutingLink, redScoutingLink] = await Promise.all([
       this.discordService.createVoiceChannels(scrim, BLUE, RED),
-      this.createDraftLobby(lobbyDetails.teamNames),
       this.generateScoutingLink(BLUE, scrim.region),
       this.generateScoutingLink(RED, scrim.region)
     ]);
@@ -41,7 +42,6 @@ export class MatchDetailServiceImpl implements MatchDetailService {
       scrim.id,
       BLUE,
       RED,
-      draftLobby.BLUE,
       `ss${scrim.id}`,
       password,
       blueScoutingLink,
@@ -52,12 +52,10 @@ export class MatchDetailServiceImpl implements MatchDetailService {
       scrim.id,
       RED,
       BLUE,
-      draftLobby.RED,
       `ss${scrim.id}`,
       password,
       redScoutingLink,
       blueScoutingLink
-      
     );
 
     // We have some test users that we don't want to send DMs to
@@ -72,7 +70,8 @@ export class MatchDetailServiceImpl implements MatchDetailService {
       this.discordService.sendMatchDirectMessage(redIDs, {
         embeds: [matchEmbed, redEmbed]
       }),
-      this.prisma.draft.create({ data: { scrimId: scrim.id, draftRoomId: draftLobby.roomId } })
+      // # T123456: draftRoomId: draftLobby.roomId
+      this.prisma.draft.create({ data: { scrimId: scrim.id, draftRoomId: scrim.id.toString() } })
     ]);
     console.log(`${dm1 + dm2} DMs have been sent`);
 
@@ -84,7 +83,8 @@ export class MatchDetailServiceImpl implements MatchDetailService {
             content: `Invite for ${vc.name}: ${invite}`
           });
         })
-      ),
+      )
+      /* # T123456: re-enable channel message once drafting works
       this.discordService.sendMessageInChannel({
         embeds: [
           matchEmbed.addFields({
@@ -93,6 +93,7 @@ export class MatchDetailServiceImpl implements MatchDetailService {
           })
         ]
       })
+      */
     ]);
   }
 

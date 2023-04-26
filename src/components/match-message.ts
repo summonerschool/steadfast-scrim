@@ -54,7 +54,6 @@ export const LobbyDetailsEmbed = (
   scrimID: number,
   teammates: User[],
   enemies: User[],
-  draftURL: string,
   lobbyName: string,
   password: number,
   scoutingLinkTeam: string,
@@ -63,8 +62,6 @@ export const LobbyDetailsEmbed = (
   const detailsText = `
       Lobby name: ${lobbyName}
       Password: ${password}
-      [**Become Draft Captain**](${draftURL})
-      [**Spectate draft**](${draftURL.split('/').slice(0, -1).join('/')})
       `;
   const scoutingLinksMsg = `
     [**Team Profiles**](${scoutingLinkTeam})

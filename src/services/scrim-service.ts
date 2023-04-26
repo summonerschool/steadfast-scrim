@@ -125,9 +125,11 @@ export const initScrimService = (prisma: PrismaClient, matchmakingService: Match
       const draft = await prisma.draft.findUnique({
         where: { scrimId: scrim.id }
       });
+      /* # T123456: re-enable storing draft once drafting works. in current state is a no-op
       if (draft) {
         await matchDetailService.storeDraft(scrim.id, draft.draftRoomId);
       }
+      */
       console.info(text);
       return res.length > 0;
     },
