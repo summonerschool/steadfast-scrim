@@ -67,7 +67,12 @@ export const initScrimService = (prisma: PrismaClient, matchmakingService: Match
           }
         }),
         // autofill protect the user
-        prisma.user.updateMany({ where: { id: { in: fillers } }, data: { autofillProtected: true } })
+        prisma.user.updateMany({ where: { id: { in: fillers } }, data: { autofillProtected: true } }),
+        // Remove autofill protection from users that got their role
+        prisma.user.updateMany({
+          where: { id: { notIn: fillers, in: users.map((u) => u.id) }, autofillProtected: true },
+          data: { autofillProtected: false }
+        })
       ]);
       for (const player of players) {
         ingame.set(player.userId, scrim.id);
