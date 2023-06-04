@@ -83,10 +83,13 @@ const profile: SlashCommand = {
 
         console.info(`${interaction.user.username}(${ign}) setup with the rank ${rank}`);
 
+        // Only add division elo if rank is below Masters
+        const divisionElo = ELO_TRANSLATION[rank] < 2800 ? (4 - division) * 50 : 0;
+
         const user = await userService.setUserProfile(
           interaction.user.id,
           options,
-          ELO_TRANSLATION[rank] + (4 - division) * 50 // Increase elo by 50 for each division after the first one
+          ELO_TRANSLATION[rank] + divisionElo // Increase elo by 50 for each division after the first one
           // rankInfo.elo
         );
         return {
