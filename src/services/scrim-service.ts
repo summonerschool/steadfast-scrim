@@ -1,11 +1,12 @@
 import { chance } from '../lib/chance';
 import type { MatchmakingService } from './matchmaking-service';
+import { OFFROLE_PENALTY } from './matchmaking-service';
 import type { Player, PrismaClient, Region, Scrim, User } from '@prisma/client';
 import { Status } from '@prisma/client';
 import { NotFoundError } from '../errors/errors';
 import { adjectives } from '../lib/adjectives';
 import { capitalize } from '../utils/utils';
-import type { GameSide, LobbyDetails, Team } from '../models/matchmaking';
+import type { GameSide, LobbyDetails } from '../models/matchmaking';
 import { env } from '../env';
 import { matchDetailService } from '..';
 
@@ -95,29 +96,30 @@ export const initScrimService = (prisma: PrismaClient, matchmakingService: Match
         include: { players: { include: { user: true } } }
       });
 
-      const playerMap = new Map<string, Player & { user: User }>();
-      const red: User[] = [];
-      const blue: User[] = [];
       // Sort the users into side
+      let totalBlueElo = 0;
+      let totalRedElo = 0;
       for (const player of scrim.players) {
-        if (player.side === 'BLUE') blue.push(player.user);
-        if (player.side === 'RED') red.push(player.user);
-        playerMap.set(player.user.id, player);
+        // Apply offrole penalty if autofilled
+        const elo = player.user.elo - (player.isAutoFill || player.isOffRole ? OFFROLE_PENALTY[player.user.rank] : 0);
+        if (player.side === 'BLUE') totalBlueElo += elo;
+        if (player.side === 'RED') totalRedElo += elo;
         ingame.delete(player.userId);
       }
-      // Get the average elo for the teams
-      const totalBlueElo = getTeamTotalElo(blue);
-      const totalRedElo = getTeamTotalElo(red);
+      // For every difference of 650 points, the team/player with the higher score is ten times as likely to win as the other team/player
       const blueWinChances = 1 / (1 + 10 ** ((totalRedElo - totalBlueElo) / 650));
       const redWinChances = 1 - blueWinChances;
       let text = `Game #${scrim.id}\nBlue Elo: ${totalBlueElo}\nRed Elo:${totalRedElo}\nWinner is ${winner}\n`;
+
+      // Update the users elo
       const updatedUsers = scrim.players.map((player) => {
         ingame.delete(player.userId);
 
         const user = player.user;
         const totalGames = user.wins + user.losses;
-        const K = totalGames <= 14 ? 60 - 2 * totalGames : 32;
-        const eloChange = Math.round(K * (scrim.winner === 'BLUE' ? 1 - blueWinChances : 1 - redWinChances));
+        const K = totalGames <= 14 ? 80 - 2 * totalGames : 40;
+        let eloChange = Math.round(K * (scrim.winner === 'BLUE' ? 1 - blueWinChances : 1 - redWinChances));
+        if (eloChange < 10) eloChange = 10; //
         const hasWon = player.side === scrim.winner;
         const elo = hasWon ? user.elo + eloChange : user.elo - eloChange;
         text += `${user.leagueIGN}: ${user.elo} -> ${elo}\n`;
@@ -127,6 +129,8 @@ export const initScrimService = (prisma: PrismaClient, matchmakingService: Match
         });
       });
       const res = await prisma.$transaction(updatedUsers);
+
+      // Store the draft
       const draft = await prisma.draft.findUnique({
         where: { scrimId: scrim.id }
       });
@@ -209,8 +213,3 @@ export const initScrimService = (prisma: PrismaClient, matchmakingService: Match
   };
   return service;
 };
-
-const getTeamTotalElo = (users: User[]): number =>
-  users.reduce((prev, curr) => {
-    return prev + curr.elo;
-  }, 0);
