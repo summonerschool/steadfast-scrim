@@ -28,6 +28,8 @@ export const MatchDetailsEmbed = (scrim: Scrim, players: Player[], lobbyDetails:
 
   const blue = teams.BLUE.sort(sortByRole);
   const red = teams.RED.sort(sortByRole);
+  const blueAvgElo = Math.round(blue.reduce((prev, curr) => prev + (curr.pregameElo || 0), 0) / 5);
+  const redAvgElo = Math.round(red.reduce((prev, curr) => prev + (curr.pregameElo || 0), 0) / 5);
 
   const embed = new EmbedBuilder()
     .setColor(698371)
@@ -42,9 +44,9 @@ export const MatchDetailsEmbed = (scrim: Scrim, players: Player[], lobbyDetails:
       `
     )
     .addFields(
-      { name: teamNames[0], value: blue.map(teamToString).join('\n'), inline: true },
-      { name: teamNames[1], value: red.map(teamToString).join('\n'), inline: true }
-    )
+      { name: teamNames[0], value: blue.map(teamToString).join('\n') + "\n AVERAGE ELO: " + blueAvgElo + "\n", inline: true },
+      { name: teamNames[1], value: red.map(teamToString).join('\n') + "\n AVERAGE ELO: " + redAvgElo + "\n", inline: true }
+    ) 
     .setTimestamp();
   return embed;
 };
