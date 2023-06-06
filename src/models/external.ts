@@ -12,14 +12,3 @@ export interface DraftURLs {
   BLUE: string;
   SPECTATOR: string;
 }
-
-interface MMREntry {
-  avg: number;
-  closestRank: string;
-}
-
-export interface WhatIsMyMMRResponse {
-  ranked: MMREntry;
-  normal: MMREntry;
-  ARAM: MMREntry;
-}

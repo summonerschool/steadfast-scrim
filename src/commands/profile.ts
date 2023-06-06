@@ -39,6 +39,13 @@ const profile: SlashCommand = {
             .setDescription("What's your approxmitely league rank if we cannot determine your rank?")
             .addChoices(...rank)
         )
+        .addIntegerOption((opt) =>
+          opt
+            .setName('division')
+            .setRequired(true)
+            .setDescription("What's your division, M, GMs and Challengers can pick whatever")
+            .addChoices(...[1, 2, 3, 4].map((num) => ({ name: num.toString(), value: num })))
+        )
         .addStringOption((opt) =>
           opt
             .setName('main')
@@ -66,7 +73,7 @@ const profile: SlashCommand = {
       case 'setup': {
         await interaction.deferReply();
         const options = retrieveOptions(interaction.options.data, SetupCommandInputSchema);
-        const { ign, region, rank, main, secondary } = options;
+        const { ign, rank, main, secondary, division } = options;
         if (main === secondary) {
           return {
             content: 'Your main and secondary roles cannot be the same',
@@ -76,13 +83,13 @@ const profile: SlashCommand = {
 
         console.info(`${interaction.user.username}(${ign}) setup with the rank ${rank}`);
 
-        const rankInfo = await userService.fetchMyMMR(region, ign).catch(() => {
-          return { rank: rank, elo: ELO_TRANSLATION[rank] };
-        });
+        // Only add division elo if rank is below Masters
+        const divisionElo = ELO_TRANSLATION[rank] < 2800 ? (4 - division) * 50 : 0;
+
         const user = await userService.setUserProfile(
           interaction.user.id,
           options,
-          rankInfo.elo
+          ELO_TRANSLATION[rank] + divisionElo // Increase elo by 50 for each division after the first one
           // rankInfo.elo
         );
         return {

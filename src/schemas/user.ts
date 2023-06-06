@@ -5,6 +5,7 @@ export const SetupCommandInputSchema = z.object({
   ign: z.string(),
   region: z.nativeEnum(Region),
   rank: z.nativeEnum(Rank),
+  division: z.number().min(1).max(4),
   main: z.nativeEnum(Role),
   secondary: z.nativeEnum(Role)
 });
