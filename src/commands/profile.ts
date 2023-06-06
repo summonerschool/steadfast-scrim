@@ -42,6 +42,7 @@ const profile: SlashCommand = {
         .addIntegerOption((opt) =>
           opt
             .setName('division')
+            .setRequired(true)
             .setDescription("What's your division, M, GMs and Challengers can pick whatever")
             .addChoices(...[1, 2, 3, 4].map((num) => ({ name: num.toString(), value: num })))
         )
@@ -73,7 +74,7 @@ const profile: SlashCommand = {
         await interaction.deferReply();
         const options = retrieveOptions(interaction.options.data, SetupCommandInputSchema);
         const { ign, rank, main, secondary } = options;
-        const division = interaction.options.getInteger('division', false) || 4;
+        const division = interaction.options.getInteger('division', true);
         if (main === secondary) {
           return {
             content: 'Your main and secondary roles cannot be the same',
