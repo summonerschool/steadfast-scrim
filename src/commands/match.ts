@@ -64,7 +64,7 @@ const match: SlashCommand = {
     const availableScrims = await scrimService.getIncompleteScrims(interaction.user.id);
     const choices = availableScrims.map((scrim) => ({ name: `#${scrim.id}`, value: scrim.id }));
     await interaction.respond(choices);
-  }
+  },
 };
 
 export default match;
