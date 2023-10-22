@@ -1,9 +1,8 @@
 import { SlashCommandBuilder } from 'discord.js';
 import { discordService, redis, scrimService } from '..';
-import { env } from '../env';
 import { retrieveOptions } from '../helpers/retrieveOptions';
 import { MatchCommandInputSchema } from '../schemas/user';
-import { SlashCommand } from '../types';
+import type { SlashCommand } from '../types';
 import { capitalize } from '../utils/utils';
 
 const match: SlashCommand = {
@@ -56,16 +55,9 @@ const match: SlashCommand = {
     }
     await discordService.deleteVoiceChannels(guildId, voiceIDs);
     console.log('Attempting to delete:', voiceIDs.join(','));
-    const postmatchDiscussionID = await discordService.createPostDiscussionThread(id, winner, [
-      scrim.blueTeamName,
-      scrim.redTeamName
-    ]);
+    
     return {
-      content: `${capitalize(winner)} has been registered as the winner ✅.\n${
-        postmatchDiscussionID
-          ? `Discussion thread: https://discord.com/channels/${env.DISCORD_DEVELOPMENT_GUILD_ID}/${postmatchDiscussionID}`
-          : ''
-      }`
+      content: `${capitalize(winner)} has been registered as the winner ✅.`
     };
   },
   autocomplete: async (interaction) => {
