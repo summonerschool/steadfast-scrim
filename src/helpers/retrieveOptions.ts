@@ -1,5 +1,5 @@
-import { CacheType, CommandInteractionOption } from 'discord.js';
-import { z, ZodObject, ZodRawShape } from 'zod';
+import type { CacheType, CommandInteractionOption } from 'discord.js';
+import type { z, ZodObject, ZodRawShape } from 'zod';
 
 export const formatErrors = (errors: z.ZodFormattedError<Map<string, string>, string>) =>
   Object.entries(errors)

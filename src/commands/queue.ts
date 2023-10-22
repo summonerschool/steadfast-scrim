@@ -30,6 +30,9 @@ const queue: SlashCommand = {
       queueCommand(subGroup.setName('euw').setDescription('Commands to interact with the queue for Europe West'))
     )
     .addSubcommandGroup((subGroup) =>
+      queueCommand(subGroup.setName('euw_high_elo').setDescription('Commands to interact with the high elo queue for Europe West'))
+    )
+    .addSubcommandGroup((subGroup) =>
       queueCommand(subGroup.setName('na').setDescription('Commands to interact with the queue for North America'))
     )
     .setDescription('A queue for joining in-house games'),
@@ -52,7 +55,7 @@ const queue: SlashCommand = {
         const detailed = interaction.options.getBoolean('detailed');
         const users = [...queueService.getQueue(guildId, region).values()];
         return {
-          embeds: [QueueEmbed(users, 'show', 'EUW', region, !!detailed)]
+          embeds: [QueueEmbed(users, 'show', userId, region, !!detailed)]
         };
       }
       switch (subCommand) {
