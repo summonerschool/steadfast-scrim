@@ -4,10 +4,11 @@ export const ELO_TRANSLATION: { [key: string]: number } = {
   SILVER: 1200,
   GOLD: 1600,
   PLATINUM: 2000,
-  DIAMOND: 2400,
-  MASTER: 2800,
-  GRANDMASTER: 2800,
-  CHALLENGER: 3000
+  EMERALD: 2400,
+  DIAMOND: 2800,
+  MASTER: 3200,
+  GRANDMASTER: 3400,
+  CHALLENGER: 3600
 };
 
 export const getEstimatedRank = (elo: number) => {
