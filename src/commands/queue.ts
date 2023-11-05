@@ -35,6 +35,9 @@ const queue: SlashCommand = {
     .addSubcommandGroup((subGroup) =>
       queueCommand(subGroup.setName('na').setDescription('Commands to interact with the queue for North America'))
     )
+    .addSubcommandGroup((subGroup) =>
+      queueCommand(subGroup.setName('na_high_elo').setDescription('Commands to interact with the high elo queue for North America'))
+    )
     .setDescription('A queue for joining in-house games'),
   execute: async (interaction) => {
     // const [commandGroup, command] = ctx.subcommands;
