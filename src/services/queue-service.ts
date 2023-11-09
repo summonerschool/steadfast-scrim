@@ -22,7 +22,9 @@ export enum MatchmakingStatus {
 
 type Queues = {
   EUW: Map<string, User & { queuedAsFill: boolean }>;
+  EUW_HIGH_ELO: Map<string, User & { queuedAsFill: boolean }>;
   NA: Map<string, User & { queuedAsFill: boolean }>;
+  NA_HIGH_ELO: Map<string, User & { queuedAsFill: boolean }>;
 };
 
 const HOUR = 3600000;
@@ -60,7 +62,7 @@ export const initQueueService = (
 
   const service: QueueService = {
     joinQueue: (user, guildID, region, isFill) => {
-      const queue: Queues = queues.get(guildID) || { EUW: new Map(), NA: new Map() };
+      const queue: Queues = queues.get(guildID) || { EUW: new Map(), EUW_HIGH_ELO: new Map(),NA: new Map(),NA_HIGH_ELO: new Map()  };
       if (queue[region].get(user.id)) {
         // Reset the queue timer
         stopQueueUserTimout(user.id);
@@ -94,7 +96,7 @@ export const initQueueService = (
     getQueue: (guildID, region) => {
       let queue = queues.get(guildID);
       if (!queue) {
-        queue = { EUW: new Map(), NA: new Map() };
+        queue = { EUW: new Map(), EUW_HIGH_ELO: new Map(),NA: new Map(), NA_HIGH_ELO: new Map() };
         queues.set(guildID, queue);
       }
       return queue[region];

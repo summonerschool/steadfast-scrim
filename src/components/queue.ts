@@ -1,4 +1,4 @@
-import { Region, Role, User } from '@prisma/client';
+import type { Region, Role, User } from '@prisma/client';
 import { EmbedBuilder } from 'discord.js';
 import { capitalize, POSITION_EMOJI_TRANSLATION } from '../utils/utils';
 
@@ -9,13 +9,13 @@ export const queueEmbed = (
   command: QueueCommand,
   callerID: string,
   region: Region,
-  detailed: boolean = false
+  detailed = false
 ) => {
   const plural = users.length === 1 ? '1 player is' : `${users.length} players are`;
   const embed = new EmbedBuilder()
     .setTitle(`${plural} currently in the ${region} queue`)
     .setTimestamp(new Date())
-    .setColor(region === 'EUW' ? [40, 99, 206] : [187, 26, 52]);
+    .setColor(region === 'EUW' || region === 'EUW_HIGH_ELO' ? [40, 99, 206] : [187, 26, 52]);
 
   switch (command) {
     case 'join':

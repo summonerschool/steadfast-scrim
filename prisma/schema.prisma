@@ -97,7 +97,9 @@ enum Status {
 
 enum Region {
   EUW
+  EUW_HIGH_ELO
   NA
+  NA_HIGH_ELO
 }
 
 enum Rank {
@@ -106,6 +108,7 @@ enum Rank {
   SILVER
   GOLD
   PLATINUM
+  EMERALD
   DIAMOND
   MASTER
   GRANDMASTER

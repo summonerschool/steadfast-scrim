@@ -4,10 +4,11 @@ export const ELO_TRANSLATION: { [key: string]: number } = {
   SILVER: 1200,
   GOLD: 1600,
   PLATINUM: 2000,
-  DIAMOND: 2400,
-  MASTER: 2800,
-  GRANDMASTER: 2800,
-  CHALLENGER: 3000
+  EMERALD: 2400,
+  DIAMOND: 2800,
+  MASTER: 3200,
+  GRANDMASTER: 3400,
+  CHALLENGER: 3600
 };
 
 export const getEstimatedRank = (elo: number) => {
@@ -22,15 +23,16 @@ export const getEstimatedRank = (elo: number) => {
 };
 
 export const RANK_IMAGE_TRANSLATION: { [key: string]: string } = {
-  IRON: 'https://static.wikia.nocookie.net/leagueoflegends/images/f/fe/Season_2022_-_Iron.png',
-  BRONZE: 'https://static.wikia.nocookie.net/leagueoflegends/images/e/e9/Season_2022_-_Bronze.png',
-  SILVER: 'https://static.wikia.nocookie.net/leagueoflegends/images/4/44/Season_2022_-_Silver.png',
-  GOLD: 'https://static.wikia.nocookie.net/leagueoflegends/images/8/8d/Season_2022_-_Gold.png',
-  PLATINUM: 'https://static.wikia.nocookie.net/leagueoflegends/images/3/3b/Season_2022_-_Platinum.png',
-  DIAMOND: 'https://static.wikia.nocookie.net/leagueoflegends/images/e/ee/Season_2022_-_Diamond.png',
-  MASTER: 'https://static.wikia.nocookie.net/leagueoflegends/images/e/eb/Season_2022_-_Master.png',
-  GRANDMASTER: 'https://static.wikia.nocookie.net/leagueoflegends/images/f/fc/Season_2022_-_Grandmaster.png',
-  CHALLENGER: 'https://static.wikia.nocookie.net/leagueoflegends/images/0/02/Season_2022_-_Challenger.png'
+  IRON: 'https://static.wikia.nocookie.net/leagueoflegends/images/f/f8/Season_2023_-_Iron.png',
+  BRONZE: 'https://static.wikia.nocookie.net/leagueoflegends/images/c/cb/Season_2023_-_Bronze.png',
+  SILVER: 'https://static.wikia.nocookie.net/leagueoflegends/images/c/c4/Season_2023_-_Silver.png',
+  GOLD: 'https://static.wikia.nocookie.net/leagueoflegends/images/7/78/Season_2023_-_Gold.png',
+  PLATINUM: 'https://static.wikia.nocookie.net/leagueoflegends/images/b/bd/Season_2023_-_Platinum.png',
+  EMERALD: 'https://static.wikia.nocookie.net/leagueoflegends/images/4/4b/Season_2023_-_Emerald.png',
+  DIAMOND: 'https://static.wikia.nocookie.net/leagueoflegends/images/3/37/Season_2023_-_Diamond.png',
+  MASTER: 'https://static.wikia.nocookie.net/leagueoflegends/images/d/d5/Season_2023_-_Master.png',
+  GRANDMASTER: 'https://static.wikia.nocookie.net/leagueoflegends/images/6/64/Season_2023_-_Grandmaster.png',
+  CHALLENGER: 'https://static.wikia.nocookie.net/leagueoflegends/images/1/14/Season_2023_-_Challenger.png'
 };
 
 export const POSITION_IMAGE_TRANSLATION: { [key: string]: string } = {

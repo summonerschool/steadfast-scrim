@@ -1,6 +1,6 @@
-import { User } from '@prisma/client';
+import type { User } from '@prisma/client';
 import { EmbedBuilder } from 'discord.js';
-import { ELO_TRANSLATION, getEstimatedRank, POSITION_EMOJI_TRANSLATION, RANK_IMAGE_TRANSLATION } from '../utils/utils';
+import { getEstimatedRank, POSITION_EMOJI_TRANSLATION, RANK_IMAGE_TRANSLATION } from '../utils/utils';
 
 export const ProfileEmbed = (user: User) => {
   const roles_to_image = [user.main, user.secondary].map((x) => {

@@ -1,8 +1,8 @@
 import { chance } from '../lib/chance';
 // @ts-ignore
 import { EmbedBuilder } from 'discord.js';
-import { Player, Scrim, User } from '@prisma/client';
-import { GameSide, LobbyDetails } from '../models/matchmaking';
+import type { Player, Scrim, User } from '@prisma/client';
+import type { GameSide, LobbyDetails } from '../models/matchmaking';
 
 const ROLES_ORDER = {
   TOP: 1,

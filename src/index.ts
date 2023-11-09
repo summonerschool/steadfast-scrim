@@ -14,7 +14,8 @@ dotenv.config();
 
 const admins = [
   '183908254210981888', // kharann,
-  '164357764020305920' // Tikka
+  '164357764020305920', // Tikka
+  '121980910059913216' // ricardo
 ];
 
 export const client = new ApplicationClient(admins);
