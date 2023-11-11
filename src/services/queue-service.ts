@@ -62,7 +62,8 @@ export const initQueueService = (
 
   const service: QueueService = {
     joinQueue: (user, guildID, region, isFill) => {
-      const queue: Queues = queues.get(guildID) || { EUW: new Map(), EUW_HIGH_ELO: new Map(),NA: new Map(),NA_HIGH_ELO: new Map()  };
+      const queue: Queues = queues.get(guildID) || { EUW: new Map(),EUW_HIGH_ELO: new Map(),NA: new Map(),NA_HIGH_ELO: new Map() };
+      console.log(queue)
       if (queue[region].get(user.id)) {
         // Reset the queue timer
         stopQueueUserTimout(user.id);
