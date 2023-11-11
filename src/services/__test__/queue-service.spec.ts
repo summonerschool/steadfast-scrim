@@ -21,6 +21,7 @@ describe('QueueService', () => {
     wins: 0,
     losses: 0,
     externalElo: 0,
+    highElo: false,
     autofillProtected: false,
     registeredAt: new Date()
   };

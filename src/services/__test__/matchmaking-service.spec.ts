@@ -40,6 +40,7 @@ const fail: User[] = [
     wins: 2,
     losses: 0,
     elo: 2086,
+    highElo: false,
     registeredAt: new Date(),
     externalElo: 2000,
     autofillProtected: true
@@ -54,6 +55,7 @@ const fail: User[] = [
     wins: 8,
     losses: 4,
     elo: 2157,
+    highElo: false,
     registeredAt: new Date(),
     externalElo: 2000,
     autofillProtected: false
@@ -68,6 +70,7 @@ const fail: User[] = [
     wins: 0,
     losses: 1,
     elo: 1605,
+    highElo: false,
     registeredAt: new Date(),
     externalElo: 1663,
     autofillProtected: false
@@ -82,6 +85,7 @@ const fail: User[] = [
     rank: 'GOLD',
     region: 'EUW',
     elo: 2042,
+    highElo: false,
     registeredAt: new Date(),
     externalElo: 2208,
     autofillProtected: false
@@ -97,6 +101,7 @@ const fail: User[] = [
     rank: 'GOLD',
     region: 'EUW',
     externalElo: 2400,
+    highElo: false,
     registeredAt: new Date(),
     autofillProtected: true
   },
@@ -110,6 +115,7 @@ const fail: User[] = [
     region: 'EUW',
     losses: 5,
     elo: 1914,
+    highElo: false,
     registeredAt: new Date(),
     externalElo: 2000,
     autofillProtected: false
@@ -124,6 +130,7 @@ const fail: User[] = [
     region: 'EUW',
     losses: 3,
     elo: 1270,
+    highElo: false,
     registeredAt: new Date(),
     externalElo: 1200,
     autofillProtected: false
@@ -138,6 +145,7 @@ const fail: User[] = [
     region: 'EUW',
     losses: 0,
     elo: 2088,
+    highElo: false,
     registeredAt: new Date(),
     externalElo: 2000,
     autofillProtected: false
@@ -152,6 +160,7 @@ const fail: User[] = [
     elo: 2007,
     rank: 'GOLD',
     region: 'EUW',
+    highElo: false,
     registeredAt: new Date(),
     externalElo: 2070,
     autofillProtected: false
@@ -166,6 +175,7 @@ const fail: User[] = [
     elo: 2072,
     rank: 'GOLD',
     region: 'EUW',
+    highElo: false,
     registeredAt: new Date(),
     externalElo: 2098,
     autofillProtected: false
@@ -184,6 +194,7 @@ const createTestUser = (role: Role, secondary: Role, name: string, elo: number):
   autofillProtected: false,
   losses: 0,
   wins: 0,
+  highElo: false,
   registeredAt: new Date()
 });
 

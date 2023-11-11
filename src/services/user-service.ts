@@ -1,10 +1,11 @@
-import type { PrismaClient, User } from '@prisma/client';
-import { NotFoundError } from '../errors/errors';
-import type { SetupInput } from '../schemas/user';
+import type {PrismaClient, User} from '@prisma/client';
+import {NotFoundError} from '../errors/errors';
+import type {SetupInput} from '../schemas/user';
 
 export interface UserService {
   setUserProfile(id: string, input: SetupInput, elo: number): Promise<User>;
   updateElo(id: string, elo?: number, externalElo?: number): Promise<User>;
+  setHighEloQueue(id: string, value: boolean): Promise<User>;
   getUserProfile(id: string): Promise<User>;
   getUsers(ids: string[]): Promise<User[]>;
 }
@@ -29,6 +30,13 @@ export class UserServiceImpl implements UserService {
       data: { elo, externalElo: externalElo }
     });
     return user;
+  }
+
+  async setHighEloQueue(id: string, value: boolean = true): Promise<User> {
+    return await this.prisma.user.update({
+      where: {id},
+      data: {highElo: value}
+    });
   }
 
   async getUserProfile(id: string): Promise<User> {
