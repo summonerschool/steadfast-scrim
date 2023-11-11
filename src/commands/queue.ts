@@ -51,7 +51,10 @@ const queue: SlashCommand = {
     if (!subCommandGroup) {
       throw new Error('Could not determine region');
     }
+
     const region = Region[subCommandGroup.toUpperCase() as keyof typeof Region];
+    console.log(subCommandGroup.toUpperCase())
+    console.log(region)
 
     try {
       if (subCommand === 'show') {
