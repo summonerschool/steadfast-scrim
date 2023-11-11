@@ -1,14 +1,14 @@
 import { EmbedBuilder } from 'discord.js';
 import type { ScrimService } from './scrim-service';
 import type { DiscordService } from './discord-service';
-import type { Region, User } from '@prisma/client';
+import type { Region, Queue, User } from '@prisma/client';
 import type { MatchDetailService } from './matchdetail-service';
 
 interface QueueService {
-  joinQueue: (user: User, guildID: string, region: Region, isFill: boolean) => User[];
-  leaveQueue: (userID: string, guildID: string, region: Region) => User[];
-  getQueue: (guildID: string, region: Region) => Map<string, User>;
-  resetQueue: (guildID: string, region: Region) => void;
+  joinQueue: (user: User, guildID: string, region: Region, queue: Queue, isFill: boolean) => User[];
+  leaveQueue: (userID: string, guildID: string, region: Region, queue: Queue) => User[];
+  getQueue: (guildID: string, region: Region, queue: Queue) => Map<string, User>;
+  resetQueue: (guildID: string, region: Region, queue: Queue) => void;
   removeUserFromQueue: (guildID: string, region: Region, ids: string[]) => void;
   attemptMatchCreation: (guildID: string, region: Region) => MatchmakingStatus;
   createMatch: (guildID: string, region: Region) => Promise<EmbedBuilder>;
