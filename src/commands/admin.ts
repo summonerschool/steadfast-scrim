@@ -119,7 +119,11 @@ const admin: SlashCommand = {
         if (!mentionable) return { content: 'Not a real user ID' };
         const member = mentionable as GuildMember;
         const user = await userService.setHighEloQueue(member.user.id, value);
-        return { content: `<@${user.id}> has been approved for high elo queue` };
+        return {
+          content: value
+            ? `<@${user.id}> has been approved for high elo queue`
+            : `<@${user.id}> has been removed from high elo queue approval list`
+        }
       }
       case 'revert-game': {
         await interaction.deferReply();
