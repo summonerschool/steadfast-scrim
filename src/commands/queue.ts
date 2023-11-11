@@ -53,8 +53,6 @@ const queue: SlashCommand = {
     }
 
     const region = Region[subCommandGroup.toUpperCase() as keyof typeof Region];
-    console.log(subCommandGroup.toUpperCase())
-    console.log(region)
 
     try {
       if (subCommand === 'show') {
