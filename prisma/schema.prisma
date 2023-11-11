@@ -19,6 +19,7 @@ model User {
   losses            Int          @default(0)
   wins              Int          @default(0)
   autofillProtected Boolean      @default(false) @map("autofill_protected")
+  highElo           Boolean      @default(false) @map("high_elo")
   registeredAt      DateTime     @default(now()) @map("registered_at")
   player            Player[]
   seasonStats       SeasonStats?
@@ -45,6 +46,7 @@ model Scrim {
   status       Status   @default(STARTED)
   guildID      String
   region       Region
+  queue        Queue    @default(UNIVERSAL)
   winner       Side?
   createdAt    DateTime @default(now()) @map("created_at")
   season       Int      @default(0)
@@ -91,6 +93,11 @@ enum Status {
 enum Region {
   EUW
   NA
+}
+
+enum Queue {
+  UNIVERSAL
+  HIGH_ELO
 }
 
 enum Rank {

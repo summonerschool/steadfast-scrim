@@ -82,8 +82,6 @@ const profile: SlashCommand = {
           };
         }
 
-        console.info(`${interaction.user.username}(${ign}) setup with the rank ${rank}`);
-
         // Only add division elo if rank is below Masters
         const divisionElo = ELO_TRANSLATION[rank] < 3200 ? (4 - division) * 50 : 0;
 
@@ -93,6 +91,9 @@ const profile: SlashCommand = {
           ELO_TRANSLATION[rank] + divisionElo // Increase elo by 50 for each division after the first one
           // rankInfo.elo
         );
+
+        console.info(`${interaction.user.username}(${ign}) setup with the rank ${rank} and elo ${ELO_TRANSLATION[rank] + divisionElo}`);
+
         return {
           embeds: [ProfileEmbed(user)]
         };
