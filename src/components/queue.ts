@@ -13,7 +13,7 @@ export const queueEmbed = (
 ) => {
   const plural = users.length === 1 ? '1 player is' : `${users.length} players are`;
   const embed = new EmbedBuilder()
-    .setTitle(`${plural} currently in the ${region} queue`)
+    .setTitle(`${plural} currently in the ${region.replaceAll('_', ' ')} queue`)
     .setTimestamp(new Date())
     .setColor(
       (region === 'EUW') ? [40, 99, 206] :
