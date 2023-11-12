@@ -15,7 +15,12 @@ export const queueEmbed = (
   const embed = new EmbedBuilder()
     .setTitle(`${plural} currently in the ${region} queue`)
     .setTimestamp(new Date())
-    .setColor((region === 'EUW') ? [40, 99, 206] : [187, 26, 52]);
+    .setColor(
+      (region === 'EUW') ? [40, 99, 206] :
+      (region === 'EUW_HIGH_ELO') ? [187, 26, 52] :
+      (region === 'NA') ? [187, 26, 52] :
+      (region === 'NA_HIGH_ELO') ? [83, 27, 96] : [0,0,0]
+    );
 
   switch (command) {
     case 'join':

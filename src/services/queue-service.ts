@@ -63,7 +63,6 @@ export const initQueueService = (
   const service: QueueService = {
     joinQueue: (user, guildID, region, isFill) => {
       const queue: Queues = queues.get(guildID) || { EUW: new Map(),EUW_HIGH_ELO: new Map(),NA: new Map(),NA_HIGH_ELO: new Map() };
-      console.log(queue)
       if (queue[region].get(user.id)) {
         // Reset the queue timer
         stopQueueUserTimout(user.id);
@@ -146,7 +145,7 @@ export const initQueueService = (
         .sendMatchDetails(scrim, relevantUsers, players, lobbyDetails)
         .then(() => console.log('All post-match creation actions completed'));
       return new EmbedBuilder().setTitle(
-        `Match #${scrim.id} has been created! Send matching details to the players...`
+        `Match #${scrim.id} has been created! Match Details in DM`
       );
     }
   };

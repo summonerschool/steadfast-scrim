@@ -56,6 +56,7 @@ const queue: SlashCommand = {
 
     try {
       if (subCommand === 'show') {
+        await interaction.deferReply();
         const detailed = interaction.options.getBoolean('detailed');
         const users = [...queueService.getQueue(guildId, region).values()];
         return {
@@ -64,6 +65,7 @@ const queue: SlashCommand = {
       }
       switch (subCommand) {
         case 'join': {
+          await interaction.deferReply();
           const isFill = interaction.options.getBoolean('fill');
           const user = await userService.getUserProfile(userId);
           const queuers = queueService.joinQueue(user, guildId, region, !!isFill);
@@ -74,13 +76,13 @@ const queue: SlashCommand = {
             };
           }
           if (MatchmakingStatus.VALID_MATCH) {
-            await interaction.deferReply();
             const embed = await queueService.createMatch(guildId, region);
             return { embeds: [embed] };
           }
           break;
         }
         case 'leave': {
+          await interaction.deferReply();
           const users = queueService.leaveQueue(userId, guildId, region);
           const embed = QueueEmbed(users, 'leave', userId, region);
           return { embeds: [embed] };

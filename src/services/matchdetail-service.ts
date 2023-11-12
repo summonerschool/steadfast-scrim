@@ -1,12 +1,12 @@
-import type { LobbyDetails, Team } from '../models/matchmaking';
-import { ROLE_ORDER } from '../models/matchmaking';
-import type { Draft, Player, PrismaClient, Region, Scrim, User } from '@prisma/client';
-import { chance } from '../lib/chance';
-import { LobbyDetailsEmbed, MatchDetailsEmbed } from '../components/match-message';
-import type { DraftURLs } from '../models/external';
-import type { DiscordService } from './discord-service';
+import type {LobbyDetails, Team} from '../models/matchmaking';
+import {ROLE_ORDER} from '../models/matchmaking';
+import type {Draft, Player, PrismaClient, Region, Scrim, User} from '@prisma/client';
+import {chance} from '../lib/chance';
+import {LobbyDetailsEmbed, MatchDetailsEmbed} from '../components/match-message';
+import type {DraftURLs} from '../models/external';
+import type {DiscordService} from './discord-service';
 import WebSocket from 'ws';
-import type { Redis } from 'ioredis';
+import type {Redis} from 'ioredis';
 
 export interface MatchDetailService {
   sendMatchDetails(scrim: Scrim, users: User[], players: Player[], lobbyDetails: LobbyDetails): Promise<void>;
@@ -57,7 +57,7 @@ export class MatchDetailServiceImpl implements MatchDetailService {
       password,
       redScoutingLink,
       blueScoutingLink
-      
+
     );
 
     // We have some test users that we don't want to send DMs to
@@ -84,15 +84,7 @@ export class MatchDetailServiceImpl implements MatchDetailService {
             content: `Invite for ${vc.name}: ${invite}`
           });
         })
-      ),
-      this.discordService.sendMessageInChannel({
-        embeds: [
-          matchEmbed.addFields({
-            name: 'Draft',
-            value: `[Spectate Draft](${draftLobby.SPECTATOR})`
-          })
-        ]
-      })
+      )
     ]);
   }
 
@@ -110,9 +102,8 @@ export class MatchDetailServiceImpl implements MatchDetailService {
 
   private generateScoutingLink(users: User[], region: Region) {
     const summoners = users.map((user) => encodeURIComponent(user.leagueIGN)).join(',');
-    const server = region.toLocaleLowerCase();
-    const link = `https://u.gg/multisearch?summoners=${summoners}&region=${server}1`;
-    return link;
+    const server = region.toLocaleLowerCase().startsWith('euw') ? 'euw1' : 'na1';
+    return `https://u.gg/multisearch?summoners=${summoners}&region=${server}`;
   }
   private async createDraftLobby(teamNames: [string, string]): Promise<DraftURLs> {
     type RoomCreatedResult = {

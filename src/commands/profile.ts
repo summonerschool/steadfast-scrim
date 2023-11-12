@@ -65,6 +65,7 @@ const profile: SlashCommand = {
     const subCmd = interaction.options.getSubcommand();
     switch (subCmd) {
       case 'show': {
+        await interaction.deferReply();
         const user = await userService.getUserProfile(interaction.user.id);
         return {
           embeds: [ProfileEmbed(user)]
