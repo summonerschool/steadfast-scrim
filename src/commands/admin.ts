@@ -52,7 +52,7 @@ const admin: SlashCommand = {
         .setName('high-elo')
         .setDescription('Adds/removes a user for high elo queue')
         .addMentionableOption((opt) => opt.setName('user').setDescription('User to enable/disable').setRequired(true))
-        .addBooleanOption((opt) => opt.setName('value').setDescription('Enables/Disables user to highelo queue. Defaults TRUE'))
+        .addBooleanOption((opt) => opt.setName('allowed').setDescription('Enables/Disables user to highelo queue. Defaults TRUE'))
     )
     .addSubcommand((cmd) => cmd.setName('add-dummy-users').setDescription('creates and adds dummy users'))
     .addSubcommand((cmd) =>
@@ -115,7 +115,7 @@ const admin: SlashCommand = {
       }
       case 'high-elo': {
         const mentionable = interaction.options.getMentionable('user');
-        const value = interaction.options.getBoolean('value') ?? true;
+        const value = interaction.options.getBoolean('allowed') ?? true;
         if (!mentionable) return { content: 'Not a real user ID' };
         const member = mentionable as GuildMember;
         const user = await userService.setHighEloQueue(member.user.id, value);

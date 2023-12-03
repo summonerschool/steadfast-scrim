@@ -63,6 +63,11 @@ export const initQueueService = (
   const service: QueueService = {
     joinQueue: (user, guildID, region, isFill) => {
       const queue: Queues = queues.get(guildID) || { EUW: new Map(),EUW_HIGH_ELO: new Map(),NA: new Map(),NA_HIGH_ELO: new Map() };
+
+      if (region.includes('HIGH_ELO') && !user.highElo) {
+        throw new Error("You're not allowed to join high elo queue yet, please request acceptance from an admin");
+      }
+
       if (queue[region].get(user.id)) {
         // Reset the queue timer
         stopQueueUserTimout(user.id);

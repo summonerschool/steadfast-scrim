@@ -86,6 +86,15 @@ export class MatchDetailServiceImpl implements MatchDetailService {
         })
       )
     ]);
+
+    await this.discordService.sendMessageInChannel({
+      embeds: [
+        matchEmbed.addFields({
+          name: 'Draft',
+          value: `[Spectate Draft](${draftLobby.SPECTATOR})`
+        })
+      ]
+    })
   }
 
   private sortUsersByTeam(users: User[], players: Player[]) {

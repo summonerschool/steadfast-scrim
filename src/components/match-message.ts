@@ -1,8 +1,8 @@
-import { chance } from '../lib/chance';
+import {chance} from '../lib/chance';
 // @ts-ignore
-import { EmbedBuilder } from 'discord.js';
-import type { Player, Scrim, User } from '@prisma/client';
-import type { GameSide, LobbyDetails } from '../models/matchmaking';
+import {EmbedBuilder} from 'discord.js';
+import type {Player, Scrim, User} from '@prisma/client';
+import type {GameSide, LobbyDetails} from '../models/matchmaking';
 
 const ROLES_ORDER = {
   TOP: 1,
@@ -29,7 +29,7 @@ export const MatchDetailsEmbed = (scrim: Scrim, players: Player[], lobbyDetails:
   const blue = teams.BLUE.sort(sortByRole);
   const red = teams.RED.sort(sortByRole);
 
-  const embed = new EmbedBuilder()
+  return new EmbedBuilder()
     .setColor(698371)
     .setTitle(`Queue Popped!`)
     .setDescription(
@@ -42,11 +42,10 @@ export const MatchDetailsEmbed = (scrim: Scrim, players: Player[], lobbyDetails:
       `
     )
     .addFields(
-      { name: teamNames[0], value: blue.map(teamToString).join('\n'), inline: true },
-      { name: teamNames[1], value: red.map(teamToString).join('\n'), inline: true }
+      {name: teamNames[0], value: blue.map(teamToString).join('\n'), inline: true},
+      {name: teamNames[1], value: red.map(teamToString).join('\n'), inline: true}
     )
     .setTimestamp();
-  return embed;
 };
 
 export const LobbyDetailsEmbed = (
