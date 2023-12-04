@@ -131,8 +131,12 @@ const admin: SlashCommand = {
       case 'list-requests': {
         await interaction.deferReply();
         const requests = await userService.getHighEloRequests();
+
+        if (requests.length === 0) {
+          return { content: `No users left to approve` };
+        }
+
         const users = await userService.getUsers(requests.map(request => request.userId));
-        console.log(users)
 
         return { embeds: [HighEloAdminEmbed(users)] };
       }

@@ -82,7 +82,7 @@ export class ApplicationClient extends Client {
     const dir = path.join(__dirname, '../commands');
     await Promise.all(
       readdirSync(dir).map(async (file) => {
-        const command: SlashCommand = (await import(`${dir}/${file}`)).default;
+        const command: SlashCommand = (await import(`file://${dir}/${file}`)).default;
         if (command.command) {
           const name = command.command.name;
           this.slashCommands.set(name, command);
@@ -106,8 +106,6 @@ export class ApplicationClient extends Client {
     const res = (await rest.put(Routes.applicationGuildCommands(clientId, guildId!), {
       body: commands.map((cmd) => cmd.command.toJSON())
     })) as RESTPutAPIApplicationCommandsResult;
-    console.log(res);
-
     console.log(`Migrated ${res.length} commands`);
   }
 }
