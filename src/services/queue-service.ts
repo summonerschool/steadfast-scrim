@@ -65,7 +65,7 @@ export const initQueueService = (
       const queue: Queues = queues.get(guildID) || { EUW: new Map(),EUW_HIGH_ELO: new Map(),NA: new Map(),NA_HIGH_ELO: new Map() };
 
       if (region.includes('HIGH_ELO') && !user.highElo) {
-        throw new Error("You're not allowed to join high elo queue yet, please request access with the command /profile request_high_elo");
+        throw new Error("You're not allowed to join high elo queue yet, please request access with the command \/profile request_high_elo");
       }
 
       if (queue[region].get(user.id)) {
