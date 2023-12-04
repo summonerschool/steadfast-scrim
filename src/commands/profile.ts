@@ -18,6 +18,7 @@ const profile: SlashCommand = {
     .setName('profile')
     .setDescription('Inhouse Profile')
     .addSubcommand((cmd) => cmd.setName('show').setDescription('Show your own profile'))
+    .addSubcommand((cmd) => cmd.setName('request_high_elo').setDescription('Request High Elo Queue access'))
     .addSubcommand((cmd) =>
       cmd
         .setName('setup')
@@ -70,6 +71,16 @@ const profile: SlashCommand = {
         return {
           embeds: [ProfileEmbed(user)]
         };
+      }
+      case 'request_high_elo': {
+        await interaction.deferReply({ephemeral: true});
+        const user = await userService.getUserProfile(interaction.user.id);
+        if (user.highElo) {
+          return { content: 'High Elo Queue already enabled'};
+        }
+
+        await userService.requestHighEloQueue(interaction.user.id);
+        return { content: 'High Elo queue request has been submitted'};
       }
       case 'setup': {
         await interaction.deferReply();

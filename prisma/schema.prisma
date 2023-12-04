@@ -19,10 +19,11 @@ model User {
   losses            Int          @default(0)
   wins              Int          @default(0)
   autofillProtected Boolean      @default(false) @map("autofill_protected")
-  highElo           Boolean      @default(false) @map("high_elo")
   registeredAt      DateTime     @default(now()) @map("registered_at")
+  highElo           Boolean      @default(false) @map("high_elo")
   player            Player[]
   seasonStats       SeasonStats?
+  HighEloRequest    HighEloRequest?
 }
 
 model Player {
@@ -46,12 +47,12 @@ model Scrim {
   status       Status   @default(STARTED)
   guildID      String
   region       Region
-  queue        Queue    @default(UNIVERSAL)
   winner       Side?
   createdAt    DateTime @default(now()) @map("created_at")
   season       Int      @default(0)
   blueTeamName String   @map("blue_team_name")
   redTeamName  String   @map("red_team_name")
+  queue        Queue    @default(UNIVERSAL)
   Draft        Draft?
   players      Player[]
 }
@@ -79,6 +80,14 @@ model Draft {
   @@id([scrimId, draftRoomId])
 }
 
+model HighEloRequest {
+  userId    String   @unique @map("user_id")
+  user      User     @relation(fields: [userId], references: [id])
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([userId], name: "idx_user_id")
+}
+
 enum Side {
   RED
   BLUE
@@ -92,8 +101,8 @@ enum Status {
 
 enum Region {
   EUW
-  EUW_HIGH_ELO
   NA
+  EUW_HIGH_ELO
   NA_HIGH_ELO
 }
 
@@ -108,11 +117,11 @@ enum Rank {
   SILVER
   GOLD
   PLATINUM
-  EMERALD
   DIAMOND
   MASTER
   GRANDMASTER
   CHALLENGER
+  EMERALD
 }
 
 enum Role {

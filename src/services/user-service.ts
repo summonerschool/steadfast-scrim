@@ -1,4 +1,4 @@
-import type {PrismaClient, User} from '@prisma/client';
+import type {HighEloRequest, PrismaClient, User} from '@prisma/client';
 import {NotFoundError} from '../errors/errors';
 import type {SetupInput} from '../schemas/user';
 
@@ -6,8 +6,10 @@ export interface UserService {
   setUserProfile(id: string, input: SetupInput, elo: number): Promise<User>;
   updateElo(id: string, elo?: number, externalElo?: number): Promise<User>;
   setHighEloQueue(id: string, value: boolean): Promise<User>;
+  requestHighEloQueue(id: string): Promise<HighEloRequest>;
   getUserProfile(id: string): Promise<User>;
   getUsers(ids: string[]): Promise<User[]>;
+  getHighEloRequests(): Promise<HighEloRequest[]>
 }
 
 export class UserServiceImpl implements UserService {
@@ -15,12 +17,11 @@ export class UserServiceImpl implements UserService {
 
   async setUserProfile(id: string, input: SetupInput, elo: number): Promise<User> {
     const { ign, ...user } = input;
-    const res = await this.prisma.user.upsert({
-      where: { id: id },
-      create: { id, elo, externalElo: elo, leagueIGN: ign, ...user },
-      update: { leagueIGN: input.ign, ...user }
+    return await this.prisma.user.upsert({
+      where: {id: id},
+      create: {id, elo, externalElo: elo, leagueIGN: ign, ...user},
+      update: {leagueIGN: input.ign, ...user}
     });
-    return res;
   }
 
   async updateElo(id: string, elo?: number, externalElo?: number): Promise<User> {
@@ -33,9 +34,23 @@ export class UserServiceImpl implements UserService {
   }
 
   async setHighEloQueue(id: string, value: boolean = true): Promise<User> {
-    return await this.prisma.user.update({
+    const user = await this.prisma.user.update({
       where: {id},
       data: {highElo: value}
+    });
+
+    await this.prisma.highEloRequest.deleteMany({
+      where: {userId: id}
+    })
+
+    return user
+  }
+
+  async requestHighEloQueue(id: string): Promise<HighEloRequest> {
+    return await this.prisma.highEloRequest.upsert({
+      where: { userId: id },
+      update: {},
+      create: { userId: id },
     });
   }
 
@@ -47,5 +62,9 @@ export class UserServiceImpl implements UserService {
 
   async getUsers(ids: string[]): Promise<User[]> {
     return await this.prisma.user.findMany({ where: { id: { in: ids } } });
+  }
+
+  async getHighEloRequests(): Promise<HighEloRequest[]> {
+    return await this.prisma.highEloRequest.findMany()
   }
 }

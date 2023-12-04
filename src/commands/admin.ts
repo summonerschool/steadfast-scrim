@@ -6,6 +6,7 @@ import { queueService, scrimService, userService } from '..';
 import { ProfileEmbed } from '../components/setup-feedback';
 import { chance } from '../lib/chance';
 import type { SlashCommand } from '../types';
+import {HighEloAdminEmbed} from "../components/high-elo-admin";
 
 const createTestUser = (role: Role, secondary: Role, name: string, elo: number): User => ({
   id: chance.guid(),
@@ -54,6 +55,11 @@ const admin: SlashCommand = {
         .addMentionableOption((opt) => opt.setName('user').setDescription('User to enable/disable').setRequired(true))
         .addBooleanOption((opt) => opt.setName('allowed').setDescription('Enables/Disables user to highelo queue. Defaults TRUE'))
     )
+    .addSubcommand((cmd) =>
+      cmd
+        .setName('list-requests')
+        .setDescription('List all currently requested users')
+    )
     .addSubcommand((cmd) => cmd.setName('add-dummy-users').setDescription('creates and adds dummy users'))
     .addSubcommand((cmd) =>
       cmd
@@ -86,7 +92,7 @@ const admin: SlashCommand = {
           users = notTwoOfEach;
         }
         for (const user of users) {
-          await queueService.joinQueue(user, interaction.guildId!, user.region, false);
+          queueService.joinQueue(user, interaction.guildId!, user.region, false);
         }
         return { content: `Added ${users.length} to the queue` };
       }
@@ -114,12 +120,21 @@ const admin: SlashCommand = {
         return { embeds: [ProfileEmbed(user)] };
       }
       case 'high-elo': {
+        await interaction.deferReply();
         const mentionable = interaction.options.getMentionable('user');
         const value = interaction.options.getBoolean('allowed') ?? true;
         if (!mentionable) return { content: 'Not a real user ID' };
         const member = mentionable as GuildMember;
         const user = await userService.setHighEloQueue(member.user.id, value);
-        return { content: `<@${user.id}> has been approved for high elo queue` };
+        return { content: `<@${user.id}> has been ${value ? 'approved' : 'denied'} for high elo queue` };
+      }
+      case 'list-requests': {
+        await interaction.deferReply();
+        const requests = await userService.getHighEloRequests();
+        const users = await userService.getUsers(requests.map(request => request.userId));
+        console.log(users)
+
+        return { embeds: [HighEloAdminEmbed(users)] };
       }
       case 'revert-game': {
         await interaction.deferReply();
