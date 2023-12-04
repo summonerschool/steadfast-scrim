@@ -9,7 +9,7 @@ export const HighEloAdminEmbed = (requests: User[]) => {
     .setTitle(`High Elo Request List`)
     .addFields({
       name: 'Users',
-      value: requests.map(user => `${user.leagueIGN} (${user.region}) [op.gg](https://www.op.gg/summoners/${regionToServer(user.region)}/${user.leagueIGN})`).join('\n'), inline: true
+      value: requests.map(user => `<@${user.id}> : ${user.leagueIGN} (${user.region}) [op.gg](${urlEncodedLink(user.region, user.leagueIGN)})`).join('\n'), inline: true
     })
     .setTimestamp();
 };
@@ -18,3 +18,7 @@ export const HighEloAdminEmbed = (requests: User[]) => {
 const regionToServer = (region: string) => {
   return  region.toLocaleLowerCase().startsWith('euw') ? 'euw' : 'na';
 };
+
+const urlEncodedLink = (region: string, ign: string) => {
+  return `https://www.op.gg/summoners/${regionToServer(region)}/${encodeURIComponent(ign)}`
+}
