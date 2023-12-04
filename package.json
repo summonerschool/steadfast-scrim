@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "Discord bot for scrims",
   "main": "dist/index.js",
+  "license": "MIT",
   "scripts": {
     "start": "cd dist && node index.js",
     "dev": "esno src/index",
