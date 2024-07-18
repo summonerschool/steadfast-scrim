@@ -23,7 +23,11 @@ export const client = new ApplicationClient(admins);
 client.login(env.DISCORD_BOT_TOKEN);
 
 const prisma = new PrismaClient();
-export const redis = new Redis(env.REDIS_URL);
+export const redis = new Redis(env.REDIS_URL, {
+  tls: {
+    rejectUnauthorized: false
+  }
+});
 
 // Services
 export const userService = new UserServiceImpl(prisma);
