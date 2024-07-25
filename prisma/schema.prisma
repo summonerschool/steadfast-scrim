@@ -18,6 +18,7 @@ model User {
   externalElo       Int          @default(0) @map("external_elo")
   losses            Int          @default(0)
   wins              Int          @default(0)
+  secondaryCounter  Int          @default(0)
   autofillProtected Boolean      @default(false) @map("autofill_protected")
   registeredAt      DateTime     @default(now()) @map("registered_at")
   highElo           Boolean      @default(false) @map("high_elo")

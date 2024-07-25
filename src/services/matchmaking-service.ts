@@ -170,7 +170,7 @@ export const findBestMatchup = (
   let bestMatchupByEloDiff: Matchup | undefined = undefined;
 
   const getOffroleCount = createCountOffroleHandler(users);
-
+  const getOffroleCountMod = createCountOffroleModHandler(users);
   for (let i = 0; i < combinations.length; i++) {
     const team = combinations[i];
     for (let j = i; j < combinations.length; j++) {
@@ -179,7 +179,7 @@ export const findBestMatchup = (
       const noSharedPlayers = !team.some((player) => enemy.some((p) => player.id == p.id));
 
       if (noSharedPlayers) {
-        const eloDifference = calculateEloDifference(team, enemy);
+        const eloDifference = calculateEloDifference(team, enemy)+getOffroleCountMod(enemy)*100+getOffroleCountMod(team)*100;
         const offroleCount = getOffroleCount(enemy) + getOffroleCount(team);
         const leastFairLaneDiff = getHighestLaneDiff(team, enemy);
 
@@ -215,6 +215,7 @@ export const findBestMatchup = (
 
   return { valid: true, matchupByOffrole: bestMatchupByOffroleCount, matchupByElo: bestMatchupByEloDiff };
 };
+
 
 const compareOffrole = (m1: Matchup, m2: Matchup) => {
   if (m1.offroleCount < m2.offroleCount) {
@@ -257,7 +258,17 @@ const createCountOffroleHandler = (initialUsers: User[]) => (team: Team) => {
   }
   return counter;
 };
-
+const createCountOffroleModHandler = (initialUsers: User[]) => (team: Team) => {
+  let counter = 0;
+  for (const u of team) {
+    const user = initialUsers.find((initial) => initial.id === u.id);
+    // The user is on offrole if they have less elo than the initial one
+    if (user && user.elo > u.elo) {
+      counter += 1+u.secondaryCounter;
+    }
+  }
+  return counter;
+};
 const getHighestLaneDiff = (t1: Team, t2: Team) => {
   let highestDiff = 0;
   for (let i = 0; i < 5; i++) {

@@ -114,8 +114,14 @@ export const initScrimService = (prisma: PrismaClient, matchmakingService: Match
       // Update the users elo
       const updatedUsers = scrim.players.map((player) => {
         ingame.delete(player.userId);
-
         const user = player.user;
+        if (player.isOffRole||player.isAutoFill) {
+          user.secondaryCounter+=1;
+        }
+        else {
+          user.secondaryCounter=0;
+        }
+        
         const totalGames = user.wins + user.losses;
         const K = totalGames <= 14 ? 80 - 2 * totalGames : 40;
         let eloChange = Math.round(K * (scrim.winner === 'BLUE' ? 1 - blueWinChances : 1 - redWinChances));
